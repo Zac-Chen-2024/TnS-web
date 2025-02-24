@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tap&amp;Say Text Editor</title>
+  <style>
+    
+    /* Global styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header, footer {
+      background: #007bff;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+    }
+    .container {
+      flex: 1;
+      width: 90%;
+      max-width: 800px;
+      margin: 20px auto;
+    }
+    .card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+      margin: 10px 0;
+    }
+    #text-editor {
+      width: 100%;
+      min-height: 300px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+      outline: none;
+      font-size: 16px;
+      background: white;
+      white-space: pre-wrap;
+    }
+    /* Placeholder when empty */
+    #text-editor:empty:before {
+      content: "Type here or drag a .doc/.txt file here";
+      color: gray;
+    }
+    /* Recording status */
+    #mic-status {
+      font-weight: bold;
+      color: red;
+    }
+    /* Event log area */
+    #event-log {
+      font-size: 14px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    /* --- Monitoring window: Original Error Sentence --- */
+    #original-error-sentence {
+      font-weight: bold;
+      color: #333;
+    }
+    /* --- 圆形悬浮框（左右分半） --- */
+    #select-overlay {
+      position: fixed;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex;
+      border: 2px solid #000;
+      background: rgba(255,255,255,0.95);
+      left: 0;
+      top: 0;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    #select-overlay .half {
+      width: 50%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      cursor: pointer;
+      font-weight: bold;
+      text-align: center;
+      padding: 5px;
+    }
+    #select-overlay .half.left {
+      border-right: 1px solid #000;
+    }
+    /* --- Spinner 样式：与悬浮框同大 --- */
+    @keyframes spin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    .spinner {
+      width: 150px;
+      height: 150px;
+      border: 8px solid #ccc;
+      border-top-color: #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      position: relative;
+      top: 0;
+      left: 0;
+    }
+    /* --- 建议列表（矩形悬浮框） --- */
+    .suggestions-box {
+      text-align: left;
+      max-height: 150px;
+      overflow-y: auto;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 5px;
+    }
+    .suggestions-box div {
+      padding: 5px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+      word-wrap: break-word;
+    }
+    .suggestions-box div:hover {
+      background-color: #f0f0f0;
+    }
+    /* --- 高亮整句 --- */
+    .highlighted-sentence {
+      background-color: yellow;
+    }
+    /* --- Toast 提醒 --- */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 5px;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #tips-card {
+  position: fixed;
+  right: 20px;
+  /* 仅指定上下间距，让浏览器自动计算卡片高度 */
+  top: 150px;    /* 距顶部留出给页眉的空间，按需调整 */
+  bottom: 120px; /* 距底部留出给页脚的空间，按需调整 */
+  
+  /* 不要再写 height: 430px，这会干扰 top/bottom */
+  /* 如果想给它一个最大高度，也用 max-height */
+  max-height: calc(100vh - 160px); /* 80+80=160，高度再扣一下边距 */
+
+  width: 160px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  z-index: 2000;
+}
+    #tips-card h4 {
+      margin-top: 0;
+    }
+    #tips-card ul {
+      padding-left: 20px;
+      margin: 0;
+    }
+    #tips-card li {
+      margin-bottom: 5px;
+      list-style: disc;
+    }
+    /* --- 响应式调整 Tips 卡片 --- */
+    @media screen and (max-width: 800px) {
+      #tips-card {
+        position: static;
+        width: 90%;
+        margin: 10px auto;
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 默认页眉 -->
+  <header id="header-container">默认页眉</header>
+  <div class="container">
+    <!-- Monitoring window -->
+    <div class="card">
+      <h3>Tap&amp;Say Monitoring Window</h3>
+      <p><strong>Error Sentence:</strong> <span id="error-text">None</span></p>
+      <p><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
+      <p><strong>Touch Index (relative to sentence):</strong> <span id="touch-index">None</span></p>
+      <p><strong>Speech Input:</strong> <span id="voice-input">None</span></p>
+      <p><strong>Final Output:</strong> <span id="final-output">None</span></p>
+      <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Recording stopped</span></p>
+    </div>
+    <!-- Text Editor -->
+    <div class="card">
+      <h2>Tap&amp;Say Text Editor</h2>
+      <div id="text-editor" contenteditable="true"></div>
+    </div>
+    <!-- Event Log -->
+    <div class="card">
+      <h3>Event Log</h3>
+      <div id="event-log">No events recorded</div>
+    </div>
+  </div>
+
+  <!-- 右侧固定 Tips 卡片，通过 JS 动态生成列表 -->
+  <div id="tips-card">
+    <h4>Tips</h4>
+    <ul id="tips-list"></ul>
+  </div>
+
+  <footer id="footer-container">默认页脚</footer>
+
+  <script>
+
+    //目前问题：
+//1、语音输入无声时会直接输入监控内容å
+//2、语音输入只能在文本框0位置输入
+//3、tips卡片设计
+    async function loadHeaderFooter() {
+      try {
+        const headerResponse = await fetch('header.html');
+        const headerHtml = await headerResponse.text();
+        document.getElementById('header-container').innerHTML = headerHtml;
+      } catch (error) {
+        console.warn("加载 header.html 失败，使用默认页眉。", error);
+      }
+      try {
+        const footerResponse = await fetch('footer.html');
+        const footerHtml = await footerResponse.text();
+        document.getElementById('footer-container').innerHTML = footerHtml;
+      } catch (error) {
+        console.warn("加载 footer.html 失败，使用默认页脚。", error);
+      }
+    }
+    loadHeaderFooter();
+
+    const API_URL = "https://f728-35-184-108-131.ngrok-free.app/correct";
+
+    let pressTimer, tapTriggered = false, globalTapIndex = -1;
+    let initialX = 0, initialY = 0;
+    let currentMode = null; 
+    let selectOverlay = null; 
+    let overlayTimeout = null; 
+    let originalSentence = ""; 
+    let recognition, isListening = false, silenceTimer;
+
+    const editor = document.getElementById("text-editor");
+    const errorText = document.getElementById("error-text");
+    const originalErrorSpan = document.getElementById("original-error-sentence");
+    const touchIndex = document.getElementById("touch-index");
+    const voiceInput = document.getElementById("voice-input");
+    const micStatus = document.getElementById("mic-status");
+    const eventLog = document.getElementById("event-log");
+    const finalOutput = document.getElementById("final-output");
+
+    // 动态生成 Tips 列表
+    let tips = [
+  "Select the location where you want to make changes",
+  "Long press the editor for 1 second to pop up options",
+  "Click to trigger the corresponding function",
+  "For the Tap&Say option, speak out the modified content",
+  "Right-click to cancel Tap&Say modifications",
+  ];
+    let tipsListEl = document.getElementById("tips-list");
+    tips.forEach(tip => {
+      let li = document.createElement("li");
+      li.textContent = tip;
+      tipsListEl.appendChild(li);
+    });
+
+    document.addEventListener("contextmenu", function(e) {
+      if (currentMode === "tap" && selectOverlay) {
+        e.preventDefault();
+        removeHighlight();
+        replaceHighlightedSentence(originalSentence);
+        removeOverlay();
+      }
+    });
+
+    function showToast(message) {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.innerText = message;
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => { toast.style.opacity = 1; });
+      setTimeout(() => {
+        toast.style.opacity = 0;
+        setTimeout(() => { toast.remove(); }, 500);
+      }, 2000);
+    }
+
+    window.onload = function() {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .catch(err => {
+            showToast("请允许麦克风访问以使用 Tap&Say。");
+          });
+      }
+    };
+
+    editor.addEventListener("mousedown", function (event) {
+      tapTriggered = false;
+      globalTapIndex = getCaretIndex(event.clientX, event.clientY);
+      initialX = event.clientX;
+      initialY = event.clientY;
+      pressTimer = setTimeout(() => {
+        tapTriggered = true;
+        if (!selectOverlay) {
+          showSelectOverlay(initialX, initialY);
+        }
+      }, 1000);
+    });
+    editor.addEventListener("mouseup", function () {
+      if (!tapTriggered) {
+        clearTimeout(pressTimer);
+      }
+    });
+
+    function getCaretIndex(x, y) {
+      let range;
+      if (document.caretRangeFromPoint) {
+        range = document.caretRangeFromPoint(x, y);
+      } else if (document.caretPositionFromPoint) {
+        let pos = document.caretPositionFromPoint(x, y);
+        if (!pos) return -1;
+        range = document.createRange();
+        range.setStart(pos.offsetNode, pos.offset);
+        range.collapse(true);
+      }
+      if (!range) return -1;
+      let preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(editor);
+      preCaretRange.setEnd(range.startContainer, range.startOffset);
+      return preCaretRange.toString().length;
+    }
+
+    function getSelectedSentenceAndRelativeIndex(globalIndex) {
+      let text = editor.innerText;
+      let sentences = text.match(/[^.!?。！？]*[.!?。！？]/g) || [text];
+      let selectedSentence = sentences.find(s => {
+        let sentenceStart = text.indexOf(s);
+        return sentenceStart <= globalIndex && globalIndex <= sentenceStart + s.length;
+      }) || text;
+      let sentenceStartIndex = text.indexOf(selectedSentence);
+      let relativeIndex = globalIndex - sentenceStartIndex;
+      return { sentence: selectedSentence, relativeIndex: relativeIndex };
+    }
+
+    function adjustIndexWithinWord(sentence, index) {
+      if (index <= 0 || index >= sentence.length) return index;
+      const isWordChar = ch => /[a-zA-Z0-9]/.test(ch);
+      let leftChar = sentence[index - 1];
+      let rightChar = sentence[index];
+      if (isWordChar(leftChar) && isWordChar(rightChar)) {
+        let wordStart = index - 1;
+        while (wordStart > 0 && isWordChar(sentence[wordStart - 1])) {
+          wordStart--;
+        }
+        let wordEnd = index;
+        while (wordEnd < sentence.length && isWordChar(sentence[wordEnd])) {
+          wordEnd++;
+        }
+        let distToStart = index - wordStart;
+        let distToEnd = wordEnd - index;
+        return distToStart <= distToEnd ? wordStart : wordEnd;
+      }
+      return index;
+    }
+
+    function showSelectOverlay(x, y) {
+      selectOverlay = document.createElement("div");
+      selectOverlay.id = "select-overlay";
+      selectOverlay.style.left = x + "px";
+      selectOverlay.style.top = y + "px";
+      selectOverlay.innerHTML = `
+        <div class="half left">Tap&amp;Say</div>
+        <div class="half right">Voice Input</div>
+      `;
+      document.body.appendChild(selectOverlay);
+      overlayTimeout = setTimeout(() => { removeOverlay(); }, 3000);
+      selectOverlay.querySelector(".half.left").addEventListener("click", () => {
+        clearTimeout(overlayTimeout);
+        handleSelection("tap");
+      });
+      selectOverlay.querySelector(".half.right").addEventListener("click", () => {
+        clearTimeout(overlayTimeout);
+        handleSelection("voice");
+      });
+    }
+
+    function handleSelection(mode) {
+      currentMode = (mode === "voice") ? "voice" : "tap";
+      if (currentMode === "tap") {
+        let { sentence, relativeIndex } = getSelectedSentenceAndRelativeIndex(globalTapIndex);
+        originalSentence = sentence;
+        originalErrorSpan.innerText = originalSentence;
+        let adjustedIndex = adjustIndexWithinWord(sentence, relativeIndex);
+        let errorSentenceWithMarker = sentence.slice(0, adjustedIndex) + " <|> " + sentence.slice(adjustedIndex);
+        errorText.innerText = errorSentenceWithMarker;
+        touchIndex.innerText = adjustedIndex;
+        highlightSentence(sentence);
+      }
+      updateOverlayToSpinner();
+      startRecording();
+    }
+
+    function highlightSentence(sentence) {
+      let html = editor.innerHTML;
+      let safe = escapeRegExp(sentence);
+      let re = new RegExp(safe, "m");
+      editor.innerHTML = html.replace(re, `<span class="highlighted-sentence">${sentence}</span>`);
+    }
+
+    function updateOverlayToSpinner() {
+      if (selectOverlay) {
+        selectOverlay.innerHTML = '<div class="spinner"></div>';
+      }
+    }
+
+    function transformOverlayToRectangle(corrections) {
+      if (!selectOverlay) return;
+      selectOverlay.style.width = "220px";
+      selectOverlay.style.height = "auto";
+      selectOverlay.style.borderRadius = "10px";
+      selectOverlay.innerHTML = `<div class="suggestions-box"></div>`;
+      let sugBox = selectOverlay.querySelector(".suggestions-box");
+      let top3 = corrections.slice(0, 3);
+      top3.forEach(corr => {
+        let div = document.createElement("div");
+        div.innerText = corr;
+        div.addEventListener("click", () => {
+          removeHighlight();
+          replaceHighlightedSentence(corr);
+          removeOverlay();
+        });
+        sugBox.appendChild(div);
+      });
+    }
+
+    function removeHighlight() {
+      let html = editor.innerHTML;
+      html = html.replace(/<span class="highlighted-sentence">(.*?)<\/span>/, "$1");
+      editor.innerHTML = html;
+    }
+
+    function replaceHighlightedSentence(newText) {
+      let html = editor.innerHTML;
+      let safe = escapeRegExp(originalSentence);
+      let re = new RegExp(safe, "m");
+      editor.innerHTML = html.replace(re, newText);
+    }
+
+    function removeOverlay() {
+      if (selectOverlay) {
+        selectOverlay.remove();
+        selectOverlay = null;
+      }
+      if (overlayTimeout) {
+        clearTimeout(overlayTimeout);
+        overlayTimeout = null;
+      }
+    }
+
+    function startRecording() {
+      if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
+        showToast("您的浏览器不支持语音识别。");
+        return;
+      }
+      let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+      recognition.onstart = function() {
+        isListening = true;
+        micStatus.innerText = "🟢 Recording...";
+        silenceTimer = setTimeout(() => {
+          if (isListening) recognition.stop();
+        }, 5000);
+      };
+      recognition.onresult = function(event) {
+        clearTimeout(silenceTimer);
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        voiceInput.innerText = transcript;
+      };
+      recognition.onerror = function(event) {
+        console.error("Speech recognition error:", event.error);
+        micStatus.innerText = "❌ Recording error";
+        if (isListening) recognition.stop();
+      };
+      recognition.onend = function() {
+        isListening = false;
+        micStatus.innerText = "🔴 Recording stopped";
+        finalizeTapSay();
+      };
+      recognition.start();
+    }
+
+    // ----去掉语音识别自动添加的标点----
+    function removePunctuation(str) {
+      return str.replace(/[^a-zA-Z0-9\s]/g, "");
+    }
+    // ---------------------------------------
+
+    function finalizeTapSay() {
+      let transcriptText = voiceInput.innerText.trim();
+      if (transcriptText === "") {
+        showToast("未检测到输入，请提高音量再试。");
+        removeOverlay();
+        return;
+      }
+      if (currentMode === "voice") {
+        let noPunct = removePunctuation(transcriptText);
+        insertTextAtCursor(noPunct + " ");
+        removeOverlay();
+      } else {
+        let errorSentenceWithMarker = errorText.innerText;
+        let finalLabel = errorSentenceWithMarker + "<||>" + transcriptText + "</s>";
+        finalOutput.innerText = finalLabel;
+        logEvent("Final output: " + finalLabel, transcriptText, touchIndex.innerText);
+        sendToAPI(errorSentenceWithMarker, touchIndex.innerText, transcriptText);
+      }
+    }
+
+    function sendToAPI(sentence, cursorPos, voice) {
+      fetch(API_URL, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+             sentence: sentence,
+             cursor_position: parseInt(cursorPos, 10),
+             voice: voice,
+             original_sentence: originalSentence
+         })
+      })
+      .then(response => response.json())
+      .then(data => {
+         let corrections = data.corrections || [];
+         logEvent("API corrections: " + JSON.stringify(corrections), "", "");
+         transformOverlayToRectangle(corrections.slice(0, 3));
+      })
+      .catch(error => {
+         console.error("API error:", error);
+         logEvent("API call error: " + error, "", "");
+      });
+    }
+
+    function insertTextAtCursor(text) {
+      editor.focus();
+      if (document.queryCommandSupported('insertHTML')) {
+        document.execCommand('insertHTML', false, text);
+      } else {
+        let sel = window.getSelection();
+        if (!sel.rangeCount) return;
+        let range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(text));
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function logEvent(message, speech, index) {
+      let p = document.createElement("p");
+      p.innerText = `[${new Date().toLocaleString("en-US",{hour12:false})}] ${message}`;
+      eventLog.appendChild(p);
+    }
+
+    ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
+      editor.addEventListener(evtName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+      }, false);
+    });
+    editor.addEventListener("dragover", () => { editor.style.background = "#fafafa"; });
+    editor.addEventListener("dragleave", () => { editor.style.background = "white"; });
+    editor.addEventListener("drop", e => {
+      editor.style.background = "white";
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        const file = files[0];
+        const fname = file.name.toLowerCase();
+        if (fname.endsWith(".txt") || fname.endsWith(".doc")) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            editor.innerText = evt.target.result;
+            logEvent("File loaded: " + file.name, "0", "");
+          };
+          reader.readAsText(file, "UTF-8");
+        } else {
+          showToast("仅支持 .txt 或 .doc 文件。");
+        }
+      }
+    });
+  </script>
+</body>
+</html>
