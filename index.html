@@ -305,7 +305,7 @@
     let recognition = null;
     let isListening = false;
     let silenceTimer = null;
-    let savedRange = null;
+    let savedRange = null;        // For saving/restoring cursor
     let originalSentence = "";
     let suggestionsBox = null;
     let suggestionsTimer = null;  // Timer to auto-remove suggestion box
@@ -782,7 +782,6 @@
         removeHighlight();
         highlightSentence(candidate);
         setTimeout(() => {
-          // if next char is not space/punctuation => add space
           maybeAddSpaceAfterHighlight(ts);
           moveCaretToEndOfTarget();
         }, 50);
@@ -863,26 +862,33 @@
     }
 
     // ========== 19) Utility Functions ==========
+
+    // Mobile input => try to keep caret stable but remove highlight if user inserts text
+    editor.addEventListener("input", function(e){
+      if (isMobile() && e.inputType && e.inputType.startsWith("insert")) {
+        saveCurrentSelection();
+        removeHighlight();
+        restoreCurrentSelection();
+      }
+    });
+
     // Remove punctuation except single quotes
     function removePunctuation(str){
       return str.replace(/[^a-zA-Z0-9'\s]/g, "");
     }
 
-    // If next char after highlight is not space/punctuation, add one space
+    // If next char after highlight is not space/punctuation => add one space
+    // Also if there's NO next element => add space
     function maybeAddSpaceAfterHighlight(ts){
-      // Find the next text in the editor after the highlight node
       let parent = ts.parentNode;
       if (!parent) return;
 
-      // Collect the editor's text content from highlight end
-      // We'll do a simple approach: check the text node after highlight
       let next = ts.nextSibling;
-      // skip empty text or empty elements
       while (next && next.nodeType === Node.ELEMENT_NODE && !next.textContent.trim()) {
         next = next.nextSibling;
       }
+      // If no next node => definitely add space if not ends with punctuation/space
       if (!next) {
-        // no next node => if last char not space/punctuation => add space
         if (!endsWithSpaceOrPunc(ts.innerText)) {
           ts.innerText = ts.innerText + " ";
         }
@@ -895,20 +901,23 @@
             ts.innerText += " ";
           }
         } else {
-          // if next char is space or punctuation => skip
           if (!t[0].match(/[\s.,;!?]/)) {
-            // add space
             if (!endsWithSpaceOrPunc(ts.innerText)) {
               ts.innerText += " ";
             }
           }
         }
       } else if (next.nodeType === Node.ELEMENT_NODE) {
-        // if next element text starts with space or punctuation => skip
         let text = next.textContent.trimStart();
-        if (text.length > 0 && !text[0].match(/[\s.,;!?]/)) {
+        if (text.length === 0) {
           if (!endsWithSpaceOrPunc(ts.innerText)) {
             ts.innerText += " ";
+          }
+        } else {
+          if (!text[0].match(/[\s.,;!?]/)) {
+            if (!endsWithSpaceOrPunc(ts.innerText)) {
+              ts.innerText += " ";
+            }
           }
         }
       }
@@ -965,6 +974,7 @@
         sel.addRange(savedRange);
       }
     }
+
     /**
      * Return { sentence, relativeIndex } for the tapped sentence
      * relativeIndex = absoluteIndex - sentenceStart
