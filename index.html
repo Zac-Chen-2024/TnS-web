@@ -121,7 +121,7 @@
     /* Spinner Animation */
     @keyframes spin {
       from { transform: translate(-50%, -50%) rotate(0deg); }
-      to   { transform: translate(-50%, -50%) rotate(360deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
     }
     .spinner {
       width: 150px;
@@ -320,12 +320,12 @@
     let recognition = null;
     let isListening = false;
     let silenceTimer = null;
-    let savedRange = null;    // For saving/restoring the cursor position
+    let savedRange = null;    // For saving/restoring cursor position
     let originalSentence = "";
     let suggestionsBox = null;
     let suggestionsTimer = null;
     let undoStack = [];
-    let isUserTyping = false; // Flag if user is typing
+    let isUserTyping = false; // Flag for user input
 
     /*******************************************************
      * 4) DOM Element References
@@ -378,7 +378,7 @@
     }
 
     /*******************************************************
-     * 6) Monitoring / Event Log / IME toggles
+     * 6) Monitoring / Event Log / IME Toggles
      *******************************************************/
     monitoringBtn.addEventListener("click", () => {
       monitoringCard.style.display = (monitoringCard.style.display === "none") ? "block" : "none";
@@ -395,7 +395,7 @@
     });
 
     /*******************************************************
-     * 7) Toast & Event Log functions
+     * 7) Toast and Event Log Functions
      *******************************************************/
     function showToast(msg){
       const t = document.createElement("div");
@@ -416,7 +416,7 @@
     }
 
     /*******************************************************
-     * 8) File Drag & Drop
+     * 8) File Drag & Drop Functionality
      *******************************************************/
     ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
       editor.addEventListener(evtName, e => {
@@ -446,7 +446,7 @@
     });
 
     /*******************************************************
-     * 9) Long Press for Tap/Voice selection
+     * 9) Long Press for Tap/Voice Selection
      *******************************************************/
     editor.addEventListener("mousedown", onEditorMouseDown);
     editor.addEventListener("mouseup", onEditorMouseUp);
@@ -460,6 +460,7 @@
       initialY = e.clientY;
       pressTimer = setTimeout(() => {
         tapTriggered = true;
+        // On desktop, show overlay
         if (!isMobile() && !selectOverlay) {
           showSelectOverlay(initialX, initialY);
         }
@@ -497,7 +498,7 @@
     }
 
     /*******************************************************
-     * 10) Show overlay for desktop (if needed)
+     * 10) Show Overlay for Desktop (if needed)
      *******************************************************/
     function showSelectOverlay(x, y){
       selectOverlay = document.createElement("div");
@@ -531,7 +532,7 @@
     }
 
     /*******************************************************
-     * 11) Suggestions Box functions
+     * 11) Suggestions Box Functions
      *******************************************************/
     function removeSuggestionsBox(){
       if (suggestionsBox) {
@@ -545,7 +546,7 @@
     }
 
     /*******************************************************
-     * 12) Handle selection (Tap/Voice)
+     * 12) Handle Selection (Tap/Voice)
      *******************************************************/
     function handleSelection(mode){
       removeSuggestionsBox();
@@ -569,7 +570,7 @@
         if (!highlightSentence(sentence)) {
           logEvent("Highlight not found in editor => " + sentence);
         }
-        // After highlighting, move caret to end of the highlighted sentence
+        // After highlighting, move caret to end of target sentence
         setTimeout(() => {
           moveCaretToEndOfTarget();
           editor.focus();
@@ -586,7 +587,7 @@
     }
 
     /*******************************************************
-     * 13) Remove suggestions & highlight when clicking outside
+     * 13) Remove Suggestions & Highlight when clicking outside
      *******************************************************/
     document.addEventListener("click", function(e){
       if (suggestionsBox && !suggestionsBox.contains(e.target)) {
@@ -608,7 +609,7 @@
     });
 
     /*******************************************************
-     * 14) Highlight / Remove Highlight / Replace Highlighted Sentence
+     * 14) Highlight Functions
      *******************************************************/
     function highlightSentence(sentence){
       let html = editor.innerHTML;
@@ -679,7 +680,7 @@
     }
 
     /*******************************************************
-     * 16) Multi-level Undo functionality
+     * 16) Multi-level Undo Functionality
      *******************************************************/
     undoButton.addEventListener("click", function(){
       if (undoStack.length > 0) {
@@ -694,7 +695,7 @@
     });
 
     /*******************************************************
-     * 17) Move caret to end of highlighted sentence
+     * 17) Move Caret to End of Highlighted Sentence
      *******************************************************/
     function moveCaretToEndOfTarget(){
       let ts = document.getElementById("target-sentence");
@@ -709,13 +710,13 @@
     }
 
     /*******************************************************
-     * 18) Finalize Tap&Say (Main logic after speech recognition or selection)
+     * 18) Finalize Tap&Say (Main Logic)
      *******************************************************/
     function finalizeTapSay(){
       removeOverlay();
       removeSuggestionsBox();
       let transcript = voiceInputSpan.innerText.trim();
-      // Remove trailing spaces from transcript to avoid sending extra space
+      // Remove trailing spaces from transcript to avoid extra space
       transcript = transcript.replace(/\s+$/,"");
       if (!transcript) {
         showToast("No speech input detected.");
@@ -725,7 +726,7 @@
       undoStack.push(editor.innerHTML);
 
       if (currentMode === "voice") {
-        // For voice mode, remove punctuation (except single quotes) and then call punctuation API
+        // For voice mode, remove punctuation and call punctuation API
         let textNoPunc = removePunctuation(transcript);
         logEvent("Sending voice text to /restore_punctuation => " + textNoPunc);
 
@@ -739,8 +740,19 @@
           let restored = data.restored_text || "";
           logEvent("Punctuation API returned => " + restored);
           restoreCurrentSelection();
-          // Insert a space only if the character before caret is not space
-          let toInsert = (restored && !endsWithSpaceOrPunc(restored)) ? " " + restored.trim() : restored.trim();
+          // Insert a space + restored text only if needed
+          let toInsert = "";
+          // 如果当前高亮句后已经有空格则不再插入，否则添加一个空格
+          let ts = document.getElementById("target-sentence");
+          if (ts) {
+            if (!endsWithSpaceOrPunc(ts.innerText)) {
+              toInsert = " " + restored.trim();
+            } else {
+              toInsert = restored.trim();
+            }
+          } else {
+            toInsert = " " + restored.trim();
+          }
           insertTextAtCursor(toInsert);
           setTimeout(() => {
             moveCaretToEndOfTarget();
@@ -751,10 +763,11 @@
           logEvent("Punctuation API call error => " + err);
         });
       } else {
-        // For tap mode
+        // For tap mode, prepare merged string
         let parted = errorText.innerText || "";
         parted = parted.trimEnd();
         parted = parted.replace(/([.!?])(\S)/g, "$1 $2");
+
         let textNoPunc = removePunctuation(transcript).trimEnd();
         let merged = parted + " <||> " + textNoPunc;
         merged = merged.trimEnd();
@@ -767,11 +780,13 @@
         }, 300);
       }
       currentMode = null;
+      // 清除高亮（确认修改后自动消失）
+      setTimeout(() => { removeHighlight(); }, 3000);
       voiceInputSpan.innerText = "";
     }
 
     /*******************************************************
-     * 19) /correct API call for Tap&Say correction
+     * 19) /correct API call for Tap&Say Correction
      *******************************************************/
     function sendToAPI(mergedStr, loc){
       logEvent("Sending /correct => merged_string:" + mergedStr + ", touch_location:" + loc);
@@ -797,7 +812,7 @@
     }
 
     /*******************************************************
-     * 20) Apply suggestion and show suggestion box
+     * 20) Apply Suggestion and Show Suggestion Box
      *******************************************************/
     function applyFirstSuggestionAndShowBox(corrections){
       if (!corrections.length) return;
@@ -842,7 +857,6 @@
       let rect = tsNew.getBoundingClientRect();
       suggestionsBox = createSuggestionBox(rect, corrections);
       document.body.appendChild(suggestionsBox);
-      // If no candidate selected within 3 seconds, remove suggestions and highlight
       suggestionsTimer = setTimeout(() => {
         removeSuggestionsBox();
         removeHighlight();
@@ -957,6 +971,12 @@
       let startIndex = text.toLowerCase().indexOf(selectedSentence.toLowerCase());
       let relIndex = globalIndex - startIndex;
       return { sentence: selectedSentence, relativeIndex: relIndex };
+    }
+    // Check if string ends with a space or punctuation
+    function endsWithSpaceOrPunc(str){
+      if (!str) return false;
+      let c = str[str.length-1];
+      return !!c.match(/[\s.,;!?]/);
     }
   </script>
 </body>
