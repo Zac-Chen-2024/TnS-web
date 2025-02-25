@@ -121,7 +121,7 @@
     /* Spinner Animation */
     @keyframes spin {
       from { transform: translate(-50%, -50%) rotate(0deg); }
-      to { transform: translate(-50%, -50%) rotate(360deg); }
+      to   { transform: translate(-50%, -50%) rotate(360deg); }
     }
     .spinner {
       width: 150px;
@@ -206,7 +206,7 @@
     #drawer-toggle:hover {
       background: #0056b3;
     }
-    /* The other three buttons in the drawer */
+    /* Other buttons in the drawer */
     #drawer button:not(#drawer-toggle) {
       padding: 10px 14px;
       font-size: 14px;
@@ -223,7 +223,9 @@
       background: #0056b3;
     }
     @media (min-width: 481px) {
-      #toggle-ime { display: none; }
+      #toggle-ime {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -280,13 +282,13 @@
 
   <script>
     /*******************************************************
-     * 1) Global constants for API endpoints
+     * 1) Global Constants for API Endpoints
      *******************************************************/
     const API_URL = "https://tns.zacchen.win/correct";
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
 
     /*******************************************************
-     * 2) Drawer toggle variables and functionality
+     * 2) Drawer Toggle Variables and Functionality
      *******************************************************/
     let drawerOpen = false;
     const drawer = document.getElementById("drawer");
@@ -304,15 +306,15 @@
     });
 
     /*******************************************************
-     * 3) Other global variables
+     * 3) Other Global Variables
      *******************************************************/
     let disableIME = false;
     let selectOverlay = null;
     let overlayTimer = null;
     let pressTimer = null;
     let tapTriggered = false;
-    let globalTapIndex = -1;  // Absolute index in the full text
-    let localTapIndex = -1;   // Relative index in the selected sentence
+    let globalTapIndex = -1;  // Absolute index in full text
+    let localTapIndex = -1;   // Relative index in selected sentence
     let initialX = 0, initialY = 0;
     let currentMode = null;   // "tap" or "voice"
     let recognition = null;
@@ -323,10 +325,10 @@
     let suggestionsBox = null;
     let suggestionsTimer = null;
     let undoStack = [];
-    let isUserTyping = false; // 标志用户是否在输入
+    let isUserTyping = false; // Flag if user is typing
 
     /*******************************************************
-     * 4) DOM element references
+     * 4) DOM Element References
      *******************************************************/
     const monitoringCard = document.getElementById("monitoring-card");
     const eventLogCard = document.getElementById("event-log-card");
@@ -345,7 +347,7 @@
     const imeBtn = document.getElementById("toggle-ime");
 
     /*******************************************************
-     * 5) Window onload: Load header/footer and get mic access
+     * 5) Window onload: Load header/footer and request mic access
      *******************************************************/
     window.onload = function(){
       loadHeaderFooter();
@@ -393,7 +395,7 @@
     });
 
     /*******************************************************
-     * 7) Toast and Event Log functions
+     * 7) Toast & Event Log functions
      *******************************************************/
     function showToast(msg){
       const t = document.createElement("div");
@@ -474,7 +476,7 @@
       initialY = touch.clientY;
       pressTimer = setTimeout(() => {
         tapTriggered = true;
-        // On mobile, directly trigger Tap mode without showing overlay
+        // On mobile, directly trigger Tap mode without overlay
         handleSelection("tap");
       }, 1000);
     }
@@ -529,7 +531,7 @@
     }
 
     /*******************************************************
-     * 11) Suggestions box functions
+     * 11) Suggestions Box functions
      *******************************************************/
     function removeSuggestionsBox(){
       if (suggestionsBox) {
@@ -559,7 +561,6 @@
         }
         localTapIndex = relativeIndex;
         touchIndexSpan.innerText = localTapIndex.toString();
-
         errorText.innerText = sentence;
         originalSentence = sentence;
         originalErrorSpan.innerText = sentence;
@@ -568,7 +569,7 @@
         if (!highlightSentence(sentence)) {
           logEvent("Highlight not found in editor => " + sentence);
         }
-        // After highlighting, move caret to end of target sentence
+        // After highlighting, move caret to end of the highlighted sentence
         setTimeout(() => {
           moveCaretToEndOfTarget();
           editor.focus();
@@ -576,7 +577,6 @@
       }
       updateOverlayToSpinner();
       startRecording();
-      // On mobile, do not disturb input
       setTimeout(() => editor.focus(), 0);
     }
     function updateOverlayToSpinner(){
@@ -636,7 +636,7 @@
     }
 
     /*******************************************************
-     * 15) Start speech recognition
+     * 15) Start Speech Recognition
      *******************************************************/
     function startRecording(){
       if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
@@ -679,7 +679,7 @@
     }
 
     /*******************************************************
-     * 16) Multi-level Undo
+     * 16) Multi-level Undo functionality
      *******************************************************/
     undoButton.addEventListener("click", function(){
       if (undoStack.length > 0) {
@@ -694,7 +694,7 @@
     });
 
     /*******************************************************
-     * 17) Move caret to end of target sentence
+     * 17) Move caret to end of highlighted sentence
      *******************************************************/
     function moveCaretToEndOfTarget(){
       let ts = document.getElementById("target-sentence");
@@ -709,22 +709,23 @@
     }
 
     /*******************************************************
-     * 18) Finalize Tap&Say (main logic)
+     * 18) Finalize Tap&Say (Main logic after speech recognition or selection)
      *******************************************************/
     function finalizeTapSay(){
       removeOverlay();
       removeSuggestionsBox();
       let transcript = voiceInputSpan.innerText.trim();
+      // Remove trailing spaces from transcript to avoid sending extra space
+      transcript = transcript.replace(/\s+$/,"");
       if (!transcript) {
         showToast("No speech input detected.");
         currentMode = null;
         return;
       }
-      // Push current editor state to undo stack
       undoStack.push(editor.innerHTML);
 
       if (currentMode === "voice") {
-        // For voice mode, remove punctuation from transcript then call punctuation API
+        // For voice mode, remove punctuation (except single quotes) and then call punctuation API
         let textNoPunc = removePunctuation(transcript);
         logEvent("Sending voice text to /restore_punctuation => " + textNoPunc);
 
@@ -737,9 +738,9 @@
         .then(data => {
           let restored = data.restored_text || "";
           logEvent("Punctuation API returned => " + restored);
-          // Restore cursor and insert a space + restored text
           restoreCurrentSelection();
-          let toInsert = " " + restored.trim();
+          // Insert a space only if the character before caret is not space
+          let toInsert = (restored && !endsWithSpaceOrPunc(restored)) ? " " + restored.trim() : restored.trim();
           insertTextAtCursor(toInsert);
           setTimeout(() => {
             moveCaretToEndOfTarget();
@@ -750,12 +751,10 @@
           logEvent("Punctuation API call error => " + err);
         });
       } else {
-        // For tap mode, prepare the merged string to send to /correct
+        // For tap mode
         let parted = errorText.innerText || "";
         parted = parted.trimEnd();
         parted = parted.replace(/([.!?])(\S)/g, "$1 $2");
-
-        // For tap mode, remove punctuation from transcript and trim trailing space
         let textNoPunc = removePunctuation(transcript).trimEnd();
         let merged = parted + " <||> " + textNoPunc;
         merged = merged.trimEnd();
@@ -772,7 +771,7 @@
     }
 
     /*******************************************************
-     * 19) /correct API call
+     * 19) /correct API call for Tap&Say correction
      *******************************************************/
     function sendToAPI(mergedStr, loc){
       logEvent("Sending /correct => merged_string:" + mergedStr + ", touch_location:" + loc);
@@ -809,7 +808,6 @@
         originalSentence = candidate;
         removeHighlight();
         highlightSentence(candidate);
-        // If there's no non-space character after the highlighted sentence, add a space
         setTimeout(() => {
           maybeAddSpaceAfterHighlight(ts);
           moveCaretToEndOfTarget();
@@ -844,7 +842,11 @@
       let rect = tsNew.getBoundingClientRect();
       suggestionsBox = createSuggestionBox(rect, corrections);
       document.body.appendChild(suggestionsBox);
-      suggestionsTimer = setTimeout(() => { removeSuggestionsBox(); }, 5000);
+      // If no candidate selected within 3 seconds, remove suggestions and highlight
+      suggestionsTimer = setTimeout(() => {
+        removeSuggestionsBox();
+        removeHighlight();
+      }, 3000);
     }
     function createSuggestionBox(rect, corrections){
       let box = document.createElement("div");
@@ -895,7 +897,7 @@
     /*******************************************************
      * 21) Utility Functions
      *******************************************************/
-    // Remove punctuation except single quotes to preserve contractions
+    // Remove punctuation except single quotes (to preserve contractions)
     function removePunctuation(str){
       return str.replace(/[^a-zA-Z0-9'\s]/g, "");
     }
