@@ -283,35 +283,35 @@
   <footer id="footer-container"></footer>
 
   <script>
-    // Global constants for API endpoints
+    // ========== Global constants for API endpoints ==========
     const API_URL = "https://tns.zacchen.win/correct";
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
 
-    // Drawer toggle variables
-    let drawerOpen = false; // Drawer is collapsed by default
+    // ========== Drawer toggle variables ==========
+    let drawerOpen = false;
     const drawer = document.getElementById("drawer");
     const drawerToggle = document.getElementById("drawer-toggle");
 
-    // Other global variables
+    // ========== Other global variables ==========
     let disableIME = false;
     let selectOverlay = null;
     let overlayTimer = null;
     let pressTimer = null;
     let tapTriggered = false;
-    let globalTapIndex = -1;      // absolute index in entire text
-    let localTapIndex = -1;       // relative index to the chosen sentence
+    let globalTapIndex = -1;   // absolute index in entire text
+    let localTapIndex = -1;    // relative index to the chosen sentence
     let initialX = 0, initialY = 0;
-    let currentMode = null;       // "tap" or "voice"
+    let currentMode = null;    // "tap" or "voice"
     let recognition = null;
     let isListening = false;
     let silenceTimer = null;
-    let savedRange = null;        // For saving/restoring cursor
+    let savedRange = null;     // For saving/restoring cursor
     let originalSentence = "";
     let suggestionsBox = null;
-    let suggestionsTimer = null;  // Timer to auto-remove suggestion box
+    let suggestionsTimer = null;
     let undoStack = [];
 
-    // DOM element references
+    // ========== DOM references ==========
     const monitoringCard = document.getElementById("monitoring-card");
     const eventLogCard = document.getElementById("event-log-card");
     const editor = document.getElementById("text-editor");
@@ -444,7 +444,8 @@
       initialY = e.clientY;
       pressTimer = setTimeout(() => {
         tapTriggered = true;
-        if (!selectOverlay) {
+        // Only show overlay if not mobile
+        if (!isMobile() && !selectOverlay) {
           showSelectOverlay(initialX, initialY);
         }
       }, 600);
@@ -455,24 +456,14 @@
     function onEditorTouchStart(e){
       tapTriggered = false;
       const touch = e.touches[0];
-      if (isMobile()) {
-        // On mobile, compute index, then trigger tap after 1s
-        globalTapIndex = getTouchIndex(touch.clientX, touch.clientY);
-        pressTimer = setTimeout(() => {
-          tapTriggered = true;
-          handleSelection("tap");
-        }, 1000);
-      } else {
-        globalTapIndex = getCaretIndex(touch.clientX, touch.clientY);
-        pressTimer = setTimeout(() => {
-          tapTriggered = true;
-          if (!selectOverlay) {
-            showSelectOverlay(initialX, initialY);
-          }
-        }, 600);
-      }
+      globalTapIndex = getTouchIndex(touch.clientX, touch.clientY);
       initialX = touch.clientX;
       initialY = touch.clientY;
+      pressTimer = setTimeout(() => {
+        tapTriggered = true;
+        // On mobile => directly handle tap
+        handleSelection("tap");
+      }, 1000);
     }
     function onEditorTouchEnd(e){
       if (!tapTriggered) clearTimeout(pressTimer);
@@ -485,7 +476,11 @@
       let rect = editor.getBoundingClientRect();
       let relativeX = x - rect.left;
       let totalChars = editor.innerText.length;
-      return Math.floor((relativeX / rect.width) * totalChars);
+      if (totalChars === 0) return 0;
+      let ratio = relativeX / rect.width;
+      if (ratio < 0) ratio = 0;
+      if (ratio > 1) ratio = 1;
+      return Math.floor(ratio * totalChars);
     }
 
     // ========== 7) Show overlay (desktop only) ==========
@@ -534,19 +529,17 @@
 
     // ========== 9) handleSelection for tap or voice ==========
     function handleSelection(mode){
-      removeSuggestionsBox(); // remove old suggestions
+      removeSuggestionsBox();
       currentMode = mode;
       if (mode === "voice") {
         saveCurrentSelection();
       } else if (mode === "tap") {
-        // find local index inside the chosen sentence
         let { sentence, relativeIndex } = getSelectedSentenceAndRelativeIndex(globalTapIndex);
         sentence = sentence.trim();
         if (!sentence) {
           logEvent("No valid sentence found for highlight");
           return;
         }
-        // store localTapIndex
         localTapIndex = relativeIndex;
         touchIndexSpan.innerText = localTapIndex.toString();
 
@@ -558,9 +551,15 @@
         if (!highlightSentence(sentence)) {
           logEvent("Highlight not found in editor => " + sentence);
         }
+        // >>> 关键：高亮完后把光标移到高亮句末
+        setTimeout(() => {
+          moveCaretToEndOfTarget();
+          editor.focus();
+        }, 50);
       }
       updateOverlayToSpinner();
       startRecording();
+      setTimeout(() => editor.focus(), 0);  // keep focus
     }
     function updateOverlayToSpinner(){
       if (selectOverlay) {
@@ -570,7 +569,6 @@
 
     // ========== 10) Clicking outside suggestions, etc. ==========
     document.addEventListener("click", function(e){
-      // remove suggestion box if clicking outside
       if (suggestionsBox && !suggestionsBox.contains(e.target)) {
         removeSuggestionsBox();
       }
@@ -666,20 +664,20 @@
       } else {
         showToast("No change to undo!");
       }
+      editor.focus(); // keep IME up
     });
 
     // ========== 14) Move caret to end of target ==========
     function moveCaretToEndOfTarget(){
-      editor.focus();
       let ts = document.getElementById("target-sentence");
-      if (ts) {
-        let range = document.createRange();
-        range.selectNodeContents(ts);
-        range.collapse(false);
-        let sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
+      if (!ts) return;
+      editor.focus();
+      let range = document.createRange();
+      range.selectNodeContents(ts);
+      range.collapse(false); // at end
+      let sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
 
     // ========== 15) finalizeTapSay (main logic) ==========
@@ -697,48 +695,46 @@
       if (currentMode === "voice") {
         let textNoPunc = removePunctuation(transcript);
         logEvent("Sending voice text to /restore_punctuation => " + textNoPunc);
+
         fetch(PUNCTUATION_API_URL, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({ voice_text: textNoPunc })
         })
-        .then(resp => {
-          logEvent("Punctuation API response => status " + resp.status);
-          return resp.json();
-        })
+        .then(resp => resp.json())
         .then(data => {
           let restored = data.restored_text || "";
           logEvent("Punctuation API returned => " + restored);
-          // Insert the recognized text with a preceding space if needed
-          restoreCurrentSelection();
+
+          restoreCurrentSelection(); // 还原光标
           let toInsert = " " + restored.trim();
-          insertTextAtCursor( maybeAddSpace(toInsert) );
+          insertTextAtCursor(toInsert);
+
           setTimeout(() => {
             moveCaretToEndOfTarget();
-          }, 100);
+            editor.focus();
+          }, 50);
         })
         .catch(err => {
           logEvent("Punctuation API call error => " + err);
         });
       } else {
-        // tap mode
+        // "tap" mode
         let parted = errorText.innerText || "";
-        parted = parted.trimEnd();                // remove trailing spaces first
+        parted = parted.trimEnd();
         parted = parted.replace(/([.!?])(\S)/g, "$1 $2");
-        let textNoPunc = removePunctuation(transcript).trimEnd();
 
-        // Merge with no trailing space
+        let textNoPunc = removePunctuation(transcript).trimEnd();
         let merged = parted + " <||> " + textNoPunc;
-        merged = merged.trimEnd();                // remove trailing spaces if any
-        // do NOT automatically add space at the end for server
+        merged = merged.trimEnd();
         finalOutputSpan.innerText = merged;
         logEvent("Final output => " + merged);
 
-        // Use localTapIndex instead of globalTapIndex
         sendToAPI(merged, localTapIndex);
         setTimeout(() => {
           moveCaretToEndOfTarget();
-        }, 100);
+          editor.focus();
+        }, 50);
       }
       currentMode = null;
       voiceInputSpan.innerText = "";
@@ -755,10 +751,7 @@
           touch_location: loc
         })
       })
-      .then(resp => {
-        logEvent("Server response => status " + resp.status);
-        return resp.json();
-      })
+      .then(resp => resp.json())
       .then(data => {
         let corrs = data.corrections || [];
         logEvent("API corrections => " + JSON.stringify(corrs));
@@ -781,9 +774,11 @@
         originalSentence = candidate;
         removeHighlight();
         highlightSentence(candidate);
+
         setTimeout(() => {
           maybeAddSpaceAfterHighlight(ts);
           moveCaretToEndOfTarget();
+          editor.focus();
         }, 50);
       } else {
         let html = editor.innerHTML;
@@ -797,10 +792,12 @@
         originalSentence = candidate;
         removeHighlight();
         highlightSentence(candidate);
+
         setTimeout(() => {
           let ts2 = document.getElementById("target-sentence");
           if (ts2) maybeAddSpaceAfterHighlight(ts2);
           moveCaretToEndOfTarget();
+          editor.focus();
         }, 50);
       }
       if (corrections.length === 1) return;
@@ -827,7 +824,10 @@
       for (let i = 1; i < corrections.length; i++){
         let div = document.createElement("div");
         div.innerText = corrections[i];
-        div.onclick = () => {
+        div.onclick = (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+
           removeHighlight();
           let ts = document.getElementById("target-sentence");
           let candidate = corrections[i].trimEnd();
@@ -837,9 +837,11 @@
             originalSentence = candidate;
             removeHighlight();
             highlightSentence(candidate);
+
             setTimeout(() => {
               maybeAddSpaceAfterHighlight(ts);
               moveCaretToEndOfTarget();
+              editor.focus();
             }, 50);
           } else {
             let html = editor.innerHTML;
@@ -848,10 +850,12 @@
             editor.innerHTML = html.replace(re, candidate);
             originalSentence = candidate;
             highlightSentence(candidate);
+
             setTimeout(() => {
               let ts2 = document.getElementById("target-sentence");
               if (ts2) maybeAddSpaceAfterHighlight(ts2);
               moveCaretToEndOfTarget();
+              editor.focus();
             }, 50);
           }
           removeSuggestionsBox();
@@ -866,9 +870,14 @@
     // Mobile input => try to keep caret stable but remove highlight if user inserts text
     editor.addEventListener("input", function(e){
       if (isMobile() && e.inputType && e.inputType.startsWith("insert")) {
-        saveCurrentSelection();
         removeHighlight();
-        restoreCurrentSelection();
+      }
+    });
+
+    // Also force re-focus on mobile blur to keep IME
+    editor.addEventListener("blur", function(e){
+      if (isMobile()) {
+        setTimeout(() => editor.focus(), 0);
       }
     });
 
@@ -877,8 +886,6 @@
       return str.replace(/[^a-zA-Z0-9'\s]/g, "");
     }
 
-    // If next char after highlight is not space/punctuation => add one space
-    // Also if there's NO next element => add space
     function maybeAddSpaceAfterHighlight(ts){
       let parent = ts.parentNode;
       if (!parent) return;
@@ -887,7 +894,6 @@
       while (next && next.nodeType === Node.ELEMENT_NODE && !next.textContent.trim()) {
         next = next.nextSibling;
       }
-      // If no next node => definitely add space if not ends with punctuation/space
       if (!next) {
         if (!endsWithSpaceOrPunc(ts.innerText)) {
           ts.innerText = ts.innerText + " ";
@@ -941,9 +947,11 @@
         sel.removeAllRanges();
         sel.addRange(range);
       } else {
+        // If there's no range, append at end
         editor.innerHTML += text;
       }
     }
+
     function getCaretIndex(x, y){
       let range;
       if (document.caretRangeFromPoint) {
@@ -960,19 +968,6 @@
       pre.selectNodeContents(editor);
       pre.setEnd(range.startContainer, range.startOffset);
       return pre.toString().length;
-    }
-    function saveCurrentSelection(){
-      let sel = window.getSelection();
-      if (sel.rangeCount > 0){
-        savedRange = sel.getRangeAt(0).cloneRange();
-      }
-    }
-    function restoreCurrentSelection(){
-      if (savedRange){
-        let sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(savedRange);
-      }
     }
 
     /**
