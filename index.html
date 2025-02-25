@@ -283,35 +283,35 @@
   <footer id="footer-container"></footer>
 
   <script>
-    // ========== Global constants for API endpoints ==========
+    // Global constants for API endpoints
     const API_URL = "https://tns.zacchen.win/correct";
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
 
-    // ========== Drawer toggle variables ==========
-    let drawerOpen = false;
+    // Drawer toggle variables
+    let drawerOpen = false; // Drawer is collapsed by default
     const drawer = document.getElementById("drawer");
     const drawerToggle = document.getElementById("drawer-toggle");
 
-    // ========== Other global variables ==========
+    // Other global variables
     let disableIME = false;
     let selectOverlay = null;
     let overlayTimer = null;
     let pressTimer = null;
     let tapTriggered = false;
-    let globalTapIndex = -1;   // absolute index in entire text
-    let localTapIndex = -1;    // relative index to the chosen sentence
+    let globalTapIndex = -1;      // absolute index in entire text
+    let localTapIndex = -1;       // relative index to the chosen sentence
     let initialX = 0, initialY = 0;
-    let currentMode = null;    // "tap" or "voice"
+    let currentMode = null;       // "tap" or "voice"
     let recognition = null;
     let isListening = false;
     let silenceTimer = null;
-    let savedRange = null;     // For saving/restoring cursor
+    let savedRange = null;        // For saving/restoring cursor
     let originalSentence = "";
     let suggestionsBox = null;
-    let suggestionsTimer = null;
+    let suggestionsTimer = null;  // Timer to auto-remove suggestion box
     let undoStack = [];
 
-    // ========== DOM references ==========
+    // DOM element references
     const monitoringCard = document.getElementById("monitoring-card");
     const eventLogCard = document.getElementById("event-log-card");
     const editor = document.getElementById("text-editor");
@@ -444,8 +444,7 @@
       initialY = e.clientY;
       pressTimer = setTimeout(() => {
         tapTriggered = true;
-        // Only show overlay if not mobile
-        if (!isMobile() && !selectOverlay) {
+        if (!selectOverlay && !isMobile()) {
           showSelectOverlay(initialX, initialY);
         }
       }, 600);
@@ -461,7 +460,7 @@
       initialY = touch.clientY;
       pressTimer = setTimeout(() => {
         tapTriggered = true;
-        // On mobile => directly handle tap
+        // mobile => directly handle "tap"
         handleSelection("tap");
       }, 1000);
     }
@@ -529,11 +528,12 @@
 
     // ========== 9) handleSelection for tap or voice ==========
     function handleSelection(mode){
-      removeSuggestionsBox();
+      removeSuggestionsBox(); // remove old suggestions
       currentMode = mode;
       if (mode === "voice") {
         saveCurrentSelection();
       } else if (mode === "tap") {
+        // find local index inside the chosen sentence
         let { sentence, relativeIndex } = getSelectedSentenceAndRelativeIndex(globalTapIndex);
         sentence = sentence.trim();
         if (!sentence) {
@@ -554,7 +554,8 @@
       }
       updateOverlayToSpinner();
       startRecording();
-      setTimeout(() => editor.focus(), 0);  // keep focus
+      // Keep editor focused => keep IME up if possible
+      setTimeout(() => editor.focus(), 0);
     }
     function updateOverlayToSpinner(){
       if (selectOverlay) {
@@ -564,6 +565,7 @@
 
     // ========== 10) Clicking outside suggestions, etc. ==========
     document.addEventListener("click", function(e){
+      // remove suggestion box if clicking outside
       if (suggestionsBox && !suggestionsBox.contains(e.target)) {
         removeSuggestionsBox();
       }
@@ -659,7 +661,8 @@
       } else {
         showToast("No change to undo!");
       }
-      editor.focus(); // keep IME up
+      // Keep focus => keep IME
+      editor.focus();
     });
 
     // ========== 14) Move caret to end of target ==========
@@ -678,9 +681,6 @@
 
     // ========== 15) finalizeTapSay (main logic) ==========
     function finalizeTapSay(){
-      // 1) 先保存当前光标位置
-      let cursorPos = saveCursorPosition();
-
       removeOverlay();
       removeSuggestionsBox();
       let transcript = voiceInputSpan.innerText.trim();
@@ -694,52 +694,49 @@
       if (currentMode === "voice") {
         let textNoPunc = removePunctuation(transcript);
         logEvent("Sending voice text to /restore_punctuation => " + textNoPunc);
-
         fetch(PUNCTUATION_API_URL, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({ voice_text: textNoPunc })
         })
-        .then(resp => resp.json())
+        .then(resp => {
+          logEvent("Punctuation API response => status " + resp.status);
+          return resp.json();
+        })
         .then(data => {
           let restored = data.restored_text || "";
           logEvent("Punctuation API returned => " + restored);
-
-          // 2) 在插入前恢复光标，再插入
+          // Insert the recognized text with a preceding space if needed
           restoreCurrentSelection();
           let toInsert = " " + restored.trim();
-          insertTextAtCursor(maybeAddSpace(toInsert));
-
-          // 3) 更新后，再将光标移到句末+恢复位置
+          insertTextAtCursor( maybeAddSpace(toInsert) );
           setTimeout(() => {
             moveCaretToEndOfTarget();
-            restoreCursorPosition(cursorPos);
-            editor.focus();
-          }, 50);
+            editor.focus(); // re-focus
+          }, 100);
         })
         .catch(err => {
           logEvent("Punctuation API call error => " + err);
         });
       } else {
-        // "tap" mode
+        // tap mode
         let parted = errorText.innerText || "";
-        parted = parted.trimEnd();
+        parted = parted.trimEnd();                // remove trailing spaces first
         parted = parted.replace(/([.!?])(\S)/g, "$1 $2");
-
         let textNoPunc = removePunctuation(transcript).trimEnd();
+
+        // Merge with no trailing space
         let merged = parted + " <||> " + textNoPunc;
-        merged = merged.trimEnd();
+        merged = merged.trimEnd();                // remove trailing spaces if any
         finalOutputSpan.innerText = merged;
         logEvent("Final output => " + merged);
 
+        // Use localTapIndex instead of globalTapIndex
         sendToAPI(merged, localTapIndex);
-
-        // 3) 重新移动光标
         setTimeout(() => {
           moveCaretToEndOfTarget();
-          restoreCursorPosition(cursorPos);
           editor.focus();
-        }, 50);
+        }, 100);
       }
       currentMode = null;
       voiceInputSpan.innerText = "";
@@ -756,7 +753,10 @@
           touch_location: loc
         })
       })
-      .then(resp => resp.json())
+      .then(resp => {
+        logEvent("Server response => status " + resp.status);
+        return resp.json();
+      })
       .then(data => {
         let corrs = data.corrections || [];
         logEvent("API corrections => " + JSON.stringify(corrs));
@@ -772,9 +772,6 @@
     // ========== 17) applyFirstSuggestionAndShowBox ==========
     function applyFirstSuggestionAndShowBox(corrections){
       if (!corrections.length) return;
-      // 保存光标
-      let cursorPos = saveCursorPosition();
-
       let ts = document.getElementById("target-sentence");
       let candidate = corrections[0].trimEnd();
       if (ts) {
@@ -782,11 +779,9 @@
         originalSentence = candidate;
         removeHighlight();
         highlightSentence(candidate);
-
         setTimeout(() => {
           maybeAddSpaceAfterHighlight(ts);
           moveCaretToEndOfTarget();
-          restoreCursorPosition(cursorPos);
           editor.focus();
         }, 50);
       } else {
@@ -801,12 +796,10 @@
         originalSentence = candidate;
         removeHighlight();
         highlightSentence(candidate);
-
         setTimeout(() => {
           let ts2 = document.getElementById("target-sentence");
           if (ts2) maybeAddSpaceAfterHighlight(ts2);
           moveCaretToEndOfTarget();
-          restoreCursorPosition(cursorPos);
           editor.focus();
         }, 50);
       }
@@ -820,8 +813,6 @@
       let rect = tsNew.getBoundingClientRect();
       suggestionsBox = createSuggestionBox(rect, corrections);
       document.body.appendChild(suggestionsBox);
-
-      // 5秒后自动移除候选
       suggestionsTimer = setTimeout(() => { removeSuggestionsBox(); }, 5000);
     }
 
@@ -845,18 +836,14 @@
           let ts = document.getElementById("target-sentence");
           let candidate = corrections[i].trimEnd();
 
-          let cursorPos = saveCursorPosition(); // 保存光标位置
-
           if (ts) {
             ts.innerText = candidate;
             originalSentence = candidate;
             removeHighlight();
             highlightSentence(candidate);
-
             setTimeout(() => {
               maybeAddSpaceAfterHighlight(ts);
               moveCaretToEndOfTarget();
-              restoreCursorPosition(cursorPos);
               editor.focus();
             }, 50);
           } else {
@@ -866,12 +853,10 @@
             editor.innerHTML = html.replace(re, candidate);
             originalSentence = candidate;
             highlightSentence(candidate);
-
             setTimeout(() => {
               let ts2 = document.getElementById("target-sentence");
               if (ts2) maybeAddSpaceAfterHighlight(ts2);
               moveCaretToEndOfTarget();
-              restoreCursorPosition(cursorPos);
               editor.focus();
             }, 50);
           }
@@ -905,9 +890,12 @@
     function removePunctuation(str){
       return str.replace(/[^a-zA-Z0-9'\s]/g, "");
     }
-    // Optionally add space if needed
+    // Optionally add space if not already has it
     function maybeAddSpace(text){
       if (!text.length) return text;
+      if (endsWithSpaceOrPunc(text[0])) {
+        return text; 
+      }
       return text;
     }
     // If next char after highlight is not space/punctuation => add one space
@@ -961,57 +949,22 @@
       return !!c.match(/[\s.,;!?]/);
     }
 
-    /**
-     * Saves the current cursor position in the entire editor's text
-     */
-    function saveCursorPosition(){
-      let sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return 0;
-      let range = sel.getRangeAt(0);
-      // Create a preRange to measure distance from start
-      let preRange = range.cloneRange();
-      preRange.selectNodeContents(editor);
-      preRange.setEnd(range.startContainer, range.startOffset);
-      return preRange.toString().length; // number of chars from start
-    }
-
-    /**
-     * Restores the cursor position (pos) from the start of editor
-     */
-    function restoreCursorPosition(pos){
-      if (pos == null) return;
+    function insertTextAtCursor(text){
       editor.focus();
-      let selection = window.getSelection();
-      selection.removeAllRanges();
-
-      // We'll walk the editor's child nodes to find where pos lands
-      let range = document.createRange();
-      let currentPos = 0;
-
-      function traverse(node) {
-        if (!node || pos < 0) return null;
-        if (node.nodeType === Node.TEXT_NODE) {
-          let textLength = node.nodeValue.length;
-          if (currentPos + textLength >= pos) {
-            range.setStart(node, pos - currentPos);
-            return true;
-          } else {
-            currentPos += textLength;
-          }
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-          for (let i = 0; i < node.childNodes.length; i++) {
-            let found = traverse(node.childNodes[i]);
-            if (found) return true;
-          }
-        }
-        return false;
+      let sel = window.getSelection();
+      if (sel.rangeCount > 0){
+        let range = sel.getRangeAt(0);
+        range.deleteContents();
+        let textNode = document.createTextNode(text);
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        editor.innerHTML += text;
       }
-
-      traverse(editor);
-      range.collapse(true);
-      selection.addRange(range);
     }
-
     function getCaretIndex(x, y){
       let range;
       if (document.caretRangeFromPoint) {
@@ -1028,6 +981,20 @@
       pre.selectNodeContents(editor);
       pre.setEnd(range.startContainer, range.startOffset);
       return pre.toString().length;
+    }
+
+    function saveCurrentSelection(){
+      let sel = window.getSelection();
+      if (sel.rangeCount > 0){
+        savedRange = sel.getRangeAt(0).cloneRange();
+      }
+    }
+    function restoreCurrentSelection(){
+      if (savedRange){
+        let sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      }
     }
 
     /**
