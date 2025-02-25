@@ -395,7 +395,7 @@
     });
 
     /*******************************************************
-     * 7) Toast and Event Log Functions
+     * 7) Toast & Event Log Functions
      *******************************************************/
     function showToast(msg){
       const t = document.createElement("div");
@@ -460,7 +460,6 @@
       initialY = e.clientY;
       pressTimer = setTimeout(() => {
         tapTriggered = true;
-        // On desktop, show overlay
         if (!isMobile() && !selectOverlay) {
           showSelectOverlay(initialX, initialY);
         }
@@ -595,6 +594,8 @@
       }
       let ts = document.getElementById("target-sentence");
       if (ts && !ts.contains(e.target)) {
+        // When clicking outside, move caret to end then clear highlight
+        moveCaretToEndOfTarget();
         removeHighlight();
       }
     });
@@ -602,6 +603,7 @@
       if (disableIME) e.preventDefault();
       if (currentMode === "tap" && selectOverlay) {
         e.preventDefault();
+        moveCaretToEndOfTarget();
         removeHighlight();
         replaceHighlightedSentence(originalSentence);
         removeOverlay();
@@ -716,10 +718,15 @@
       removeOverlay();
       removeSuggestionsBox();
       let transcript = voiceInputSpan.innerText.trim();
-      // Remove trailing spaces from transcript to avoid extra space
+      // Remove trailing spaces from transcript
       transcript = transcript.replace(/\s+$/,"");
       if (!transcript) {
         showToast("No speech input detected.");
+        // If no speech input, after 3s clear highlight and move caret
+        setTimeout(() => {
+          moveCaretToEndOfTarget();
+          removeHighlight();
+        }, 3000);
         currentMode = null;
         return;
       }
@@ -740,10 +747,9 @@
           let restored = data.restored_text || "";
           logEvent("Punctuation API returned => " + restored);
           restoreCurrentSelection();
-          // Insert a space + restored text only if needed
-          let toInsert = "";
-          // 如果当前高亮句后已经有空格则不再插入，否则添加一个空格
+          // Determine whether to add a space based on highlighted sentence tail
           let ts = document.getElementById("target-sentence");
+          let toInsert = "";
           if (ts) {
             if (!endsWithSpaceOrPunc(ts.innerText)) {
               toInsert = " " + restored.trim();
@@ -779,9 +785,13 @@
           editor.focus();
         }, 300);
       }
+      // After 3 seconds without candidate selection, clear highlight and then move caret
+      setTimeout(() => {
+        removeSuggestionsBox();
+        removeHighlight();
+        moveCaretToEndOfTarget();
+      }, 3000);
       currentMode = null;
-      // 清除高亮（确认修改后自动消失）
-      setTimeout(() => { removeHighlight(); }, 3000);
       voiceInputSpan.innerText = "";
     }
 
@@ -857,8 +867,10 @@
       let rect = tsNew.getBoundingClientRect();
       suggestionsBox = createSuggestionBox(rect, corrections);
       document.body.appendChild(suggestionsBox);
+      // Auto-clear suggestions and highlight after 3 seconds if no selection
       suggestionsTimer = setTimeout(() => {
         removeSuggestionsBox();
+        moveCaretToEndOfTarget();
         removeHighlight();
       }, 3000);
     }
@@ -975,8 +987,16 @@
     // Check if string ends with a space or punctuation
     function endsWithSpaceOrPunc(str){
       if (!str) return false;
-      let c = str[str.length-1];
+      let c = str[str.length - 1];
       return !!c.match(/[\s.,;!?]/);
+    }
+    // Check highlighted sentence's tail; if no non-space, add a space
+    function maybeAddSpaceAfterHighlight(ts){
+      if (!ts) return;
+      let text = ts.innerText;
+      if (!endsWithSpaceOrPunc(text)) {
+        ts.innerText = text + " ";
+      }
     }
   </script>
 </body>
