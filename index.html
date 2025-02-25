@@ -2,16 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- Ensure proper scaling on mobile devices -->
+  <!-- 在移动端正确缩放 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tap&amp;Say Text Editor</title>
+  <title>Tap&Say Text Editor (Simplified)</title>
   <style>
-    /* ========== Global Basic Styles ========== */
+    /* ========== 全局基础样式 ========== */
     html, body {
-      margin: 0; 
-      padding: 0;
-      width: 100%;
-      max-width: 100%;
+      margin: 0; padding: 0;
+      width: 100%; max-width: 100%;
       box-sizing: border-box;
       overflow-x: hidden;
       font-family: Arial, sans-serif;
@@ -20,42 +18,29 @@
       box-sizing: inherit;
     }
     body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      background-color: #f4f4f4;
+      display: flex; flex-direction: column;
+      min-height: 100vh; background-color: #f4f4f4;
     }
-    /* Header/Footer Containers */
+    /* header/footer 容器 */
     #header-container, #footer-container {
       width: 100%;
     }
-    /* Container + Card Layout */
+    /* Container + 卡片布局 */
     .container {
-      flex: 1;
-      width: 90%;
-      max-width: 800px;
-      margin: 20px auto;
+      flex: 1; width: 90%; max-width: 800px; margin: 20px auto;
     }
     .card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      background: #fff; padding: 20px;
+      border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       margin: 10px 0;
     }
-    /* ========== Editor ========== */
+    /* ========== 编辑器 ========== */
     #text-editor {
-      width: 100%;
-      min-height: 300px;
-      border: 1px solid #ccc;
-      padding: 12px;
-      border-radius: 8px;
-      outline: none;
-      font-size: 16px;
-      background: #fff;
-      white-space: pre-wrap;
-      transition: border 0.3s;
-      -webkit-touch-callout: default; /* allow touch menu */
+      width: 100%; min-height: 300px;
+      border: 1px solid #ccc; padding: 12px; border-radius: 8px;
+      outline: none; font-size: 16px; background: #fff;
+      white-space: pre-wrap; transition: border 0.3s;
+      -webkit-touch-callout: default; /* 允许触摸菜单 */
     }
     #text-editor:focus {
       border-color: #007bff;
@@ -64,188 +49,108 @@
       content: "Type here or drag a .doc/.txt file here";
       color: gray;
     }
-    /* Highlighted Sentence */
+    /* 高亮句子 */
     .highlighted-sentence {
       background-color: yellow;
     }
-    /* Recording / Event Log, etc. */
+    /* 事件 / 录音状态等 */
     #mic-status {
-      font-weight: bold;
-      color: red;
+      font-weight: bold; color: red;
     }
     #event-log {
-      font-size: 14px;
-      max-height: 200px;
-      overflow-y: auto;
-      background: #f9f9f9;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      font-size: 14px; max-height: 200px;
+      overflow-y: auto; background: #f9f9f9;
+      padding: 10px; border: 1px solid #ccc; border-radius: 5px;
     }
-    /* Overlay for Tap/Voice Selection (desktop only) */
+    /* Overlay: 仅桌面弹出选择 */
     #select-overlay {
-      position: fixed;
-      width: 150px; 
-      height: 150px;
-      border-radius: 50%;
-      overflow: hidden;
-      display: flex;
-      border: 2px solid #007bff;
-      background: rgba(255,255,255,0.95);
-      left: 50%; 
-      top: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 1000;
-      transition: all 0.3s ease;
+      position: fixed; width: 150px; height: 150px;
+      border-radius: 50%; overflow: hidden; display: flex;
+      border: 2px solid #007bff; background: rgba(255,255,255,0.95);
+      left: 50%; top: 50%; transform: translate(-50%, -50%);
+      z-index: 1000; transition: all 0.3s ease;
     }
     #select-overlay .half {
-      width: 50%; 
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-      cursor: pointer;
-      font-weight: bold;
-      text-align: center;
-      padding: 5px;
-      background: #e7f0ff;
+      width: 50%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      user-select: none; cursor: pointer; font-weight: bold;
+      text-align: center; padding: 5px; background: #e7f0ff;
       transition: background 0.3s;
     }
-    #select-overlay .half:hover {
-      background: #d0e4ff;
-    }
+    #select-overlay .half:hover { background: #d0e4ff; }
     #select-overlay .half.left {
       border-right: 1px solid #007bff;
     }
-    /* Spinner Animation */
     @keyframes spin {
       from { transform: translate(-50%, -50%) rotate(0deg); }
-      to { transform: translate(-50%, -50%) rotate(360deg); }
+      to   { transform: translate(-50%, -50%) rotate(360deg); }
     }
     .spinner {
-      width: 150px;
-      height: 150px;
-      border: 8px solid #ccc;
-      border-top-color: #007bff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      position: relative;
-      top: 0;
-      left: 0;
+      width: 150px; height: 150px;
+      border: 8px solid #ccc; border-top-color: #007bff;
+      border-radius: 50%; animation: spin 1s linear infinite;
+      position: relative; top: 0; left: 0;
     }
-    /* Floating Suggestion Box */
+    /* 浮动候选框 */
     .suggestions-box-floating {
-      position: absolute;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      padding: 5px;
-      z-index: 2000;
-      user-select: none;
-      pointer-events: auto;
-      max-height: 150px;
-      overflow-y: auto;
+      position: absolute; background: #fff; border: 1px solid #ccc; border-radius: 5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15); padding: 5px; z-index: 2000;
+      user-select: none; pointer-events: auto; max-height: 150px; overflow-y: auto;
     }
     .suggestions-box-floating div {
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-      cursor: pointer;
-      transition: background 0.3s;
+      padding: 8px; border-bottom: 1px solid #eee;
+      cursor: pointer; transition: background 0.3s;
     }
     .suggestions-box-floating div:hover {
       background: #f0f0f0;
     }
-    /* Toast Notification */
+    /* Toast 提示 */
     .toast {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
+      position: fixed; bottom: 20px; left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.8);
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 5px;
-      z-index: 3000;
-      opacity: 0;
-      transition: opacity 0.5s ease;
+      background: rgba(0,0,0,0.8); color: #fff;
+      padding: 12px 24px; border-radius: 5px;
+      z-index: 3000; opacity: 0; transition: opacity 0.5s ease;
     }
-    /* ========== Drawer Container (replacing original floating buttons) ========== */
+    /* 抽屉容器 (取代左下角按钮) */
     #drawer {
-      position: fixed;
-      bottom: 10px;
-      left: 0;
-      width: 240px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 3000;
-      transition: transform 0.3s ease;
+      position: fixed; bottom: 10px; left: 0; width: 240px;
+      display: flex; flex-direction: column; gap: 10px;
+      z-index: 3000; transition: transform 0.3s ease;
     }
-    /* Collapsed state: shift left so most is off-screen */
-    .drawer-collapsed {
-      transform: translateX(-200px);
-    }
-    /* Toggle Arrow Button */
+    .drawer-collapsed { transform: translateX(-200px); }
     #drawer-toggle {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      width: 240px;
-      padding: 10px 14px;
-      padding-right: 8px;
-      font-size: 14px;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      background: #007bff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      cursor: pointer;
-      transition: background 0.3s;
+      display: flex; justify-content: flex-end; align-items: center;
+      width: 240px; padding: 10px 14px; padding-right: 8px;
+      font-size: 14px; border: none; border-radius: 6px;
+      color: #fff; background: #007bff; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer; transition: background 0.3s;
     }
-    #drawer-toggle:hover {
-      background: #0056b3;
-    }
-    /* The other three buttons in the drawer */
+    #drawer-toggle:hover { background: #0056b3; }
     #drawer button:not(#drawer-toggle) {
-      padding: 10px 14px;
-      font-size: 14px;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      background: #007bff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      cursor: pointer;
-      transition: background 0.3s;
-      width: 160px;
+      padding: 10px 14px; font-size: 14px; border: none; border-radius: 6px;
+      color: #fff; background: #007bff; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer; transition: background 0.3s; width: 160px;
     }
-    #drawer button:not(#drawer-toggle):hover {
-      background: #0056b3;
-    }
-    /* On PC, optionally hide the IME button via media query */
+    #drawer button:not(#drawer-toggle):hover { background: #0056b3; }
     @media (min-width: 481px) {
-      #toggle-ime {
-        display: none;
-      }
+      #toggle-ime { display: none; }
     }
   </style>
 </head>
 <body>
   <header id="header-container"></header>
 
-  <!-- Drawer Container -->
+  <!-- 抽屉容器 -->
   <div id="drawer" class="drawer-collapsed">
-    <!-- Toggle Arrow Button -->
     <button id="drawer-toggle" style="width: 240px; text-align: right;">&gt;</button>
-    <!-- The three function buttons -->
     <button id="toggle-monitoring">Show Monitoring</button>
     <button id="toggle-log">Show Event Log</button>
     <button id="toggle-ime">Disable IME Shortcuts: OFF</button>
   </div>
 
   <div class="container">
-    <!-- Monitoring Area -->
+    <!-- 监控区 -->
     <div class="card" id="monitoring-card">
       <p><strong>Error Sentence:</strong> <span id="error-text">None</span></p>
       <p><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
@@ -255,25 +160,18 @@
       <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Stopped</span></p>
     </div>
 
-    <!-- Editor + Undo Button -->
+    <!-- 编辑器 + Undo 按钮 -->
     <div class="card">
       <h3>Tap&amp;Say Text Editor</h3>
       <div id="text-editor" contenteditable="true"></div>
       <button id="undo-button" style="
-        margin-top: 12px;
-        width: 100%;
-        padding: 14px;
-        font-size: 16px;
-        border: none;
-        border-radius: 6px;
-        background: #28a745;
-        color: #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        cursor: pointer;
+        margin-top: 12px; width: 100%; padding: 14px; font-size: 16px;
+        border: none; border-radius: 6px; background: #28a745; color: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2); cursor: pointer;
       ">Undo Last Change</button>
     </div>
 
-    <!-- Event Log Area -->
+    <!-- 日志区 -->
     <div class="card" id="event-log-card">
       <h3>Event Log</h3>
       <div id="event-log">No events recorded</div>
@@ -283,300 +181,313 @@
   <footer id="footer-container"></footer>
 
   <script>
-    // Global constants for API endpoints
+    /*******************************************************
+     * 1) 全局变量 & 常量
+     *******************************************************/
     const API_URL = "https://tns.zacchen.win/correct";
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
 
-    // Drawer toggle variables
-    let drawerOpen = false; // Drawer is collapsed by default
+    let drawerOpen = false;
     const drawer = document.getElementById("drawer");
     const drawerToggle = document.getElementById("drawer-toggle");
 
-    // Other global variables
     let disableIME = false;
     let selectOverlay = null;
     let overlayTimer = null;
     let pressTimer = null;
     let tapTriggered = false;
-    let globalTapIndex = -1;      // absolute index in entire text
-    let localTapIndex = -1;       // relative index to the chosen sentence
-    let initialX = 0, initialY = 0;
-    let currentMode = null;       // "tap" or "voice"
-    let recognition = null;
-    let isListening = false;
-    let silenceTimer = null;
-    let savedRange = null;        // For saving/restoring cursor
-    let originalSentence = "";
-    let suggestionsBox = null;
-    let suggestionsTimer = null;  // Timer to auto-remove suggestion box
-    let undoStack = [];
+    let globalTapIndex = -1;  // 全文绝对index
+    let localTapIndex = -1;   // 选中句子的相对index
+    let initialX=0, initialY=0;
+    let currentMode=null;     // "tap" or "voice"
+    let recognition=null;
+    let isListening=false;
+    let silenceTimer=null;
+    let originalSentence="";
+    let suggestionsBox=null;
+    let suggestionsTimer=null;
+    let undoStack=[];
 
-    // DOM element references
-    const monitoringCard = document.getElementById("monitoring-card");
-    const eventLogCard = document.getElementById("event-log-card");
-    const editor = document.getElementById("text-editor");
-    const errorText = document.getElementById("error-text");
-    const originalErrorSpan = document.getElementById("original-error-sentence");
-    const touchIndexSpan = document.getElementById("touch-index");
-    const voiceInputSpan = document.getElementById("voice-input");
-    const micStatusSpan = document.getElementById("mic-status");
-    const finalOutputSpan = document.getElementById("final-output");
-    const eventLog = document.getElementById("event-log");
-    const undoButton = document.getElementById("undo-button");
+    const monitoringCard=document.getElementById("monitoring-card");
+    const eventLogCard=document.getElementById("event-log-card");
+    const editor=document.getElementById("text-editor");
+    const errorText=document.getElementById("error-text");
+    const originalErrorSpan=document.getElementById("original-error-sentence");
+    const touchIndexSpan=document.getElementById("touch-index");
+    const voiceInputSpan=document.getElementById("voice-input");
+    const micStatusSpan=document.getElementById("mic-status");
+    const finalOutputSpan=document.getElementById("final-output");
+    const eventLog=document.getElementById("event-log");
+    const undoButton=document.getElementById("undo-button");
 
-    const monitoringBtn = document.getElementById("toggle-monitoring");
-    const eventLogBtn = document.getElementById("toggle-log");
-    const imeBtn = document.getElementById("toggle-ime");
+    const monitoringBtn=document.getElementById("toggle-monitoring");
+    const eventLogBtn=document.getElementById("toggle-log");
+    const imeBtn=document.getElementById("toggle-ime");
 
-    // ========== 1) Drawer toggle logic ==========
-    drawerToggle.addEventListener("click", () => {
-      drawerOpen = !drawerOpen;
-      if (drawerOpen) {
-        drawer.classList.remove("drawer-collapsed");
-        drawerToggle.innerText = "<";
-      } else {
-        drawer.classList.add("drawer-collapsed");
-        drawerToggle.innerText = ">";
-      }
-    });
-
-    // ========== 2) Onload logic ==========
-    window.onload = function(){
+    /*******************************************************
+     * 2) onload
+     *******************************************************/
+    window.onload=function(){
       loadHeaderFooter();
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
         navigator.mediaDevices.getUserMedia({audio:true})
-          .catch(err => {
+          .catch(err=>{
             showToast("Please allow microphone access to use Tap&Say.");
             console.warn("Mic permission error:", err);
           });
       }
     };
-
     async function loadHeaderFooter(){
       try {
-        const headerRes = await fetch("header.html");
-        const headerHtml = await headerRes.text();
-        document.getElementById("header-container").innerHTML += headerHtml;
-      } catch(e) {
-        console.warn("Failed to load header.html:", e);
-      }
+        const headerRes=await fetch("header.html");
+        const headerHtml=await headerRes.text();
+        document.getElementById("header-container").innerHTML+=headerHtml;
+      }catch(e){console.warn("Failed to load header.html:",e);}
       try {
-        const footerRes = await fetch("footer.html");
-        const footerHtml = await footerRes.text();
-        document.getElementById("footer-container").innerHTML += footerHtml;
-      } catch(e) {
-        console.warn("Failed to load footer.html:", e);
-      }
+        const footerRes=await fetch("footer.html");
+        const footerHtml=await footerRes.text();
+        document.getElementById("footer-container").innerHTML+=footerHtml;
+      }catch(e){console.warn("Failed to load footer.html:",e);}
     }
 
-    // ========== 3) Monitoring / Log / IME toggles ==========
-    monitoringBtn.addEventListener("click", () => {
-      monitoringCard.style.display = (monitoringCard.style.display === "none") ? "block" : "none";
-      monitoringBtn.innerText = (monitoringCard.style.display === "none") ? "Show Monitoring" : "Hide Monitoring";
-    });
-    eventLogBtn.addEventListener("click", () => {
-      eventLogCard.style.display = (eventLogCard.style.display === "none") ? "block" : "none";
-      eventLogBtn.innerText = (eventLogCard.style.display === "none") ? "Show Event Log" : "Hide Event Log";
-    });
-    imeBtn.addEventListener("click", () => {
-      disableIME = !disableIME;
-      imeBtn.innerText = disableIME ? "Disable IME Shortcuts: ON" : "Disable IME Shortcuts: OFF";
-      editor.style.webkitTouchCallout = disableIME ? "none" : "default";
+    /*******************************************************
+     * 3) 抽屉按钮
+     *******************************************************/
+    drawerToggle.addEventListener("click",()=>{
+      drawerOpen=!drawerOpen;
+      if(drawerOpen){
+        drawer.classList.remove("drawer-collapsed");
+        drawerToggle.innerText="<";
+      }else{
+        drawer.classList.add("drawer-collapsed");
+        drawerToggle.innerText=">";
+      }
     });
 
-    // ========== 4) Toast & Event Log ==========
+    /*******************************************************
+     * 4) 监控 / 日志 / IME
+     *******************************************************/
+    monitoringBtn.addEventListener("click",()=>{
+      monitoringCard.style.display=(monitoringCard.style.display==="none")?"block":"none";
+      monitoringBtn.innerText=(monitoringCard.style.display==="none")?"Show Monitoring":"Hide Monitoring";
+    });
+    eventLogBtn.addEventListener("click",()=>{
+      eventLogCard.style.display=(eventLogCard.style.display==="none")?"block":"none";
+      eventLogBtn.innerText=(eventLogCard.style.display==="none")?"Show Event Log":"Hide Event Log";
+    });
+    imeBtn.addEventListener("click",()=>{
+      disableIME=!disableIME;
+      imeBtn.innerText= disableIME?"Disable IME Shortcuts: ON":"Disable IME Shortcuts: OFF";
+      editor.style.webkitTouchCallout= disableIME?"none":"default";
+    });
+
+    /*******************************************************
+     * 5) Toast & Log
+     *******************************************************/
     function showToast(msg){
-      const t = document.createElement("div");
-      t.className = "toast";
-      t.innerText = msg;
+      const t=document.createElement("div");
+      t.className="toast";
+      t.innerText=msg;
       document.body.appendChild(t);
-      requestAnimationFrame(() => { t.style.opacity = 1; });
-      setTimeout(() => {
-        t.style.opacity = 0;
-        setTimeout(() => { t.remove(); }, 500);
-      }, 2000);
+      requestAnimationFrame(()=>{ t.style.opacity=1; });
+      setTimeout(()=>{
+        t.style.opacity=0;
+        setTimeout(()=>{ t.remove(); },500);
+      },2000);
     }
     function logEvent(message){
-      const p = document.createElement("p");
-      const now = new Date().toLocaleString("en-US", { hour12: false });
-      p.innerText = `[${now}] ${message}`;
+      const p=document.createElement("p");
+      const now=new Date().toLocaleString("en-US",{hour12:false});
+      p.innerText=`[${now}] ${message}`;
       eventLog.appendChild(p);
     }
 
-    // ========== 5) Drag & Drop for files ==========
-    ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
-      editor.addEventListener(evtName, e => {
-        e.preventDefault();
-        e.stopPropagation();
-      }, false);
+    /*******************************************************
+     * 6) 文件拖拽
+     *******************************************************/
+    ["dragenter","dragover","dragleave","drop"].forEach(evtName=>{
+      editor.addEventListener(evtName,e=>{
+        e.preventDefault(); e.stopPropagation();
+      },false);
     });
-    editor.addEventListener("dragover", () => { editor.style.background = "#fafafa"; });
-    editor.addEventListener("dragleave", () => { editor.style.background = "white"; });
-    editor.addEventListener("drop", e => {
-      editor.style.background = "white";
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        const file = files[0];
-        const fname = file.name.toLowerCase();
-        if (fname.endsWith(".txt") || fname.endsWith(".doc")) {
-          let reader = new FileReader();
-          reader.onload = function(evt) {
-            editor.innerText = evt.target.result;
-            logEvent("File loaded: " + file.name);
+    editor.addEventListener("dragover",()=>{editor.style.background="#fafafa";});
+    editor.addEventListener("dragleave",()=>{editor.style.background="white";});
+    editor.addEventListener("drop", e=>{
+      editor.style.background="white";
+      const files=e.dataTransfer.files;
+      if(files.length>0){
+        const file=files[0];
+        const fname=file.name.toLowerCase();
+        if(fname.endsWith(".txt")||fname.endsWith(".doc")){
+          let reader=new FileReader();
+          reader.onload=function(evt){
+            editor.innerText=evt.target.result;
+            logEvent("File loaded: "+file.name);
           };
-          reader.readAsText(file, "UTF-8");
-        } else {
+          reader.readAsText(file,"UTF-8");
+        }else{
           showToast("Only .txt or .doc files are supported.");
         }
       }
     });
 
-    // ========== 6) Long press for Tap/Voice selection ==========
+    /*******************************************************
+     * 7) 长按 => Tap/Voice
+     *******************************************************/
     editor.addEventListener("mousedown", onEditorMouseDown);
     editor.addEventListener("mouseup", onEditorMouseUp);
     editor.addEventListener("touchstart", onEditorTouchStart);
     editor.addEventListener("touchend", onEditorTouchEnd);
 
     function onEditorMouseDown(e){
-      tapTriggered = false;
-      globalTapIndex = getCaretIndex(e.clientX, e.clientY);
-      initialX = e.clientX;
-      initialY = e.clientY;
-      pressTimer = setTimeout(() => {
-        tapTriggered = true;
-        if (!selectOverlay && !isMobile()) {
-          showSelectOverlay(initialX, initialY);
+      tapTriggered=false;
+      globalTapIndex=getCaretIndex(e.clientX,e.clientY);
+      initialX=e.clientX; initialY=e.clientY;
+      pressTimer=setTimeout(()=>{
+        tapTriggered=true;
+        // 桌面弹出 overlay
+        if(!isMobile() && !selectOverlay){
+          showSelectOverlay(initialX,initialY);
         }
-      }, 600);
+      },600);
     }
     function onEditorMouseUp(e){
-      if (!tapTriggered) clearTimeout(pressTimer);
+      if(!tapTriggered) clearTimeout(pressTimer);
     }
     function onEditorTouchStart(e){
-      tapTriggered = false;
-      const touch = e.touches[0];
-      globalTapIndex = getTouchIndex(touch.clientX, touch.clientY);
-      initialX = touch.clientX;
-      initialY = touch.clientY;
-      pressTimer = setTimeout(() => {
-        tapTriggered = true;
-        // mobile => directly handle "tap"
+      tapTriggered=false;
+      const touch=e.touches[0];
+      globalTapIndex=getTouchIndex(touch.clientX,touch.clientY);
+      initialX=touch.clientX; initialY=touch.clientY;
+      pressTimer=setTimeout(()=>{
+        tapTriggered=true;
+        // 移动端直接Tap
         handleSelection("tap");
-      }, 1000);
+      },1000);
     }
     function onEditorTouchEnd(e){
-      if (!tapTriggered) clearTimeout(pressTimer);
+      if(!tapTriggered) clearTimeout(pressTimer);
     }
-
-    function isMobile() {
+    function isMobile(){
       return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     }
-    function getTouchIndex(x, y) {
-      let rect = editor.getBoundingClientRect();
-      let relativeX = x - rect.left;
-      let totalChars = editor.innerText.length;
-      if (totalChars === 0) return 0;
-      let ratio = relativeX / rect.width;
-      if (ratio < 0) ratio = 0;
-      if (ratio > 1) ratio = 1;
-      return Math.floor(ratio * totalChars);
+    function getTouchIndex(x,y){
+      let rect=editor.getBoundingClientRect();
+      let relativeX=x-rect.left;
+      let totalChars=editor.innerText.length;
+      if(totalChars===0) return 0;
+      let ratio= relativeX/rect.width;
+      if(ratio<0) ratio=0;
+      if(ratio>1) ratio=1;
+      return Math.floor(ratio*totalChars);
     }
 
-    // ========== 7) Show overlay (desktop only) ==========
-    function showSelectOverlay(x, y){
-      selectOverlay = document.createElement("div");
-      selectOverlay.id = "select-overlay";
-      selectOverlay.style.left = x + "px";
-      selectOverlay.style.top = y + "px";
-      selectOverlay.innerHTML = `
+    /*******************************************************
+     * 8) 显示 overlay (桌面)
+     *******************************************************/
+    function showSelectOverlay(x,y){
+      selectOverlay=document.createElement("div");
+      selectOverlay.id="select-overlay";
+      selectOverlay.style.left=x+"px";
+      selectOverlay.style.top=y+"px";
+      selectOverlay.innerHTML=`
         <div class="half left">Tap&amp;Say</div>
         <div class="half right">Voice Input</div>
       `;
       document.body.appendChild(selectOverlay);
-      overlayTimer = setTimeout(() => { removeOverlay(); }, 3000);
-      selectOverlay.querySelector(".half.left").onclick = () => {
+      overlayTimer=setTimeout(()=>{ removeOverlay(); },3000);
+      selectOverlay.querySelector(".half.left").onclick=()=>{
         clearTimeout(overlayTimer);
         handleSelection("tap");
       };
-      selectOverlay.querySelector(".half.right").onclick = () => {
+      selectOverlay.querySelector(".half.right").onclick=()=>{
         clearTimeout(overlayTimer);
         handleSelection("voice");
       };
     }
     function removeOverlay(){
-      if (selectOverlay) {
+      if(selectOverlay){
         selectOverlay.remove();
-        selectOverlay = null;
+        selectOverlay=null;
       }
-      if (overlayTimer) {
+      if(overlayTimer){
         clearTimeout(overlayTimer);
-        overlayTimer = null;
+        overlayTimer=null;
       }
     }
 
-    // ========== 8) Suggestions box logic ==========
+    /*******************************************************
+     * 9) 建议框
+     *******************************************************/
     function removeSuggestionsBox(){
-      if (suggestionsBox) {
+      if(suggestionsBox){
         suggestionsBox.remove();
-        suggestionsBox = null;
+        suggestionsBox=null;
       }
-      if (suggestionsTimer) {
+      if(suggestionsTimer){
         clearTimeout(suggestionsTimer);
-        suggestionsTimer = null;
+        suggestionsTimer=null;
       }
     }
 
-    // ========== 9) handleSelection for tap or voice ==========
+    /*******************************************************
+     * 10) handleSelection
+     *******************************************************/
     function handleSelection(mode){
-      removeSuggestionsBox(); // remove old suggestions
-      currentMode = mode;
-      if (mode === "voice") {
+      removeSuggestionsBox();
+      currentMode=mode;
+      if(mode==="voice"){
+        // 保存光标
         saveCurrentSelection();
-      } else if (mode === "tap") {
-        // find local index inside the chosen sentence
-        let { sentence, relativeIndex } = getSelectedSentenceAndRelativeIndex(globalTapIndex);
-        sentence = sentence.trim();
-        if (!sentence) {
+      }else if(mode==="tap"){
+        let {sentence, relativeIndex}= getSelectedSentenceAndRelativeIndex(globalTapIndex);
+        sentence= sentence.trim();
+        if(!sentence){
           logEvent("No valid sentence found for highlight");
           return;
         }
-        localTapIndex = relativeIndex;
-        touchIndexSpan.innerText = localTapIndex.toString();
+        localTapIndex=relativeIndex;
+        touchIndexSpan.innerText= localTapIndex.toString();
 
-        errorText.innerText = sentence;
-        originalSentence = sentence;
-        originalErrorSpan.innerText = sentence;
+        errorText.innerText= sentence;
+        originalSentence= sentence;
+        originalErrorSpan.innerText= sentence;
         undoStack.push(editor.innerHTML);
         removeHighlight();
-        if (!highlightSentence(sentence)) {
-          logEvent("Highlight not found in editor => " + sentence);
+        if(!highlightSentence(sentence)){
+          logEvent("Highlight not found => "+ sentence);
         }
+        // 移动光标到句末
+        setTimeout(()=>{
+          moveCaretToEndOfTarget();
+          editor.focus();
+        },50);
       }
       updateOverlayToSpinner();
       startRecording();
-      // Keep editor focused => keep IME up if possible
-      setTimeout(() => editor.focus(), 0);
+      setTimeout(()=>editor.focus(),0);
     }
     function updateOverlayToSpinner(){
-      if (selectOverlay) {
-        selectOverlay.innerHTML = '<div class="spinner"></div>';
+      if(selectOverlay){
+        selectOverlay.innerHTML='<div class="spinner"></div>';
       }
     }
 
-    // ========== 10) Clicking outside suggestions, etc. ==========
-    document.addEventListener("click", function(e){
-      // remove suggestion box if clicking outside
-      if (suggestionsBox && !suggestionsBox.contains(e.target)) {
+    /*******************************************************
+     * 11) 点击外面 => 移除建议 & 高亮
+     *******************************************************/
+    document.addEventListener("click",function(e){
+      if(suggestionsBox && !suggestionsBox.contains(e.target)){
         removeSuggestionsBox();
       }
-      let ts = document.getElementById("target-sentence");
-      if (ts && !ts.contains(e.target)) {
+      let ts=document.getElementById("target-sentence");
+      if(ts && !ts.contains(e.target)){
         removeHighlight();
       }
     });
-    document.addEventListener("contextmenu", function(e){
-      if (disableIME) e.preventDefault();
-      if (currentMode === "tap" && selectOverlay) {
+    document.addEventListener("contextmenu",function(e){
+      if(disableIME) e.preventDefault();
+      if(currentMode==="tap" && selectOverlay){
         e.preventDefault();
         removeHighlight();
         replaceHighlightedSentence(originalSentence);
@@ -584,281 +495,290 @@
       }
     });
 
-    // ========== 11) highlight / removeHighlight / replace ==========
+    /*******************************************************
+     * 12) 高亮
+     *******************************************************/
     function highlightSentence(sentence){
-      let html = editor.innerHTML;
-      let safe = sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(safe, "i");
-      if (!re.test(html)) return false;
-      editor.innerHTML = html.replace(re, `<span id="target-sentence" class="highlighted-sentence">$&</span>`);
+      let html= editor.innerHTML;
+      let safe= sentence.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      const re= new RegExp(safe,"i");
+      if(!re.test(html)) return false;
+      editor.innerHTML= html.replace(re, `<span id="target-sentence" class="highlighted-sentence">$&</span>`);
       return true;
     }
     function removeHighlight(){
-      let html = editor.innerHTML;
-      html = html.replace(/<span id="target-sentence" class="highlighted-sentence">(.*?)<\/span>/i, "$1");
-      editor.innerHTML = html;
+      let html= editor.innerHTML;
+      html= html.replace(/<span id="target-sentence" class="highlighted-sentence">(.*?)<\/span>/i,"$1");
+      editor.innerHTML= html;
     }
     function replaceHighlightedSentence(newText){
-      let ts = document.getElementById("target-sentence");
-      if (ts) {
-        ts.innerText = newText;
-      } else {
-        let html = editor.innerHTML;
-        let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const re = new RegExp(safe, "i");
-        editor.innerHTML = html.replace(re, newText);
+      let ts=document.getElementById("target-sentence");
+      if(ts){
+        ts.innerText=newText;
+      }else{
+        let html= editor.innerHTML;
+        let safe= originalSentence.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        const re= new RegExp(safe,"i");
+        editor.innerHTML= html.replace(re,newText);
       }
     }
 
-    // ========== 12) Start speech recognition ==========
+    /*******************************************************
+     * 13) 录音
+     *******************************************************/
     function startRecording(){
-      if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
+      if(!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)){
         showToast("Speech recognition not supported in this browser.");
         finalizeTapSay();
         return;
       }
-      let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "en-US";
+      let SpeechRecognition= window.SpeechRecognition||window.webkitSpeechRecognition;
+      recognition=new SpeechRecognition();
+      recognition.continuous=false; recognition.interimResults=false;
+      recognition.lang="en-US";
 
-      recognition.onstart = () => {
-        isListening = true;
-        micStatusSpan.innerText = "🟢 Recording...";
-        silenceTimer = setTimeout(() => {
-          if (isListening) recognition.stop();
-        }, 5000);
+      recognition.onstart=()=>{
+        isListening=true;
+        micStatusSpan.innerText="🟢 Recording...";
+        silenceTimer=setTimeout(()=>{
+          if(isListening) recognition.stop();
+        },5000);
       };
-      recognition.onresult = (e) => {
+      recognition.onresult=(e)=>{
         clearTimeout(silenceTimer);
-        let txt = "";
-        for (let i = e.resultIndex; i < e.results.length; i++){
-          txt += e.results[i][0].transcript;
+        let txt="";
+        for(let i=e.resultIndex;i< e.results.length;i++){
+          txt+= e.results[i][0].transcript;
         }
-        voiceInputSpan.innerText = txt;
+        voiceInputSpan.innerText= txt;
       };
-      recognition.onerror = (err) => {
-        micStatusSpan.innerText = "❌ Recording error";
-        if (isListening) recognition.stop();
-        logEvent("Speech recognition error => " + err.error);
+      recognition.onerror=(err)=>{
+        micStatusSpan.innerText="❌ Recording error";
+        if(isListening) recognition.stop();
+        logEvent("Speech recognition error => "+ err.error);
       };
-      recognition.onend = () => {
-        isListening = false;
-        micStatusSpan.innerText = "🔴 Stopped";
+      recognition.onend=()=>{
+        isListening=false;
+        micStatusSpan.innerText="🔴 Stopped";
         finalizeTapSay();
       };
       recognition.start();
     }
 
-    // ========== 13) Undo logic ==========
-    undoButton.addEventListener("click", function(){
-      if (undoStack.length > 0) {
-        let prevState = undoStack.pop();
-        editor.innerHTML = prevState;
+    /*******************************************************
+     * 14) Undo
+     *******************************************************/
+    undoButton.addEventListener("click",function(){
+      if(undoStack.length>0){
+        let prevState=undoStack.pop();
+        editor.innerHTML= prevState;
         removeHighlight();
         showToast("Undo last change");
       } else {
         showToast("No change to undo!");
       }
-      // Keep focus => keep IME
       editor.focus();
     });
 
-    // ========== 14) Move caret to end of target ==========
+    /*******************************************************
+     * 15) moveCaretToEndOfTarget
+     *******************************************************/
     function moveCaretToEndOfTarget(){
+      let ts=document.getElementById("target-sentence");
+      if(!ts) return;
       editor.focus();
-      let ts = document.getElementById("target-sentence");
-      if (ts) {
-        let range = document.createRange();
-        range.selectNodeContents(ts);
-        range.collapse(false);
-        let sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
+      let range= document.createRange();
+      range.selectNodeContents(ts);
+      range.collapse(false);
+      let sel= window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
 
-    // ========== 15) finalizeTapSay (main logic) ==========
+    /*******************************************************
+     * 16) finalizeTapSay
+     *******************************************************/
     function finalizeTapSay(){
       removeOverlay();
       removeSuggestionsBox();
-      let transcript = voiceInputSpan.innerText.trim();
-      if (!transcript) {
+      let transcript= voiceInputSpan.innerText.trim();
+      if(!transcript){
         showToast("No speech input detected.");
-        currentMode = null;
+        currentMode=null;
         return;
       }
       undoStack.push(editor.innerHTML);
 
-      if (currentMode === "voice") {
-        let textNoPunc = removePunctuation(transcript);
-        logEvent("Sending voice text to /restore_punctuation => " + textNoPunc);
-        fetch(PUNCTUATION_API_URL, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
+      if(currentMode==="voice"){
+        let textNoPunc= removePunctuation(transcript);
+        logEvent("Sending voice text to /restore_punctuation => "+ textNoPunc);
+
+        fetch(PUNCTUATION_API_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
           body: JSON.stringify({ voice_text: textNoPunc })
         })
-        .then(resp => {
-          logEvent("Punctuation API response => status " + resp.status);
-          return resp.json();
-        })
-        .then(data => {
-          let restored = data.restored_text || "";
-          logEvent("Punctuation API returned => " + restored);
-          // Insert the recognized text with a preceding space if needed
+        .then(resp=> resp.json())
+        .then(data=>{
+          let restored= data.restored_text||"";
+          logEvent("Punctuation API returned => "+ restored);
+
+          // 恢复光标 & 插入
           restoreCurrentSelection();
-          let toInsert = " " + restored.trim();
-          insertTextAtCursor( maybeAddSpace(toInsert) );
-          setTimeout(() => {
+          let toInsert=" "+ restored.trim();
+          insertTextAtCursor(toInsert);
+
+          setTimeout(()=>{
             moveCaretToEndOfTarget();
-            editor.focus(); // re-focus
-          }, 100);
+            editor.focus();
+          },50);
         })
-        .catch(err => {
-          logEvent("Punctuation API call error => " + err);
+        .catch(err=>{
+          logEvent("Punctuation API call error => "+ err);
         });
       } else {
-        // tap mode
-        let parted = errorText.innerText || "";
-        parted = parted.trimEnd();                // remove trailing spaces first
-        parted = parted.replace(/([.!?])(\S)/g, "$1 $2");
-        let textNoPunc = removePunctuation(transcript).trimEnd();
+        let parted= errorText.innerText||"";
+        parted= parted.trimEnd();
+        parted= parted.replace(/([.!?])(\S)/g,"$1 $2");
 
-        // Merge with no trailing space
-        let merged = parted + " <||> " + textNoPunc;
-        merged = merged.trimEnd();                // remove trailing spaces if any
-        finalOutputSpan.innerText = merged;
-        logEvent("Final output => " + merged);
+        let textNoPunc= removePunctuation(transcript).trimEnd();
+        let merged= parted+" <||> "+ textNoPunc;
+        merged= merged.trimEnd();
+        finalOutputSpan.innerText= merged;
+        logEvent("Final output => "+ merged);
 
-        // Use localTapIndex instead of globalTapIndex
         sendToAPI(merged, localTapIndex);
-        setTimeout(() => {
+        setTimeout(()=>{
           moveCaretToEndOfTarget();
           editor.focus();
-        }, 100);
+        },50);
       }
-      currentMode = null;
-      voiceInputSpan.innerText = "";
+      currentMode=null;
+      voiceInputSpan.innerText="";
     }
 
-    // ========== 16) /correct API call ==========
+    /*******************************************************
+     * 17) /correct
+     *******************************************************/
     function sendToAPI(mergedStr, loc){
-      logEvent("Sending /correct => merged_string:" + mergedStr + ", touch_location:" + loc);
-      fetch(API_URL, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
+      logEvent("Sending /correct => merged_string:"+ mergedStr+", touch_location:"+ loc);
+      fetch(API_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           merged_string: mergedStr,
           touch_location: loc
         })
       })
-      .then(resp => {
-        logEvent("Server response => status " + resp.status);
-        return resp.json();
-      })
-      .then(data => {
-        let corrs = data.corrections || [];
-        logEvent("API corrections => " + JSON.stringify(corrs));
+      .then(resp=> resp.json())
+      .then(data=>{
+        let corrs= data.corrections||[];
+        logEvent("API corrections => "+ JSON.stringify(corrs));
         removeOverlay();
         applyFirstSuggestionAndShowBox(corrs);
       })
-      .catch(err => {
-        logEvent("API call error => " + err);
+      .catch(err=>{
+        logEvent("API call error => "+ err);
         removeOverlay();
       });
     }
 
-    // ========== 17) applyFirstSuggestionAndShowBox ==========
+    /*******************************************************
+     * 18) applyFirstSuggestionAndShowBox
+     *******************************************************/
     function applyFirstSuggestionAndShowBox(corrections){
-      if (!corrections.length) return;
-      let ts = document.getElementById("target-sentence");
-      let candidate = corrections[0].trimEnd();
-      if (ts) {
-        ts.innerText = candidate;
-        originalSentence = candidate;
+      if(!corrections.length) return;
+      let ts=document.getElementById("target-sentence");
+      let candidate= corrections[0].trimEnd();
+      if(ts){
+        ts.innerText= candidate;
+        originalSentence= candidate;
         removeHighlight();
         highlightSentence(candidate);
-        setTimeout(() => {
+
+        setTimeout(()=>{
           maybeAddSpaceAfterHighlight(ts);
           moveCaretToEndOfTarget();
           editor.focus();
-        }, 50);
+        },50);
       } else {
-        let html = editor.innerHTML;
-        let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const re = new RegExp(safe, "i");
-        if (!re.test(html)) {
-          logEvent("No highlighted sentence found. fallback => " + originalSentence);
+        let html= editor.innerHTML;
+        let safe= originalSentence.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        const re= new RegExp(safe,"i");
+        if(!re.test(html)){
+          logEvent("No highlighted sentence found => "+ originalSentence);
           return;
         }
-        editor.innerHTML = html.replace(re, candidate);
-        originalSentence = candidate;
+        editor.innerHTML= html.replace(re,candidate);
+        originalSentence= candidate;
         removeHighlight();
         highlightSentence(candidate);
-        setTimeout(() => {
-          let ts2 = document.getElementById("target-sentence");
-          if (ts2) maybeAddSpaceAfterHighlight(ts2);
+
+        setTimeout(()=>{
+          let ts2=document.getElementById("target-sentence");
+          if(ts2) maybeAddSpaceAfterHighlight(ts2);
           moveCaretToEndOfTarget();
           editor.focus();
-        }, 50);
+        },50);
       }
-      if (corrections.length === 1) return;
+      if(corrections.length===1) return;
 
-      let tsNew = document.getElementById("target-sentence");
-      if (!tsNew) {
+      let tsNew=document.getElementById("target-sentence");
+      if(!tsNew){
         logEvent("No highlighted sentence found for suggestions.");
         return;
       }
-      let rect = tsNew.getBoundingClientRect();
-      suggestionsBox = createSuggestionBox(rect, corrections);
+      let rect= tsNew.getBoundingClientRect();
+      suggestionsBox= createSuggestionBox(rect, corrections);
       document.body.appendChild(suggestionsBox);
-      suggestionsTimer = setTimeout(() => { removeSuggestionsBox(); }, 5000);
+      suggestionsTimer= setTimeout(()=>{ removeSuggestionsBox(); },5000);
     }
 
-    // ========== 18) createSuggestionBox ==========
+    /*******************************************************
+     * 19) createSuggestionBox
+     *******************************************************/
     function createSuggestionBox(rect, corrections){
-      let box = document.createElement("div");
-      box.className = "suggestions-box-floating";
-      box.style.left = (rect.left + window.scrollX) + "px";
-      box.style.top = (rect.bottom + window.scrollY) + "px";
-      box.style.width = rect.width + "px";
+      let box=document.createElement("div");
+      box.className="suggestions-box-floating";
+      box.style.left=(rect.left+window.scrollX)+"px";
+      box.style.top=(rect.bottom+window.scrollY)+"px";
+      box.style.width= rect.width+"px";
 
-      for (let i = 1; i < corrections.length; i++){
-        let div = document.createElement("div");
-        div.innerText = corrections[i];
-        div.onclick = (evt) => {
-          // prevent losing focus
-          evt.preventDefault();
-          evt.stopPropagation();
+      for(let i=1;i<corrections.length;i++){
+        let div=document.createElement("div");
+        div.innerText= corrections[i];
+        div.onclick=(evt)=>{
+          evt.preventDefault(); evt.stopPropagation();
 
           removeHighlight();
-          let ts = document.getElementById("target-sentence");
-          let candidate = corrections[i].trimEnd();
+          let ts=document.getElementById("target-sentence");
+          let candidate= corrections[i].trimEnd();
 
-          if (ts) {
-            ts.innerText = candidate;
-            originalSentence = candidate;
+          if(ts){
+            ts.innerText= candidate;
+            originalSentence= candidate;
             removeHighlight();
             highlightSentence(candidate);
-            setTimeout(() => {
+
+            setTimeout(()=>{
               maybeAddSpaceAfterHighlight(ts);
               moveCaretToEndOfTarget();
               editor.focus();
-            }, 50);
+            },50);
           } else {
-            let html = editor.innerHTML;
-            let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const re = new RegExp(safe, "i");
-            editor.innerHTML = html.replace(re, candidate);
-            originalSentence = candidate;
+            let html= editor.innerHTML;
+            let safe= originalSentence.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+            const re= new RegExp(safe,"i");
+            editor.innerHTML= html.replace(re,candidate);
+            originalSentence= candidate;
             highlightSentence(candidate);
-            setTimeout(() => {
-              let ts2 = document.getElementById("target-sentence");
-              if (ts2) maybeAddSpaceAfterHighlight(ts2);
+
+            setTimeout(()=>{
+              let ts2=document.getElementById("target-sentence");
+              if(ts2) maybeAddSpaceAfterHighlight(ts2);
               moveCaretToEndOfTarget();
               editor.focus();
-            }, 50);
+            },50);
           }
           removeSuggestionsBox();
         };
@@ -867,150 +787,99 @@
       return box;
     }
 
-    // ========== 19) Utility Functions ==========
-
-    // Mobile input => try to keep caret stable but remove highlight if user inserts text
-    editor.addEventListener("input", function(e){
-      if (isMobile() && e.inputType && e.inputType.startsWith("insert")) {
-        saveCurrentSelection();
-        removeHighlight();
-        restoreCurrentSelection();
-      }
-    });
-
-    // Also force re-focus on mobile blur to keep IME
-    editor.addEventListener("blur", function(e){
-      if (isMobile()) {
-        // small delay
-        setTimeout(() => editor.focus(), 0);
-      }
-    });
-
-    // Remove punctuation except single quotes
-    function removePunctuation(str){
-      return str.replace(/[^a-zA-Z0-9'\s]/g, "");
-    }
-    // Optionally add space if not already has it
-    function maybeAddSpace(text){
-      if (!text.length) return text;
-      if (endsWithSpaceOrPunc(text[0])) {
-        return text; 
-      }
-      return text;
-    }
-    // If next char after highlight is not space/punctuation => add one space
-    // Also if there's NO next element => add space
+    /*******************************************************
+     * 20) 工具函数
+     *******************************************************/
     function maybeAddSpaceAfterHighlight(ts){
-      let parent = ts.parentNode;
-      if (!parent) return;
+      let parent= ts.parentNode; if(!parent) return;
 
-      let next = ts.nextSibling;
-      while (next && next.nodeType === Node.ELEMENT_NODE && !next.textContent.trim()) {
-        next = next.nextSibling;
+      let next= ts.nextSibling;
+      while(next && next.nodeType===Node.ELEMENT_NODE && !next.textContent.trim()){
+        next= next.nextSibling;
       }
-      // If no next node => definitely add space if not ends with punctuation/space
-      if (!next) {
-        if (!endsWithSpaceOrPunc(ts.innerText)) {
-          ts.innerText = ts.innerText + " ";
+      if(!next){
+        if(!endsWithSpaceOrPunc(ts.innerText)){
+          ts.innerText= ts.innerText+" ";
         }
         return;
       }
-      if (next.nodeType === Node.TEXT_NODE) {
-        let t = next.nodeValue;
-        if (!t || t.length === 0) {
-          if (!endsWithSpaceOrPunc(ts.innerText)) {
-            ts.innerText += " ";
+      if(next.nodeType===Node.TEXT_NODE){
+        let t= next.nodeValue;
+        if(!t|| t.length===0){
+          if(!endsWithSpaceOrPunc(ts.innerText)){
+            ts.innerText+=" ";
           }
         } else {
-          if (!t[0].match(/[\s.,;!?]/)) {
-            if (!endsWithSpaceOrPunc(ts.innerText)) {
-              ts.innerText += " ";
+          if(!t[0].match(/[\s.,;!?]/)){
+            if(!endsWithSpaceOrPunc(ts.innerText)){
+              ts.innerText+=" ";
             }
           }
         }
-      } else if (next.nodeType === Node.ELEMENT_NODE) {
-        let text = next.textContent.trimStart();
-        if (text.length === 0) {
-          if (!endsWithSpaceOrPunc(ts.innerText)) {
-            ts.innerText += " ";
+      } else if(next.nodeType===Node.ELEMENT_NODE){
+        let text= next.textContent.trimStart();
+        if(text.length===0){
+          if(!endsWithSpaceOrPunc(ts.innerText)){
+            ts.innerText+=" ";
           }
         } else {
-          if (!text[0].match(/[\s.,;!?]/)) {
-            if (!endsWithSpaceOrPunc(ts.innerText)) {
-              ts.innerText += " ";
+          if(!text[0].match(/[\s.,;!?]/)){
+            if(!endsWithSpaceOrPunc(ts.innerText)){
+              ts.innerText+=" ";
             }
           }
         }
       }
     }
     function endsWithSpaceOrPunc(str){
-      if (!str) return false;
-      let c = str[str.length - 1];
+      if(!str) return false;
+      let c= str[str.length-1];
       return !!c.match(/[\s.,;!?]/);
     }
 
     function insertTextAtCursor(text){
       editor.focus();
-      let sel = window.getSelection();
-      if (sel.rangeCount > 0){
-        let range = sel.getRangeAt(0);
+      let sel= window.getSelection();
+      if(sel.rangeCount>0){
+        let range= sel.getRangeAt(0);
         range.deleteContents();
-        let textNode = document.createTextNode(text);
+        let textNode= document.createTextNode(text);
         range.insertNode(textNode);
         range.setStartAfter(textNode);
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
       } else {
-        editor.innerHTML += text;
+        editor.innerHTML+= text;
       }
     }
-    function getCaretIndex(x, y){
+    function getCaretIndex(x,y){
       let range;
-      if (document.caretRangeFromPoint) {
-        range = document.caretRangeFromPoint(x, y);
-      } else if (document.caretPositionFromPoint) {
-        let pos = document.caretPositionFromPoint(x, y);
-        if (!pos) return -1;
-        range = document.createRange();
+      if(document.caretRangeFromPoint){
+        range= document.caretRangeFromPoint(x,y);
+      } else if(document.caretPositionFromPoint){
+        let pos= document.caretPositionFromPoint(x,y);
+        if(!pos) return -1;
+        range= document.createRange();
         range.setStart(pos.offsetNode, pos.offset);
         range.collapse(true);
       }
-      if (!range) return -1;
-      let pre = range.cloneRange();
+      if(!range) return -1;
+      let pre= range.cloneRange();
       pre.selectNodeContents(editor);
       pre.setEnd(range.startContainer, range.startOffset);
       return pre.toString().length;
     }
-
-    function saveCurrentSelection(){
-      let sel = window.getSelection();
-      if (sel.rangeCount > 0){
-        savedRange = sel.getRangeAt(0).cloneRange();
-      }
-    }
-    function restoreCurrentSelection(){
-      if (savedRange){
-        let sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(savedRange);
-      }
-    }
-
-    /**
-     * Return { sentence, relativeIndex } for the tapped sentence
-     * relativeIndex = absoluteIndex - sentenceStart
-     */
     function getSelectedSentenceAndRelativeIndex(globalIndex){
-      let text = editor.innerText;
-      let sentences = text.match(/[^.!?。！？]*[.!?。！？]/gi) || [text];
-      let selectedSentence = sentences.find(s => {
-        let idx = text.toLowerCase().indexOf(s.toLowerCase());
-        return idx >= 0 && idx <= globalIndex && (idx + s.length) >= globalIndex;
-      }) || text;
-      let startIndex = text.toLowerCase().indexOf(selectedSentence.toLowerCase());
-      let relIndex = globalIndex - startIndex;
-      return { sentence: selectedSentence, relativeIndex: relIndex };
+      let text= editor.innerText;
+      let sentences= text.match(/[^.!?。！？]*[.!?。！？]/gi)|| [text];
+      let selectedSentence= sentences.find(s=>{
+        let idx= text.toLowerCase().indexOf(s.toLowerCase());
+        return idx>=0 && idx<=globalIndex && (idx+s.length)>=globalIndex;
+      })|| text;
+      let startIndex= text.toLowerCase().indexOf(selectedSentence.toLowerCase());
+      let relIndex= globalIndex- startIndex;
+      return { sentence:selectedSentence, relativeIndex:relIndex };
     }
   </script>
 </body>
