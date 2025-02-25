@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+<<<<<<< HEAD
   <!-- Ensure correct scaling on mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tap&amp;Say Text Editor</title>
@@ -9,6 +10,15 @@
     /* Global basic styles, disable horizontal scrolling */
     html, body {
       margin: 0;
+=======
+  <!-- Ensure proper scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tap&amp;Say Text Editor</title>
+  <style>
+    /* ========== Global Basic Styles ========== */
+    html, body {
+      margin: 0; 
+>>>>>>> 8413278 (Windows)
       padding: 0;
       width: 100%;
       max-width: 100%;
@@ -16,7 +26,10 @@
       overflow-x: hidden;
       font-family: Arial, sans-serif;
     }
+<<<<<<< HEAD
     /* All elements use border-box */
+=======
+>>>>>>> 8413278 (Windows)
     *, *::before, *::after {
       box-sizing: inherit;
     }
@@ -26,6 +39,7 @@
       min-height: 100vh;
       background-color: #f4f4f4;
     }
+<<<<<<< HEAD
     /* Header and footer with gradient and shadow */
     header, footer {
       background: linear-gradient(135deg, #007bff, #0056b3);
@@ -61,6 +75,13 @@
       }
     }
     /* Container: default 90% width, max 800px, centered */
+=======
+    /* Header/Footer containers */
+    #header-container, #footer-container {
+      width: 100%;
+    }
+    /* Container + Card Layout */
+>>>>>>> 8413278 (Windows)
     .container {
       flex: 1;
       width: 90%;
@@ -69,13 +90,17 @@
     }
     /* Card style with subtle shadow */
     .card {
-      background: #ffffff;
+      background: #fff;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       margin: 10px 0;
     }
+<<<<<<< HEAD
     /* Text editor with focus border transition */
+=======
+    /* ========== Editor ========== */
+>>>>>>> 8413278 (Windows)
     #text-editor {
       width: 100%;
       min-height: 300px;
@@ -87,7 +112,14 @@
       background: #fff;
       white-space: pre-wrap;
       transition: border 0.3s;
+<<<<<<< HEAD
       -webkit-touch-callout: default; /* Allow local touch callout by default */
+=======
+      -webkit-touch-callout: default; /* allow touch menu */
+    }
+    #text-editor:focus {
+      border-color: #007bff;
+>>>>>>> 8413278 (Windows)
     }
     #text-editor:focus {
       border-color: #007bff;
@@ -97,7 +129,15 @@
       content: "Type here or drag a .doc/.txt file here";
       color: gray;
     }
+<<<<<<< HEAD
     /* Recording status */
+=======
+    /* Highlighted Sentence */
+    .highlighted-sentence {
+      background-color: yellow;
+    }
+    /* Recording / Event Log, etc. */
+>>>>>>> 8413278 (Windows)
     #mic-status {
       font-weight: bold;
       color: red;
@@ -112,29 +152,41 @@
       border: 1px solid #ccc;
       border-radius: 5px;
     }
+<<<<<<< HEAD
     /* Original error sentence */
     #original-error-sentence {
       font-weight: bold;
       color: #333;
     }
     /* Selection overlay (initially circular, split in half horizontally) */
+=======
+    /* Overlay for Tap/Voice Selection */
+>>>>>>> 8413278 (Windows)
     #select-overlay {
       position: fixed;
-      width: 150px;
+      width: 150px; 
       height: 150px;
       border-radius: 50%;
       overflow: hidden;
       display: flex;
       border: 2px solid #007bff;
       background: rgba(255,255,255,0.95);
+<<<<<<< HEAD
       left: 50%;
+=======
+      left: 50%; 
+>>>>>>> 8413278 (Windows)
       top: 50%;
       transform: translate(-50%, -50%);
       z-index: 1000;
       transition: all 0.3s ease;
     }
     #select-overlay .half {
+<<<<<<< HEAD
       width: 50%;
+=======
+      width: 50%; 
+>>>>>>> 8413278 (Windows)
       height: 100%;
       display: flex;
       align-items: center;
@@ -153,7 +205,11 @@
     #select-overlay .half.left {
       border-right: 1px solid #007bff;
     }
+<<<<<<< HEAD
     /* Spinner style */
+=======
+    /* Spinner Animation */
+>>>>>>> 8413278 (Windows)
     @keyframes spin {
       from { transform: translate(-50%, -50%) rotate(0deg); }
       to { transform: translate(-50%, -50%) rotate(360deg); }
@@ -169,6 +225,7 @@
       top: 0;
       left: 0;
     }
+<<<<<<< HEAD
     /* Suggestions box style with subtle shadow */
     .suggestions-box {
       text-align: left;
@@ -196,6 +253,32 @@
       background-color: yellow;
     }
     /* Toast notification */
+=======
+    /* Floating Suggestion Box */
+    .suggestions-box-floating {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      padding: 5px;
+      z-index: 2000;
+      user-select: none;
+      pointer-events: auto;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .suggestions-box-floating div {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .suggestions-box-floating div:hover {
+      background: #f0f0f0;
+    }
+    /* Toast Notification */
+>>>>>>> 8413278 (Windows)
     .toast {
       position: fixed;
       bottom: 20px;
@@ -205,10 +288,11 @@
       color: #fff;
       padding: 12px 24px;
       border-radius: 5px;
-      z-index: 2000;
+      z-index: 3000;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
+<<<<<<< HEAD
     /* Ensure images and tables do not exceed container width */
     img, table {
       max-width: 100%;
@@ -229,11 +313,70 @@
       #text-editor {
         font-size: 16px;
         min-height: 200px;
+=======
+    /* ========== Drawer Container (replacing original floating buttons) ========== */
+    #drawer {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      width: 240px; /* Set drawer width to accommodate the arrow button */
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 3000;
+      transition: transform 0.3s ease;
+    }
+    /* Collapsed state: shift left so most is off-screen */
+    .drawer-collapsed {
+      transform: translateX(-200px);
+    }
+    /* Toggle Arrow Button */
+    #drawer-toggle {
+      display: flex;               /* Use flex layout */
+      justify-content: flex-end;   /* Align text to the right */
+      align-items: center;         /* Vertically center the text */
+      width: 240px;
+      padding: 10px 14px;
+      padding-right: 8px;          /* Extra right padding */
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      background: #007bff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #drawer-toggle:hover {
+      background: #0056b3;
+    }
+    /* The other three buttons in the drawer */
+    #drawer button:not(#drawer-toggle) {
+      padding: 10px 14px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      background: #007bff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: background 0.3s;
+      width: 160px;
+    }
+    #drawer button:not(#drawer-toggle):hover {
+      background: #0056b3;
+    }
+    /* On PC, optionally hide the IME button via media query */
+    @media (min-width: 481px) {
+      #toggle-ime {
+        display: none;
+>>>>>>> 8413278 (Windows)
       }
     }
   </style>
 </head>
 <body>
+<<<<<<< HEAD
   <header id="header-container">
 
   </header>
@@ -246,24 +389,67 @@
       <p><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
       <p><strong>Touch Index (relative to sentence):</strong> <span id="touch-index">None</span></p>
       <p><strong>Speech Input:</strong> <span id="voice-input"></span></p>
+=======
+  <header id="header-container"></header>
+
+  <!-- Drawer container -->
+  <div id="drawer" class="drawer-collapsed">
+    <!-- Toggle arrow button with text aligned to the right -->
+    <button id="drawer-toggle" style="width: 240px; text-align: right;">&gt;</button>
+    <!-- The three function buttons -->
+    <button id="toggle-monitoring">Show Monitoring</button>
+    <button id="toggle-log">Show Event Log</button>
+    <button id="toggle-ime">Disable IME Shortcuts: OFF</button>
+  </div>
+
+  <div class="container">
+    <!-- Monitoring area -->
+    <div class="card" id="monitoring-card">
+      <p><strong>Error Sentence:</strong> <span id="error-text">None</span></p>
+      <p><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
+      <p><strong>Touch Index:</strong> <span id="touch-index">None</span></p>
+      <p><strong>Speech Input:</strong> <span id="voice-input">None</span></p>
+>>>>>>> 8413278 (Windows)
       <p><strong>Final Output:</strong> <span id="final-output">None</span></p>
-      <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Recording stopped</span></p>
+      <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Stopped</span></p>
     </div>
 
-    <!-- Text Editor -->
+    <!-- Editor + Undo button -->
     <div class="card">
+<<<<<<< HEAD
       <h2>Tap&amp;Say Text Editor</h2>
+=======
+      <h3>Tap&amp;Say Text Editor</h3>
+>>>>>>> 8413278 (Windows)
       <div id="text-editor" contenteditable="true"></div>
+      <button id="undo-button" style="
+        margin-top: 12px;
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        border: none;
+        border-radius: 6px;
+        background: #28a745;
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        cursor: pointer;
+      ">Undo Last Change</button>
     </div>
 
+<<<<<<< HEAD
     <!-- Event Log -->
      
     <div class="card">
+=======
+    <!-- Event Log area -->
+    <div class="card" id="event-log-card">
+>>>>>>> 8413278 (Windows)
       <h3>Event Log</h3>
       <div id="event-log">No events recorded</div>
     </div>
   </div>
 
+<<<<<<< HEAD
   <footer id="footer-container"> </footer>
 
   <!-- Floating toggle button for IME menu (only shown on mobile) -->
@@ -279,19 +465,106 @@
         const headerResponse = await fetch('header.html');
         const headerHtml = await headerResponse.text();
         document.getElementById('header-container').innerHTML += headerHtml;
+=======
+  <footer id="footer-container"></footer>
+
+  <script>
+    // Global constants for API endpoints
+    const API_URL = "http://127.0.0.1:5000/correct";
+    const PUNCTUATION_API_URL = "http://127.0.0.1:5000/restore_punctuation";
+
+    // Drawer toggle variables
+    let drawerOpen = false; // Drawer is collapsed by default
+    const drawer = document.getElementById("drawer");
+    const drawerToggle = document.getElementById("drawer-toggle");
+
+    // Other global variables
+    let disableIME = false;
+    let selectOverlay = null;
+    let overlayTimer = null;
+    let pressTimer = null;
+    let tapTriggered = false;
+    let globalTapIndex = -1;
+    let initialX = 0, initialY = 0;
+    let currentMode = null; // "tap" or "voice"
+    let recognition = null;
+    let isListening = false;
+    let silenceTimer = null;
+    let savedRange = null;
+    let originalSentence = "";
+    let suggestionsBox = null;
+    let undoStack = [];
+
+    // DOM element references
+    const monitoringCard = document.getElementById("monitoring-card");
+    const eventLogCard = document.getElementById("event-log-card");
+    const editor = document.getElementById("text-editor");
+    const errorText = document.getElementById("error-text");
+    const originalErrorSpan = document.getElementById("original-error-sentence");
+    const touchIndexSpan = document.getElementById("touch-index");
+    const voiceInputSpan = document.getElementById("voice-input");
+    const micStatusSpan = document.getElementById("mic-status");
+    const finalOutputSpan = document.getElementById("final-output");
+    const eventLog = document.getElementById("event-log");
+    const undoButton = document.getElementById("undo-button");
+
+    const monitoringBtn = document.getElementById("toggle-monitoring");
+    const eventLogBtn = document.getElementById("toggle-log");
+    const imeBtn = document.getElementById("toggle-ime");
+
+    // Drawer toggle functionality: toggle drawer open/close on arrow button click
+    drawerToggle.addEventListener("click", () => {
+      drawerOpen = !drawerOpen;
+      if (drawerOpen) {
+        // Expand the drawer
+        drawer.classList.remove("drawer-collapsed");
+        // Change button text to "<" (arrow pointing left)
+        drawerToggle.innerText = "<";
+      } else {
+        // Collapse the drawer
+        drawer.classList.add("drawer-collapsed");
+        // Change button text to ">" (arrow pointing right)
+        drawerToggle.innerText = ">";
+      }
+    });
+
+    window.onload = function(){
+      loadHeaderFooter();
+      if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+        navigator.mediaDevices.getUserMedia({audio:true})
+          .catch(err=>{
+            showToast("Please allow microphone access to use Tap&Say.");
+            console.warn("Mic permission error:", err);
+          });
+      }
+    };
+
+    // Dynamically load header.html and footer.html if available
+    async function loadHeaderFooter(){
+      try {
+        const headerRes = await fetch("header.html");
+        const headerHtml = await headerRes.text();
+        document.getElementById("header-container").innerHTML += headerHtml;
+>>>>>>> 8413278 (Windows)
       } catch(e) {
         console.warn("Failed to load header.html:", e);
       }
       try {
+<<<<<<< HEAD
         const footerResponse = await fetch('footer.html');
         const footerHtml = await footerResponse.text();
         document.getElementById('footer-container').innerHTML += footerHtml;
+=======
+        const footerRes = await fetch("footer.html");
+        const footerHtml = await footerRes.text();
+        document.getElementById("footer-container").innerHTML += footerHtml;
+>>>>>>> 8413278 (Windows)
       } catch(e) {
         console.warn("Failed to load footer.html:", e);
       }
     }
-    loadHeaderFooter();
 
+<<<<<<< HEAD
     // Global variable for toggling IME shortcuts
     let disableIME = false;
     // Toggle IME shortcuts: disable or enable the local touch callout menu in the text editor
@@ -365,9 +638,43 @@
       setTimeout(() => {
         toast.style.opacity = 0;
         setTimeout(() => { toast.remove(); }, 500);
+=======
+    // Event listeners for toggling monitoring, event log, and IME options
+    monitoringBtn.addEventListener("click", () => {
+      monitoringCard.style.display = (monitoringCard.style.display === "none") ? "block" : "none";
+      monitoringBtn.innerText = (monitoringCard.style.display === "none") ? "Show Monitoring" : "Hide Monitoring";
+    });
+    eventLogBtn.addEventListener("click", () => {
+      eventLogCard.style.display = (eventLogCard.style.display === "none") ? "block" : "none";
+      eventLogBtn.innerText = (eventLogCard.style.display === "none") ? "Show Event Log" : "Hide Event Log";
+    });
+    imeBtn.addEventListener("click", () => {
+      disableIME = !disableIME;
+      imeBtn.innerText = disableIME ? "Disable IME Shortcuts: ON" : "Disable IME Shortcuts: OFF";
+      editor.style.webkitTouchCallout = disableIME ? "none" : "default";
+    });
+
+    // Toast and event log functions
+    function showToast(msg){
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.innerText = msg;
+      document.body.appendChild(t);
+      requestAnimationFrame(() => { t.style.opacity = 1; });
+      setTimeout(() => {
+        t.style.opacity = 0;
+        setTimeout(() => { t.remove(); }, 500);
+>>>>>>> 8413278 (Windows)
       }, 2000);
     }
+    function logEvent(message){
+      const p = document.createElement("p");
+      const now = new Date().toLocaleString("en-US", { hour12: false });
+      p.innerText = `[${now}] ${message}`;
+      eventLog.appendChild(p);
+    }
 
+<<<<<<< HEAD
     // Save current cursor position
     function saveCurrentSelection() {
       const sel = window.getSelection();
@@ -392,11 +699,53 @@
       saveCurrentSelection();
       initialX = event.clientX;
       initialY = event.clientY;
+=======
+    // File drag & drop functionality
+    ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
+      editor.addEventListener(evtName, e => {
+        e.preventDefault();
+        e.stopPropagation();
+      }, false);
+    });
+    editor.addEventListener("dragover", () => { editor.style.background = "#fafafa"; });
+    editor.addEventListener("dragleave", () => { editor.style.background = "white"; });
+    editor.addEventListener("drop", e => {
+      editor.style.background = "white";
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        const file = files[0];
+        const fname = file.name.toLowerCase();
+        if (fname.endsWith(".txt") || fname.endsWith(".doc")) {
+          let reader = new FileReader();
+          reader.onload = function(evt) {
+            editor.innerText = evt.target.result;
+            logEvent("File loaded: " + file.name);
+          };
+          reader.readAsText(file, "UTF-8");
+        } else {
+          showToast("Only .txt or .doc files are supported.");
+        }
+      }
+    });
+
+    // Long press to choose between Tap&Say and Voice
+    editor.addEventListener("mousedown", onEditorMouseDown);
+    editor.addEventListener("mouseup", onEditorMouseUp);
+    editor.addEventListener("touchstart", onEditorTouchStart);
+    editor.addEventListener("touchend", onEditorTouchEnd);
+
+    function onEditorMouseDown(e){
+      tapTriggered = false;
+      globalTapIndex = getCaretIndex(e.clientX, e.clientY);
+      initialX = e.clientX;
+      initialY = e.clientY;
+>>>>>>> 8413278 (Windows)
       pressTimer = setTimeout(() => {
         tapTriggered = true;
         if (!selectOverlay) {
           showSelectOverlay(initialX, initialY);
         }
+<<<<<<< HEAD
       }, 1000);
     });
     editor.addEventListener("mouseup", function() {
@@ -428,6 +777,358 @@
 
     // Get caret index in the editor
     function getCaretIndex(x, y) {
+=======
+      }, 600);
+    }
+    function onEditorMouseUp(e){
+      if (!tapTriggered) clearTimeout(pressTimer);
+    }
+    function onEditorTouchStart(e){
+      tapTriggered = false;
+      const touch = e.touches[0];
+      globalTapIndex = getCaretIndex(touch.clientX, touch.clientY);
+      initialX = touch.clientX;
+      initialY = touch.clientY;
+      pressTimer = setTimeout(() => {
+        tapTriggered = true;
+        if (!selectOverlay) {
+          showSelectOverlay(initialX, initialY);
+        }
+      }, 600);
+    }
+    function onEditorTouchEnd(e){
+      if (!tapTriggered) clearTimeout(pressTimer);
+    }
+
+    // Show overlay for selection (Tap&Say or Voice)
+    function showSelectOverlay(x, y){
+      selectOverlay = document.createElement("div");
+      selectOverlay.id = "select-overlay";
+      selectOverlay.style.left = x + "px";
+      selectOverlay.style.top = y + "px";
+      selectOverlay.innerHTML = `
+        <div class="half left">Tap&amp;Say</div>
+        <div class="half right">Voice Input</div>
+      `;
+      document.body.appendChild(selectOverlay);
+      overlayTimer = setTimeout(() => { removeOverlay(); }, 3000);
+      selectOverlay.querySelector(".half.left").onclick = () => {
+        clearTimeout(overlayTimer);
+        handleSelection("tap");
+      };
+      selectOverlay.querySelector(".half.right").onclick = () => {
+        clearTimeout(overlayTimer);
+        handleSelection("voice");
+      };
+    }
+    function removeOverlay(){
+      if (selectOverlay) {
+        selectOverlay.remove();
+        selectOverlay = null;
+      }
+      if (overlayTimer) {
+        clearTimeout(overlayTimer);
+        overlayTimer = null;
+      }
+    }
+
+    // Handle selection mode ("tap" or "voice")
+    function handleSelection(mode){
+      currentMode = mode;
+      if (mode === "voice") {
+        saveCurrentSelection();
+      } else if (mode === "tap") {
+        let { sentence } = getSelectedSentenceAndRelativeIndex(globalTapIndex);
+        sentence = sentence.trim();
+        if (!sentence) {
+          logEvent("No valid sentence found for highlight");
+          return;
+        }
+        errorText.innerText = sentence;
+        originalSentence = sentence;
+        originalErrorSpan.innerText = sentence;
+        undoStack.push(editor.innerHTML);
+        removeHighlight();
+        if (!highlightSentence(sentence)) {
+          logEvent("Highlight not found in editor => " + sentence);
+        }
+      }
+      updateOverlayToSpinner();
+      startRecording();
+    }
+    function updateOverlayToSpinner(){
+      if (selectOverlay) {
+        selectOverlay.innerHTML = '<div class="spinner"></div>';
+      }
+    }
+
+    // When user clicks outside, remove suggestion box & highlight
+    document.addEventListener("click", function(e){
+      if (suggestionsBox && !suggestionsBox.contains(e.target)) {
+        suggestionsBox.remove();
+        suggestionsBox = null;
+      }
+      let ts = document.getElementById("target-sentence");
+      if (ts && !ts.contains(e.target)) {
+        removeHighlight();
+      }
+    });
+    // Right-click cancel in "tap" mode
+    document.addEventListener("contextmenu", function(e){
+      if (disableIME) e.preventDefault();
+      if (currentMode === "tap" && selectOverlay) {
+        e.preventDefault();
+        removeHighlight();
+        replaceHighlightedSentence(originalSentence);
+        removeOverlay();
+      }
+    });
+
+    // Highlight a sentence in the editor
+    function highlightSentence(sentence){
+      let html = editor.innerHTML;
+      let safe = sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(safe, "i");
+      if (!re.test(html)) return false;
+      editor.innerHTML = html.replace(re, `<span id="target-sentence" class="highlighted-sentence">$&</span>`);
+      return true;
+    }
+    // Remove highlight from the editor
+    function removeHighlight(){
+      let html = editor.innerHTML;
+      html = html.replace(/<span id="target-sentence" class="highlighted-sentence">(.*?)<\/span>/i, "$1");
+      editor.innerHTML = html;
+    }
+    // Replace highlighted sentence with new text
+    function replaceHighlightedSentence(newText){
+      let ts = document.getElementById("target-sentence");
+      if (ts) {
+        ts.innerText = newText;
+      } else {
+        let html = editor.innerHTML;
+        let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp(safe, "i");
+        editor.innerHTML = html.replace(re, newText);
+      }
+    }
+
+    // Start speech recognition
+    function startRecording(){
+      if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
+        showToast("Speech recognition not supported in this browser.");
+        finalizeTapSay();
+        return;
+      }
+      let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+
+      recognition.onstart = () => {
+        isListening = true;
+        micStatusSpan.innerText = "🟢 Recording...";
+        silenceTimer = setTimeout(() => {
+          if (isListening) recognition.stop();
+        }, 5000);
+      };
+      recognition.onresult = (e) => {
+        clearTimeout(silenceTimer);
+        let txt = "";
+        for (let i = e.resultIndex; i < e.results.length; i++){
+          txt += e.results[i][0].transcript;
+        }
+        voiceInputSpan.innerText = txt;
+      };
+      recognition.onerror = (err) => {
+        micStatusSpan.innerText = "❌ Recording error";
+        if (isListening) recognition.stop();
+        logEvent("Speech recognition error => " + err.error);
+      };
+      recognition.onend = () => {
+        isListening = false;
+        micStatusSpan.innerText = "🔴 Stopped";
+        finalizeTapSay();
+      };
+      recognition.start();
+    }
+
+    // Multi-level Undo functionality
+    undoButton.addEventListener("click", function(){
+      if (undoStack.length > 0) {
+        let prevState = undoStack.pop();
+        editor.innerHTML = prevState;
+        removeHighlight();
+        showToast("Undo last change");
+      } else {
+        showToast("No change to undo!");
+      }
+    });
+
+    // finalizeTapSay: Main logic after speech recognition ends or after user selection in tap mode
+    function finalizeTapSay(){
+      removeOverlay();
+      let transcript = voiceInputSpan.innerText.trim();
+      if (!transcript) {
+        showToast("No speech input detected.");
+        currentMode = null;
+        return;
+      }
+      undoStack.push(editor.innerHTML);
+
+      if (currentMode === "voice") {
+        // Remove punctuation (except single quotes) to avoid duplication
+        let textNoPunc = removePunctuation(transcript);
+        logEvent("Sending voice text to /restore_punctuation => " + textNoPunc);
+
+        fetch(PUNCTUATION_API_URL, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ voice_text: textNoPunc })
+        })
+        .then(resp => {
+          logEvent("Punctuation API response => status " + resp.status);
+          return resp.json();
+        })
+        .then(data => {
+          let restored = data.restored_text || "";
+          logEvent("Punctuation API returned => " + restored);
+          restoreCurrentSelection();
+          insertTextAtCursor(" " + restored);
+        })
+        .catch(err => {
+          logEvent("Punctuation API call error => " + err);
+        });
+      } else {
+        // "tap" mode
+        let parted = errorText.innerText || "";
+        parted = parted.replace(/([.!?])(\S)/g, "$1 $2");
+        let merged = parted + " <||> " + transcript;
+        finalOutputSpan.innerText = merged;
+        logEvent("Final output => " + merged);
+        sendToAPI(merged, 0);
+      }
+      currentMode = null;
+      voiceInputSpan.innerText = "";
+    }
+
+    // /correct API call for Tap&Say correction
+    function sendToAPI(mergedStr, loc){
+      logEvent("Sending /correct => merged_string:" + mergedStr);
+      fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          merged_string: mergedStr,
+          touch_location: loc
+        })
+      })
+      .then(resp => {
+        logEvent("Server response => status " + resp.status);
+        return resp.json();
+      })
+      .then(data => {
+        let corrs = data.corrections || [];
+        logEvent("API corrections => " + JSON.stringify(corrs));
+        removeOverlay();
+        applyFirstSuggestionAndShowBox(corrs);
+      })
+      .catch(err => {
+        logEvent("API call error => " + err);
+        removeOverlay();
+      });
+    }
+
+    // Display suggestion box with top correction candidates
+    function applyFirstSuggestionAndShowBox(corrections){
+      if (!corrections.length) return;
+      let ts = document.getElementById("target-sentence");
+      if (ts) {
+        let newSentence = corrections[0];
+        ts.innerText = newSentence;
+        originalSentence = newSentence;
+        removeHighlight();
+        highlightSentence(newSentence);
+      } else {
+        let html = editor.innerHTML;
+        let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp(safe, "i");
+        if (!re.test(html)) {
+          logEvent("No highlighted sentence found. fallback => " + originalSentence);
+          return;
+        }
+        let newSentence = corrections[0];
+        editor.innerHTML = html.replace(re, newSentence);
+        originalSentence = newSentence;
+        removeHighlight();
+        highlightSentence(newSentence);
+      }
+      if (corrections.length === 1) return;
+      let tsNew = document.getElementById("target-sentence");
+      if (!tsNew) {
+        logEvent("No highlighted sentence found for suggestions.");
+        return;
+      }
+      let rect = tsNew.getBoundingClientRect();
+      suggestionsBox = createSuggestionBox(rect, corrections);
+      document.body.appendChild(suggestionsBox);
+    }
+    function createSuggestionBox(rect, corrections){
+      let box = document.createElement("div");
+      box.className = "suggestions-box-floating";
+      box.style.left = (rect.left + window.scrollX) + "px";
+      box.style.top = (rect.bottom + window.scrollY) + "px";
+      box.style.width = rect.width + "px";
+      for (let i = 1; i < corrections.length; i++){
+        let div = document.createElement("div");
+        div.innerText = corrections[i];
+        div.onclick = () => {
+          removeHighlight();
+          let ts = document.getElementById("target-sentence");
+          if (ts) {
+            ts.innerText = corrections[i];
+            originalSentence = corrections[i];
+            removeHighlight();
+            highlightSentence(corrections[i]);
+          } else {
+            let html = editor.innerHTML;
+            let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(safe, "i");
+            editor.innerHTML = html.replace(re, corrections[i]);
+            originalSentence = corrections[i];
+            highlightSentence(corrections[i]);
+          }
+          box.remove();
+          suggestionsBox = null;
+        };
+        box.appendChild(div);
+      }
+      return box;
+    }
+
+    /* Utility functions: Remove punctuation (except single quotes), insert text at cursor,
+       get caret index, and save/restore selection */
+    function removePunctuation(str){
+      return str.replace(/[^a-zA-Z0-9'\s]/g, "");
+    }
+    function insertTextAtCursor(text){
+      editor.focus();
+      let sel = window.getSelection();
+      if (sel.rangeCount > 0){
+        let range = sel.getRangeAt(0);
+        range.deleteContents();
+        let textNode = document.createTextNode(text);
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        editor.innerHTML += text;
+      }
+    }
+    function getCaretIndex(x, y){
+>>>>>>> 8413278 (Windows)
       let range;
       if (document.caretRangeFromPoint) {
         range = document.caretRangeFromPoint(x, y);
@@ -439,24 +1140,42 @@
         range.collapse(true);
       }
       if (!range) return -1;
-      let preCaretRange = range.cloneRange();
-      preCaretRange.selectNodeContents(editor);
-      preCaretRange.setEnd(range.startContainer, range.startOffset);
-      return preCaretRange.toString().length;
+      let pre = range.cloneRange();
+      pre.selectNodeContents(editor);
+      pre.setEnd(range.startContainer, range.startOffset);
+      return pre.toString().length;
     }
+<<<<<<< HEAD
 
     // Get selected sentence and relative index based on global click index
     function getSelectedSentenceAndRelativeIndex(globalIndex) {
+=======
+    function saveCurrentSelection(){
+      let sel = window.getSelection();
+      if (sel.rangeCount > 0){
+        savedRange = sel.getRangeAt(0).cloneRange();
+      }
+    }
+    function restoreCurrentSelection(){
+      if (savedRange){
+        let sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      }
+    }
+    function getSelectedSentenceAndRelativeIndex(globalIndex){
+>>>>>>> 8413278 (Windows)
       let text = editor.innerText;
-      let sentences = text.match(/[^.!?。！？]*[.!?。！？]/g) || [text];
+      let sentences = text.match(/[^.!?。！？]*[.!?。！？]/gi) || [text];
       let selectedSentence = sentences.find(s => {
-        let start = text.indexOf(s);
-        return start <= globalIndex && globalIndex <= start + s.length;
+        let idx = text.toLowerCase().indexOf(s.toLowerCase());
+        return idx >= 0 && idx <= globalIndex && (idx + s.length) >= globalIndex;
       }) || text;
-      let startIndex = text.indexOf(selectedSentence);
+      let startIndex = text.toLowerCase().indexOf(selectedSentence.toLowerCase());
       let relIndex = globalIndex - startIndex;
       return { sentence: selectedSentence, relativeIndex: relIndex };
     }
+<<<<<<< HEAD
 
     // Adjust index within a word
     function adjustIndexWithinWord(sentence, index) {
@@ -755,6 +1474,8 @@
         }
       }
     });
+=======
+>>>>>>> 8413278 (Windows)
   </script>
 </body>
 </html>
