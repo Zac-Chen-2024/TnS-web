@@ -5,6 +5,7 @@
   <!-- Ensure proper scaling on mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tap&amp;Say Text Editor</title>
+
   <style>
     /* ========== Global Basic Styles ========== */
     html, body {
@@ -88,7 +89,7 @@
       width: 150px; 
       height: 150px;
       border-radius: 50%;
-      overflow: hidden; 
+      overflow: hidden;
       display: flex;
       border: 2px solid #007bff;
       background: rgba(255,255,255,0.95);
@@ -176,7 +177,7 @@
       position: fixed;
       bottom: 10px;
       left: 0;
-      width: 240px; /* Set drawer width to accommodate the arrow button */
+      width: 240px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -189,12 +190,12 @@
     }
     /* Toggle Arrow Button */
     #drawer-toggle {
-      display: flex;               /* Use flex layout */
-      justify-content: flex-end;   /* Align text to the right */
-      align-items: center;         /* Vertically center the text */
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
       width: 240px;
       padding: 10px 14px;
-      padding-right: 8px;          /* Extra right padding */
+      padding-right: 8px;
       font-size: 14px;
       border: none;
       border-radius: 6px;
@@ -236,7 +237,7 @@
 
   <!-- Drawer Container -->
   <div id="drawer" class="drawer-collapsed">
-    <!-- Toggle Arrow Button with text aligned to the right -->
+    <!-- Toggle Arrow Button -->
     <button id="drawer-toggle" style="width: 240px; text-align: right;">&gt;</button>
     <!-- The three function buttons -->
     <button id="toggle-monitoring">Show Monitoring</button>
@@ -330,14 +331,10 @@
     drawerToggle.addEventListener("click", () => {
       drawerOpen = !drawerOpen;
       if (drawerOpen) {
-        // Expand the drawer
         drawer.classList.remove("drawer-collapsed");
-        // Change button text to "<" (arrow pointing left)
         drawerToggle.innerText = "<";
       } else {
-        // Collapse the drawer
         drawer.classList.add("drawer-collapsed");
-        // Change button text to ">" (arrow pointing right)
         drawerToggle.innerText = ">";
       }
     });
@@ -433,7 +430,8 @@
       }
     });
 
-    // Long press to choose between Tap&Say and Voice (desktop uses overlay; mobile uses long press without overlay)
+    // Long press to choose between Tap&Say and Voice
+    // Desktop uses overlay; mobile uses long press without overlay (with longer threshold)
     editor.addEventListener("mousedown", onEditorMouseDown);
     editor.addEventListener("mouseup", onEditorMouseUp);
     editor.addEventListener("touchstart", onEditorTouchStart);
@@ -457,16 +455,15 @@
     function onEditorTouchStart(e){
       tapTriggered = false;
       const touch = e.touches[0];
-      globalTapIndex = getCaretIndex(touch.clientX, touch.clientY);
-      initialX = touch.clientX;
-      initialY = touch.clientY;
-      // For mobile, use a longer press (e.g., 1000ms) and directly trigger "tap" mode without showing overlay
       if (isMobile()) {
+        // On mobile, compute index with getTouchIndex
+        globalTapIndex = getTouchIndex(touch.clientX, touch.clientY);
         pressTimer = setTimeout(() => {
           tapTriggered = true;
           handleSelection("tap");
         }, 1000);
       } else {
+        globalTapIndex = getCaretIndex(touch.clientX, touch.clientY);
         pressTimer = setTimeout(() => {
           tapTriggered = true;
           if (!selectOverlay) {
@@ -474,6 +471,8 @@
           }
         }, 600);
       }
+      initialX = touch.clientX;
+      initialY = touch.clientY;
     }
     function onEditorTouchEnd(e){
       if (!tapTriggered) clearTimeout(pressTimer);
@@ -482,6 +481,15 @@
     // Utility function: check if device is mobile
     function isMobile() {
       return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }
+
+    // Alternative function to calculate touch index from coordinates
+    function getTouchIndex(x, y) {
+      let rect = editor.getBoundingClientRect();
+      let relativeX = x - rect.left;
+      let totalChars = editor.innerText.length;
+      // Roughly map X position to character index
+      return Math.floor((relativeX / rect.width) * totalChars);
     }
 
     // Show overlay for selection (used on desktop)
@@ -651,11 +659,13 @@
 
     // Utility function: move caret to the end of the target sentence (after punctuation and space)
     function moveCaretToEndOfTarget(){
+      // Ensure editor is focused
+      editor.focus();
       let ts = document.getElementById("target-sentence");
       if (ts) {
         let range = document.createRange();
         range.selectNodeContents(ts);
-        range.collapse(false); // collapse to the end of the node
+        range.collapse(false);
         let sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
@@ -692,7 +702,10 @@
           logEvent("Punctuation API returned => " + restored);
           restoreCurrentSelection();
           insertTextAtCursor(" " + restored);
-          moveCaretToEndOfTarget();
+          // 延时后将光标移动到目标句子末尾
+          setTimeout(() => {
+            moveCaretToEndOfTarget();
+          }, 100);
         })
         .catch(err => {
           logEvent("Punctuation API call error => " + err);
@@ -704,8 +717,10 @@
         let merged = parted + " <||> " + transcript;
         finalOutputSpan.innerText = merged;
         logEvent("Final output => " + merged);
-        sendToAPI(merged, 0);
-        moveCaretToEndOfTarget();
+        sendToAPI(merged, globalTapIndex);
+        setTimeout(() => {
+          moveCaretToEndOfTarget();
+        }, 100);
       }
       currentMode = null;
       voiceInputSpan.innerText = "";
@@ -713,7 +728,7 @@
 
     // /correct API call for Tap&Say correction
     function sendToAPI(mergedStr, loc){
-      logEvent("Sending /correct => merged_string:" + mergedStr);
+      logEvent("Sending /correct => merged_string:" + mergedStr + ", touch_location:" + loc);
       fetch(API_URL, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -748,6 +763,10 @@
         originalSentence = newSentence;
         removeHighlight();
         highlightSentence(newSentence);
+        // 延时后将光标移动到目标句子末尾
+        setTimeout(() => {
+          moveCaretToEndOfTarget();
+        }, 50);
       } else {
         let html = editor.innerHTML;
         let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -761,8 +780,12 @@
         originalSentence = newSentence;
         removeHighlight();
         highlightSentence(newSentence);
+        setTimeout(() => {
+          moveCaretToEndOfTarget();
+        }, 50);
       }
       if (corrections.length === 1) return;
+
       let tsNew = document.getElementById("target-sentence");
       if (!tsNew) {
         logEvent("No highlighted sentence found for suggestions.");
@@ -772,6 +795,7 @@
       suggestionsBox = createSuggestionBox(rect, corrections);
       document.body.appendChild(suggestionsBox);
     }
+
     function createSuggestionBox(rect, corrections){
       let box = document.createElement("div");
       box.className = "suggestions-box-floating";
@@ -789,6 +813,10 @@
             originalSentence = corrections[i];
             removeHighlight();
             highlightSentence(corrections[i]);
+            // 选择后移动光标到新句子末尾
+            setTimeout(() => {
+              moveCaretToEndOfTarget();
+            }, 50);
           } else {
             let html = editor.innerHTML;
             let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -796,6 +824,9 @@
             editor.innerHTML = html.replace(re, corrections[i]);
             originalSentence = corrections[i];
             highlightSentence(corrections[i]);
+            setTimeout(() => {
+              moveCaretToEndOfTarget();
+            }, 50);
           }
           box.remove();
           suggestionsBox = null;
