@@ -25,7 +25,7 @@
       min-height: 100vh;
       background-color: #f4f4f4;
     }
-    /* Header/Footer containers */
+    /* Header/Footer Containers */
     #header-container, #footer-container {
       width: 100%;
     }
@@ -88,7 +88,7 @@
       width: 150px; 
       height: 150px;
       border-radius: 50%;
-      overflow: hidden;
+      overflow: hidden; 
       display: flex;
       border: 2px solid #007bff;
       background: rgba(255,255,255,0.95);
@@ -234,9 +234,9 @@
 <body>
   <header id="header-container"></header>
 
-  <!-- Drawer container -->
+  <!-- Drawer Container -->
   <div id="drawer" class="drawer-collapsed">
-    <!-- Toggle arrow button with text aligned to the right -->
+    <!-- Toggle Arrow Button with text aligned to the right -->
     <button id="drawer-toggle" style="width: 240px; text-align: right;">&gt;</button>
     <!-- The three function buttons -->
     <button id="toggle-monitoring">Show Monitoring</button>
@@ -245,7 +245,7 @@
   </div>
 
   <div class="container">
-    <!-- Monitoring area -->
+    <!-- Monitoring Area -->
     <div class="card" id="monitoring-card">
       <p><strong>Error Sentence:</strong> <span id="error-text">None</span></p>
       <p><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
@@ -255,7 +255,7 @@
       <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Stopped</span></p>
     </div>
 
-    <!-- Editor + Undo button -->
+    <!-- Editor + Undo Button -->
     <div class="card">
       <h3>Tap&amp;Say Text Editor</h3>
       <div id="text-editor" contenteditable="true"></div>
@@ -273,7 +273,7 @@
       ">Undo Last Change</button>
     </div>
 
-    <!-- Event Log area -->
+    <!-- Event Log Area -->
     <div class="card" id="event-log-card">
       <h3>Event Log</h3>
       <div id="event-log">No events recorded</div>
@@ -286,7 +286,6 @@
     // Global constants for API endpoints
     const API_URL = "https://tns.zacchen.win/correct";
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
-
 
     // Drawer toggle variables
     let drawerOpen = false; // Drawer is collapsed by default
@@ -327,7 +326,7 @@
     const eventLogBtn = document.getElementById("toggle-log");
     const imeBtn = document.getElementById("toggle-ime");
 
-    // Drawer toggle functionality: toggle drawer open/close on arrow button click
+    // Drawer toggle functionality: toggle drawer open/close when arrow button is clicked
     drawerToggle.addEventListener("click", () => {
       drawerOpen = !drawerOpen;
       if (drawerOpen) {
@@ -345,9 +344,9 @@
 
     window.onload = function(){
       loadHeaderFooter();
-      if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({audio:true})
-          .catch(err=>{
+          .catch(err => {
             showToast("Please allow microphone access to use Tap&Say.");
             console.warn("Mic permission error:", err);
           });
@@ -372,7 +371,7 @@
       }
     }
 
-    // Event listeners for toggling monitoring, event log, and IME options
+    // Event listeners for toggling Monitoring, Event Log, and IME options
     monitoringBtn.addEventListener("click", () => {
       monitoringCard.style.display = (monitoringCard.style.display === "none") ? "block" : "none";
       monitoringBtn.innerText = (monitoringCard.style.display === "none") ? "Show Monitoring" : "Hide Monitoring";
@@ -434,7 +433,7 @@
       }
     });
 
-    // Long press to choose between Tap&Say and Voice
+    // Long press to choose between Tap&Say and Voice (desktop uses overlay; mobile uses long press without overlay)
     editor.addEventListener("mousedown", onEditorMouseDown);
     editor.addEventListener("mouseup", onEditorMouseUp);
     editor.addEventListener("touchstart", onEditorTouchStart);
@@ -461,18 +460,31 @@
       globalTapIndex = getCaretIndex(touch.clientX, touch.clientY);
       initialX = touch.clientX;
       initialY = touch.clientY;
-      pressTimer = setTimeout(() => {
-        tapTriggered = true;
-        if (!selectOverlay) {
-          showSelectOverlay(initialX, initialY);
-        }
-      }, 600);
+      // For mobile, use a longer press (e.g., 1000ms) and directly trigger "tap" mode without showing overlay
+      if (isMobile()) {
+        pressTimer = setTimeout(() => {
+          tapTriggered = true;
+          handleSelection("tap");
+        }, 1000);
+      } else {
+        pressTimer = setTimeout(() => {
+          tapTriggered = true;
+          if (!selectOverlay) {
+            showSelectOverlay(initialX, initialY);
+          }
+        }, 600);
+      }
     }
     function onEditorTouchEnd(e){
       if (!tapTriggered) clearTimeout(pressTimer);
     }
 
-    // Show overlay for selection (Tap&Say or Voice)
+    // Utility function: check if device is mobile
+    function isMobile() {
+      return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }
+
+    // Show overlay for selection (used on desktop)
     function showSelectOverlay(x, y){
       selectOverlay = document.createElement("div");
       selectOverlay.id = "select-overlay";
@@ -637,6 +649,19 @@
       }
     });
 
+    // Utility function: move caret to the end of the target sentence (after punctuation and space)
+    function moveCaretToEndOfTarget(){
+      let ts = document.getElementById("target-sentence");
+      if (ts) {
+        let range = document.createRange();
+        range.selectNodeContents(ts);
+        range.collapse(false); // collapse to the end of the node
+        let sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+
     // finalizeTapSay: Main logic after speech recognition ends or after user selection in tap mode
     function finalizeTapSay(){
       removeOverlay();
@@ -667,6 +692,7 @@
           logEvent("Punctuation API returned => " + restored);
           restoreCurrentSelection();
           insertTextAtCursor(" " + restored);
+          moveCaretToEndOfTarget();
         })
         .catch(err => {
           logEvent("Punctuation API call error => " + err);
@@ -679,6 +705,7 @@
         finalOutputSpan.innerText = merged;
         logEvent("Final output => " + merged);
         sendToAPI(merged, 0);
+        moveCaretToEndOfTarget();
       }
       currentMode = null;
       voiceInputSpan.innerText = "";
