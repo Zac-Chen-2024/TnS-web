@@ -551,11 +551,6 @@
         if (!highlightSentence(sentence)) {
           logEvent("Highlight not found in editor => " + sentence);
         }
-        // >>> 关键：高亮完后把光标移到高亮句末
-        setTimeout(() => {
-          moveCaretToEndOfTarget();
-          editor.focus();
-        }, 50);
       }
       updateOverlayToSpinner();
       startRecording();
@@ -669,19 +664,23 @@
 
     // ========== 14) Move caret to end of target ==========
     function moveCaretToEndOfTarget(){
-      let ts = document.getElementById("target-sentence");
-      if (!ts) return;
       editor.focus();
-      let range = document.createRange();
-      range.selectNodeContents(ts);
-      range.collapse(false); // at end
-      let sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
+      let ts = document.getElementById("target-sentence");
+      if (ts) {
+        let range = document.createRange();
+        range.selectNodeContents(ts);
+        range.collapse(false);
+        let sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
     }
 
     // ========== 15) finalizeTapSay (main logic) ==========
     function finalizeTapSay(){
+      // 1) 先保存当前光标位置
+      let cursorPos = saveCursorPosition();
+
       removeOverlay();
       removeSuggestionsBox();
       let transcript = voiceInputSpan.innerText.trim();
@@ -706,12 +705,15 @@
           let restored = data.restored_text || "";
           logEvent("Punctuation API returned => " + restored);
 
-          restoreCurrentSelection(); // 还原光标
+          // 2) 在插入前恢复光标，再插入
+          restoreCurrentSelection();
           let toInsert = " " + restored.trim();
-          insertTextAtCursor(toInsert);
+          insertTextAtCursor(maybeAddSpace(toInsert));
 
+          // 3) 更新后，再将光标移到句末+恢复位置
           setTimeout(() => {
             moveCaretToEndOfTarget();
+            restoreCursorPosition(cursorPos);
             editor.focus();
           }, 50);
         })
@@ -731,8 +733,11 @@
         logEvent("Final output => " + merged);
 
         sendToAPI(merged, localTapIndex);
+
+        // 3) 重新移动光标
         setTimeout(() => {
           moveCaretToEndOfTarget();
+          restoreCursorPosition(cursorPos);
           editor.focus();
         }, 50);
       }
@@ -767,6 +772,9 @@
     // ========== 17) applyFirstSuggestionAndShowBox ==========
     function applyFirstSuggestionAndShowBox(corrections){
       if (!corrections.length) return;
+      // 保存光标
+      let cursorPos = saveCursorPosition();
+
       let ts = document.getElementById("target-sentence");
       let candidate = corrections[0].trimEnd();
       if (ts) {
@@ -778,6 +786,7 @@
         setTimeout(() => {
           maybeAddSpaceAfterHighlight(ts);
           moveCaretToEndOfTarget();
+          restoreCursorPosition(cursorPos);
           editor.focus();
         }, 50);
       } else {
@@ -797,6 +806,7 @@
           let ts2 = document.getElementById("target-sentence");
           if (ts2) maybeAddSpaceAfterHighlight(ts2);
           moveCaretToEndOfTarget();
+          restoreCursorPosition(cursorPos);
           editor.focus();
         }, 50);
       }
@@ -810,6 +820,8 @@
       let rect = tsNew.getBoundingClientRect();
       suggestionsBox = createSuggestionBox(rect, corrections);
       document.body.appendChild(suggestionsBox);
+
+      // 5秒后自动移除候选
       suggestionsTimer = setTimeout(() => { removeSuggestionsBox(); }, 5000);
     }
 
@@ -825,12 +837,15 @@
         let div = document.createElement("div");
         div.innerText = corrections[i];
         div.onclick = (evt) => {
+          // prevent losing focus
           evt.preventDefault();
           evt.stopPropagation();
 
           removeHighlight();
           let ts = document.getElementById("target-sentence");
           let candidate = corrections[i].trimEnd();
+
+          let cursorPos = saveCursorPosition(); // 保存光标位置
 
           if (ts) {
             ts.innerText = candidate;
@@ -841,6 +856,7 @@
             setTimeout(() => {
               maybeAddSpaceAfterHighlight(ts);
               moveCaretToEndOfTarget();
+              restoreCursorPosition(cursorPos);
               editor.focus();
             }, 50);
           } else {
@@ -855,6 +871,7 @@
               let ts2 = document.getElementById("target-sentence");
               if (ts2) maybeAddSpaceAfterHighlight(ts2);
               moveCaretToEndOfTarget();
+              restoreCursorPosition(cursorPos);
               editor.focus();
             }, 50);
           }
@@ -870,13 +887,16 @@
     // Mobile input => try to keep caret stable but remove highlight if user inserts text
     editor.addEventListener("input", function(e){
       if (isMobile() && e.inputType && e.inputType.startsWith("insert")) {
+        saveCurrentSelection();
         removeHighlight();
+        restoreCurrentSelection();
       }
     });
 
     // Also force re-focus on mobile blur to keep IME
     editor.addEventListener("blur", function(e){
       if (isMobile()) {
+        // small delay
         setTimeout(() => editor.focus(), 0);
       }
     });
@@ -885,7 +905,13 @@
     function removePunctuation(str){
       return str.replace(/[^a-zA-Z0-9'\s]/g, "");
     }
-
+    // Optionally add space if needed
+    function maybeAddSpace(text){
+      if (!text.length) return text;
+      return text;
+    }
+    // If next char after highlight is not space/punctuation => add one space
+    // Also if there's NO next element => add space
     function maybeAddSpaceAfterHighlight(ts){
       let parent = ts.parentNode;
       if (!parent) return;
@@ -894,6 +920,7 @@
       while (next && next.nodeType === Node.ELEMENT_NODE && !next.textContent.trim()) {
         next = next.nextSibling;
       }
+      // If no next node => definitely add space if not ends with punctuation/space
       if (!next) {
         if (!endsWithSpaceOrPunc(ts.innerText)) {
           ts.innerText = ts.innerText + " ";
@@ -934,22 +961,55 @@
       return !!c.match(/[\s.,;!?]/);
     }
 
-    function insertTextAtCursor(text){
-      editor.focus();
+    /**
+     * Saves the current cursor position in the entire editor's text
+     */
+    function saveCursorPosition(){
       let sel = window.getSelection();
-      if (sel.rangeCount > 0){
-        let range = sel.getRangeAt(0);
-        range.deleteContents();
-        let textNode = document.createTextNode(text);
-        range.insertNode(textNode);
-        range.setStartAfter(textNode);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      } else {
-        // If there's no range, append at end
-        editor.innerHTML += text;
+      if (!sel || sel.rangeCount === 0) return 0;
+      let range = sel.getRangeAt(0);
+      // Create a preRange to measure distance from start
+      let preRange = range.cloneRange();
+      preRange.selectNodeContents(editor);
+      preRange.setEnd(range.startContainer, range.startOffset);
+      return preRange.toString().length; // number of chars from start
+    }
+
+    /**
+     * Restores the cursor position (pos) from the start of editor
+     */
+    function restoreCursorPosition(pos){
+      if (pos == null) return;
+      editor.focus();
+      let selection = window.getSelection();
+      selection.removeAllRanges();
+
+      // We'll walk the editor's child nodes to find where pos lands
+      let range = document.createRange();
+      let currentPos = 0;
+
+      function traverse(node) {
+        if (!node || pos < 0) return null;
+        if (node.nodeType === Node.TEXT_NODE) {
+          let textLength = node.nodeValue.length;
+          if (currentPos + textLength >= pos) {
+            range.setStart(node, pos - currentPos);
+            return true;
+          } else {
+            currentPos += textLength;
+          }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          for (let i = 0; i < node.childNodes.length; i++) {
+            let found = traverse(node.childNodes[i]);
+            if (found) return true;
+          }
+        }
+        return false;
       }
+
+      traverse(editor);
+      range.collapse(true);
+      selection.addRange(range);
     }
 
     function getCaretIndex(x, y){
