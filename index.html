@@ -206,7 +206,7 @@
     #drawer-toggle:hover {
       background: #0056b3;
     }
-    /* Other buttons in the drawer */
+    /* The other three buttons in the drawer */
     #drawer button:not(#drawer-toggle) {
       padding: 10px 14px;
       font-size: 14px;
@@ -223,9 +223,7 @@
       background: #0056b3;
     }
     @media (min-width: 481px) {
-      #toggle-ime {
-        display: none;
-      }
+      #toggle-ime { display: none; }
     }
   </style>
 </head>
@@ -282,13 +280,13 @@
 
   <script>
     /*******************************************************
-     * 1) Global Constants for API Endpoints
+     * 1) Global constants for API endpoints
      *******************************************************/
     const API_URL = "https://tns.zacchen.win/correct";
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
 
     /*******************************************************
-     * 2) Drawer Toggle Variables and Functionality
+     * 2) Drawer toggle variables and functionality
      *******************************************************/
     let drawerOpen = false;
     const drawer = document.getElementById("drawer");
@@ -306,29 +304,33 @@
     });
 
     /*******************************************************
-     * 3) Other Global Variables
+     * 3) Other global variables
      *******************************************************/
     let disableIME = false;
     let selectOverlay = null;
     let overlayTimer = null;
     let pressTimer = null;
     let tapTriggered = false;
-    let globalTapIndex = -1;  // Absolute index in full text
-    let localTapIndex = -1;   // Relative index in selected sentence
+    let globalTapIndex = -1;  // Absolute index in the full text
+    let localTapIndex = -1;   // Relative index in the selected sentence
     let initialX = 0, initialY = 0;
     let currentMode = null;   // "tap" or "voice"
     let recognition = null;
     let isListening = false;
     let silenceTimer = null;
-    let savedRange = null;    // For saving/restoring cursor position
+    let savedRange = null;    // For saving/restoring the cursor position
     let originalSentence = "";
     let suggestionsBox = null;
     let suggestionsTimer = null;
     let undoStack = [];
-    let isUserTyping = false; // Flag for user input
+    let isUserTyping = false; // 标志用户是否在输入
+    let lastHighlightedSentence = "";
+    let shouldMoveCaret = false;
+    let highlightTimeout = null;
+    let currentHighlightedSentence = "";
 
     /*******************************************************
-     * 4) DOM Element References
+     * 4) DOM element references
      *******************************************************/
     const monitoringCard = document.getElementById("monitoring-card");
     const eventLogCard = document.getElementById("event-log-card");
@@ -347,7 +349,7 @@
     const imeBtn = document.getElementById("toggle-ime");
 
     /*******************************************************
-     * 5) Window onload: Load header/footer and request mic access
+     * 5) Window onload: Load header/footer and get mic access
      *******************************************************/
     window.onload = function(){
       loadHeaderFooter();
@@ -378,7 +380,7 @@
     }
 
     /*******************************************************
-     * 6) Monitoring / Event Log / IME Toggles
+     * 6) Monitoring / Event Log / IME toggles
      *******************************************************/
     monitoringBtn.addEventListener("click", () => {
       monitoringCard.style.display = (monitoringCard.style.display === "none") ? "block" : "none";
@@ -395,7 +397,7 @@
     });
 
     /*******************************************************
-     * 7) Toast & Event Log Functions
+     * 7) Toast and Event Log functions
      *******************************************************/
     function showToast(msg){
       const t = document.createElement("div");
@@ -416,7 +418,7 @@
     }
 
     /*******************************************************
-     * 8) File Drag & Drop Functionality
+     * 8) File Drag & Drop
      *******************************************************/
     ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
       editor.addEventListener(evtName, e => {
@@ -446,7 +448,7 @@
     });
 
     /*******************************************************
-     * 9) Long Press for Tap/Voice Selection
+     * 9) Long Press for Tap/Voice selection
      *******************************************************/
     editor.addEventListener("mousedown", onEditorMouseDown);
     editor.addEventListener("mouseup", onEditorMouseUp);
@@ -476,7 +478,7 @@
       initialY = touch.clientY;
       pressTimer = setTimeout(() => {
         tapTriggered = true;
-        // On mobile, directly trigger Tap mode without overlay
+        // On mobile, directly trigger Tap mode without showing overlay
         handleSelection("tap");
       }, 1000);
     }
@@ -497,7 +499,7 @@
     }
 
     /*******************************************************
-     * 10) Show Overlay for Desktop (if needed)
+     * 10) Show overlay for desktop (if needed)
      *******************************************************/
     function showSelectOverlay(x, y){
       selectOverlay = document.createElement("div");
@@ -531,7 +533,7 @@
     }
 
     /*******************************************************
-     * 11) Suggestions Box Functions
+     * 11) Suggestions box functions
      *******************************************************/
     function removeSuggestionsBox(){
       if (suggestionsBox) {
@@ -545,7 +547,7 @@
     }
 
     /*******************************************************
-     * 12) Handle Selection (Tap/Voice)
+     * 12) Handle selection (Tap/Voice)
      *******************************************************/
     function handleSelection(mode){
       removeSuggestionsBox();
@@ -561,6 +563,7 @@
         }
         localTapIndex = relativeIndex;
         touchIndexSpan.innerText = localTapIndex.toString();
+
         errorText.innerText = sentence;
         originalSentence = sentence;
         originalErrorSpan.innerText = sentence;
@@ -577,6 +580,7 @@
       }
       updateOverlayToSpinner();
       startRecording();
+      // On mobile, do not disturb input
       setTimeout(() => editor.focus(), 0);
     }
     function updateOverlayToSpinner(){
@@ -586,7 +590,7 @@
     }
 
     /*******************************************************
-     * 13) Remove Suggestions & Highlight when clicking outside
+     * 13) Remove suggestions & highlight when clicking outside
      *******************************************************/
     document.addEventListener("click", function(e){
       if (suggestionsBox && !suggestionsBox.contains(e.target)) {
@@ -594,8 +598,6 @@
       }
       let ts = document.getElementById("target-sentence");
       if (ts && !ts.contains(e.target)) {
-        // When clicking outside, move caret to end then clear highlight
-        moveCaretToEndOfTarget();
         removeHighlight();
       }
     });
@@ -603,7 +605,6 @@
       if (disableIME) e.preventDefault();
       if (currentMode === "tap" && selectOverlay) {
         e.preventDefault();
-        moveCaretToEndOfTarget();
         removeHighlight();
         replaceHighlightedSentence(originalSentence);
         removeOverlay();
@@ -611,9 +612,12 @@
     });
 
     /*******************************************************
-     * 14) Highlight Functions
+     * 14) Highlight / Remove Highlight / Replace Highlighted Sentence
      *******************************************************/
     function highlightSentence(sentence){
+      lastHighlightedSentence = sentence;
+      console.log("Updated highlighted sentence:", lastHighlightedSentence);
+
       let html = editor.innerHTML;
       let safe = sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp(safe, "i");
@@ -625,6 +629,9 @@
       let html = editor.innerHTML;
       html = html.replace(/<span id="target-sentence" class="highlighted-sentence">(.*?)<\/span>/i, "$1");
       editor.innerHTML = html;
+      console.log("removeHighlight called");
+      moveCaretToEndOfTarget();
+      console.log("Caret moved to end of target sentence.");
     }
     function replaceHighlightedSentence(newText){
       let ts = document.getElementById("target-sentence");
@@ -639,7 +646,7 @@
     }
 
     /*******************************************************
-     * 15) Start Speech Recognition
+     * 15) Start speech recognition
      *******************************************************/
     function startRecording(){
       if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
@@ -682,7 +689,7 @@
     }
 
     /*******************************************************
-     * 16) Multi-level Undo Functionality
+     * 16) Multi-level Undo
      *******************************************************/
     undoButton.addEventListener("click", function(){
       if (undoStack.length > 0) {
@@ -697,43 +704,54 @@
     });
 
     /*******************************************************
-     * 17) Move Caret to End of Highlighted Sentence
+     * 17) Move caret to end of target sentence
      *******************************************************/
     function moveCaretToEndOfTarget(){
-      let ts = document.getElementById("target-sentence");
-      if (!ts) return;
-      editor.focus();
-      let range = document.createRange();
-      range.selectNodeContents(ts);
-      range.collapse(false);
-      let sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
+      setTimeout(() => {
+        const ts = document.getElementById("target-sentence");
+        if (!ts && lastHighlightedSentence) {
+          console.log("No target sentence found, using stored sentence.");
+          const range = document.createRange();
+          const sel = window.getSelection();
+          const textNode = editor.firstChild;
+
+          if (textNode) {
+            const index = textNode.textContent.indexOf(lastHighlightedSentence);
+            if (index !== -1) {
+              range.setStart(textNode, index + lastHighlightedSentence.length);
+              range.collapse(true);
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
+          }
+        } else if (ts) {
+          const range = document.createRange();
+          const sel = window.getSelection();
+          range.setStartAfter(ts);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+          editor.focus();
+          console.log("Caret moved to end of target sentence.");
+        }
+      }, 0);
     }
 
     /*******************************************************
-     * 18) Finalize Tap&Say (Main Logic)
+     * 18) Finalize Tap&Say (main logic)
      *******************************************************/
     function finalizeTapSay(){
       removeOverlay();
       removeSuggestionsBox();
       let transcript = voiceInputSpan.innerText.trim();
-      // Remove trailing spaces from transcript
-      transcript = transcript.replace(/\s+$/,"");
       if (!transcript) {
         showToast("No speech input detected.");
-        // If no speech input, after 3s clear highlight and move caret
-        setTimeout(() => {
-          moveCaretToEndOfTarget();
-          removeHighlight();
-        }, 3000);
         currentMode = null;
         return;
       }
       undoStack.push(editor.innerHTML);
 
       if (currentMode === "voice") {
-        // For voice mode, remove punctuation and call punctuation API
         let textNoPunc = removePunctuation(transcript);
         logEvent("Sending voice text to /restore_punctuation => " + textNoPunc);
 
@@ -747,56 +765,40 @@
           let restored = data.restored_text || "";
           logEvent("Punctuation API returned => " + restored);
           restoreCurrentSelection();
-          // Determine whether to add a space based on highlighted sentence tail
-          let ts = document.getElementById("target-sentence");
-          let toInsert = "";
-          if (ts) {
-            if (!endsWithSpaceOrPunc(ts.innerText)) {
-              toInsert = " " + restored.trim();
-            } else {
-              toInsert = restored.trim();
-            }
-          } else {
-            toInsert = " " + restored.trim();
-          }
+          let toInsert = " " + restored.trim();
           insertTextAtCursor(toInsert);
-          setTimeout(() => {
-            moveCaretToEndOfTarget();
-            editor.focus();
-          }, 300);
         })
         .catch(err => {
           logEvent("Punctuation API call error => " + err);
         });
       } else {
-        // For tap mode, prepare merged string
-        let parted = errorText.innerText || "";
-        parted = parted.trimEnd();
+        let parted = errorText.innerText.trimEnd();
         parted = parted.replace(/([.!?])(\S)/g, "$1 $2");
-
         let textNoPunc = removePunctuation(transcript).trimEnd();
-        let merged = parted + " <||> " + textNoPunc;
-        merged = merged.trimEnd();
+        let merged = (parted + " <||> " + textNoPunc).trimEnd();
         finalOutputSpan.innerText = merged;
         logEvent("Final output => " + merged);
         sendToAPI(merged, localTapIndex);
-        setTimeout(() => {
-          moveCaretToEndOfTarget();
-          editor.focus();
-        }, 300);
       }
-      // After 3 seconds without candidate selection, clear highlight and then move caret
-      setTimeout(() => {
-        removeSuggestionsBox();
-        removeHighlight();
-        moveCaretToEndOfTarget();
-      }, 3000);
       currentMode = null;
       voiceInputSpan.innerText = "";
+      currentHighlightedSentence = errorText.innerText;
+      console.log("Current highlighted sentence:", currentHighlightedSentence);
+      clearTimeout(highlightTimeout);
+      highlightTimeout = setTimeout(endTapSay, 3000);
     }
 
     /*******************************************************
-     * 19) /correct API call for Tap&Say Correction
+     * 19) End Tap&Say
+     *******************************************************/
+    function endTapSay() {
+      clearTimeout(highlightTimeout);
+      removeHighlight();
+      console.log("removeHighlight called.");
+    }
+
+    /*******************************************************
+     * 20) /correct API call
      *******************************************************/
     function sendToAPI(mergedStr, loc){
       logEvent("Sending /correct => merged_string:" + mergedStr + ", touch_location:" + loc);
@@ -822,20 +824,19 @@
     }
 
     /*******************************************************
-     * 20) Apply Suggestion and Show Suggestion Box
+     * 21) Apply suggestion and show suggestion box
      *******************************************************/
-    function applyFirstSuggestionAndShowBox(corrections){
+    function applyFirstSuggestionAndShowBox(corrections) {
       if (!corrections.length) return;
       let ts = document.getElementById("target-sentence");
       let candidate = corrections[0].trimEnd();
       if (ts) {
         ts.innerText = candidate;
         originalSentence = candidate;
+        maybeAddSpaceAfterHighlight(ts);
         removeHighlight();
         highlightSentence(candidate);
         setTimeout(() => {
-          maybeAddSpaceAfterHighlight(ts);
-          moveCaretToEndOfTarget();
           editor.focus();
         }, 300);
       } else {
@@ -846,15 +847,14 @@
           logEvent("No highlighted sentence found. Fallback => " + originalSentence);
           return;
         }
-        let candidate = corrections[0].trimEnd();
+        candidate = corrections[0].trimEnd();
         editor.innerHTML = html.replace(re, candidate);
         originalSentence = candidate;
+        let ts2 = document.getElementById("target-sentence");
+        if (ts2) maybeAddSpaceAfterHighlight(ts2);
         removeHighlight();
         highlightSentence(candidate);
         setTimeout(() => {
-          let ts2 = document.getElementById("target-sentence");
-          if (ts2) maybeAddSpaceAfterHighlight(ts2);
-          moveCaretToEndOfTarget();
           editor.focus();
         }, 300);
       }
@@ -867,12 +867,8 @@
       let rect = tsNew.getBoundingClientRect();
       suggestionsBox = createSuggestionBox(rect, corrections);
       document.body.appendChild(suggestionsBox);
-      // Auto-clear suggestions and highlight after 3 seconds if no selection
-      suggestionsTimer = setTimeout(() => {
-        removeSuggestionsBox();
-        moveCaretToEndOfTarget();
-        removeHighlight();
-      }, 3000);
+      clearTimeout(suggestionsTimer);
+      suggestionsTimer = setTimeout(() => { removeSuggestionsBox(); }, 5000);
     }
     function createSuggestionBox(rect, corrections){
       let box = document.createElement("div");
@@ -921,9 +917,9 @@
     }
 
     /*******************************************************
-     * 21) Utility Functions
+     * 22) Utility Functions
      *******************************************************/
-    // Remove punctuation except single quotes (to preserve contractions)
+    // Remove punctuation except single quotes to preserve contractions
     function removePunctuation(str){
       return str.replace(/[^a-zA-Z0-9'\s]/g, "");
     }
@@ -991,13 +987,19 @@
       return !!c.match(/[\s.,;!?]/);
     }
     // Check highlighted sentence's tail; if no non-space, add a space
-    function maybeAddSpaceAfterHighlight(ts){
+    function maybeAddSpaceAfterHighlight(ts) {
       if (!ts) return;
-      let text = ts.innerText;
-      if (!endsWithSpaceOrPunc(text)) {
-        ts.innerText = text + " ";
+      let text = ts.textContent;
+      let nextSibling = ts.nextSibling;
+      let nextText = nextSibling ? nextSibling.textContent.trim() : "";
+
+      // 如果后面没有内容或紧接着有内容但没有空格，则添加空格
+      if (!nextText || !nextText.startsWith(" ")) {
+        ts.textContent = text + " ";
+        console.log(`高亮句: ${text} + 空格`);
       }
     }
   </script>
 </body>
 </html>
+
