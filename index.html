@@ -37,8 +37,8 @@
       flex-shrink: 0;
     }
     .container {
-      width: 95%;
-      max-width: 1200px; /* 更宽的PC端容器 */
+      width: 90%;
+      max-width: 1000px; /* 减小最大宽度 */
       margin: 0 auto;
       box-sizing: border-box;
     }
@@ -57,13 +57,13 @@
     .mode-button {
       flex: 1; /* 让按钮平均分配空间 */
       max-width: calc(50% - 10px); /* 确保两个按钮不会太宽 */
-      padding: 1.5rem 2.5rem; /* 更大的按钮 */
+      padding: 1rem 2rem; /* 减小内边距 */
       border: none;
       border-radius: 15px;
       background: #ffffff;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       cursor: pointer;
-      font-size: 1.4rem; /* 更大的按钮文字 */
+      font-size: 1.1rem; /* 减小字体 */
       color: #4a5568;
       text-align: center;
       transition: all 0.3s ease;
@@ -82,8 +82,8 @@
      *******************************************************/
     .card {
       border-radius: 15px;
-      padding: 40px; /* PC端更大的内边距 */
-      margin-bottom: 30px;
+      padding: 35px; /* 减小内边距 */
+      margin-bottom: 25px; /* 减小间距 */
       background: #fff;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       font-size: 1.1rem; /* 更大的基础字体 */
@@ -101,7 +101,7 @@
      *******************************************************/
     #text-editor {
       width: 100%;
-      min-height: 400px; /* 更高的编辑器 */
+      min-height: 400px; /* 减小高度 */
       box-sizing: border-box;
       resize: vertical;      
       overflow: auto;        
@@ -109,8 +109,8 @@
       background: #fff;      
       border: 2px solid #e2e8f0;
       border-radius: 15px;
-      padding: 2.5rem;
-      font-size: 1.3rem;
+      padding: 2rem;
+      font-size: 1.2rem; /* 稍微减小字体 */
       line-height: 1.8;
       color: #2d3748;
       transition: border-color 0.3s, box-shadow 0.3s;
@@ -141,8 +141,8 @@
       color: red;
     }
     #event-log {
-      font-size: 1.1rem;
-      max-height: 300px; /* 更高的日志区域 */
+      font-size: 1rem;
+      max-height: 250px; /* 减小高度 */
       overflow-y: auto;
       background: #f9f9f9;
       padding: 10px;
@@ -201,19 +201,19 @@
       position: fixed;
       bottom: 20px;
       left: 0; /* 贴合左边框 */
-      width: 250px; /* 稍微加宽 */
+      width: 220px; /* 减小宽度 */
       display: flex;
       flex-direction: column;
       gap: 12px; /* 增加按钮间距 */
       z-index: 3000;
       background: #007bff;
-      padding: 15px; /* 增加内边距 */
+      padding: 12px; /* 减小内边距 */
       border-radius: 0 8px 8px 0; /* 只保留右侧圆角 */
       box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* 更明显的阴影 */
       transition: transform 0.3s ease, opacity 0.3s ease;
     }
     .drawer-collapsed {
-      transform: translateX(-220px); /* 根据新宽度调整 */
+      transform: translateX(-240px); /* 根据新宽度调整 */
       opacity: 0.9;
     }
     #drawer-toggle {
@@ -287,7 +287,7 @@
       }
       
       #experience-mode .card {
-        padding: 50px;
+        padding: 35px; /* 减小内边距 */
       }
       
       #experience-undo-button,
@@ -307,8 +307,8 @@
       }
       
       .nav-button {
-        padding: 1rem 1.5rem;
-        font-size: 1.2rem;
+        padding: 0.8rem 1.2rem; /* 减小内边距 */
+        font-size: 1.1rem; /* 减小字体 */
         border-radius: 10px;
       }
       
@@ -317,14 +317,19 @@
       }
       
       #text-editor {
-        min-height: 500px; /* PC端更大的初始高度 */
+        min-height: 400px; /* 减小高度 */
+      }
+      
+      #monitoring-card p {
+        font-size: 1.1rem;
+        margin: 0.8rem 0;
       }
     }
 
     /* 体验模式卡片样式增强 */
     @media (min-width: 481px) { /* 只针对PC端 */
       #experience-mode .card {
-        padding: 50px; /* 更大的内边距 */
+        padding: 35px; /* 减小内边距 */
       }
       
       /* 调整按钮样式 */
@@ -348,8 +353,8 @@
       
       /* 调整导航按钮 */
       .nav-button {
-        padding: 1rem 1.5rem;
-        font-size: 1.2rem;
+        padding: 0.8rem 1.2rem; /* 减小内边距 */
+        font-size: 1.1rem; /* 减小字体 */
         border-radius: 10px;
       }
     }
