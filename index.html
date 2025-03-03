@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -213,7 +213,7 @@
       transition: transform 0.3s ease, opacity 0.3s ease;
     }
     .drawer-collapsed {
-      transform: translateX(-220px);
+      transform: translateX(-170px);
       opacity: 0.9;
     }
     #drawer-toggle {
@@ -885,6 +885,8 @@
       let transcript=voiceInputSpan.innerText.trim();
       if(!transcript){
         showToast("No speech input detected.");
+        /* 修复：无语音输入时也要去除高亮 */
+        endTapSay(); 
         currentMode=null;
         return;
       }
@@ -911,6 +913,8 @@
     function endTapSay(){
       clearTimeout(highlightTimeout);
       removeHighlight();
+      /* 修复：同时清理体验模式中的高亮 */
+      removeHighlightExp();
     }
 
     /*******************************************************
