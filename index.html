@@ -28,7 +28,7 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 1.5rem 0; /* 减小上下内边距 */
+      padding: 1.2rem 0; /* 减小上下内边距 */
     }
     #header-container, #footer-container {
       width: 100%;
@@ -37,8 +37,8 @@
       flex-shrink: 0;
     }
     .container {
-      width: 90%;
-      max-width: 1000px; /* 减小最大宽度 */
+      width: 85%;
+      max-width: 900px; /* 进一步减小最大宽度 */
       margin: 0 auto;
       box-sizing: border-box;
     }
@@ -50,20 +50,20 @@
       display: flex;
       justify-content: space-between; /* 改为两端对齐 */
       align-items: center;
-      margin-bottom: 30px; /* 统一和其他card的间距 */
-      gap: 20px; /* 按钮之间的间距 */
+      margin-bottom: 20px; /* 统一和其他card的间距 */
+      gap: 15px; /* 按钮之间的间距 */
       width: 100%; /* 确保宽度和container一致 */
     }
     .mode-button {
       flex: 1; /* 让按钮平均分配空间 */
       max-width: calc(50% - 10px); /* 确保两个按钮不会太宽 */
-      padding: 1rem 2rem; /* 减小内边距 */
+      padding: 0.8rem 1.5rem;
       border: none;
       border-radius: 15px;
       background: #ffffff;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       cursor: pointer;
-      font-size: 1.1rem; /* 减小字体 */
+      font-size: 1rem;
       color: #4a5568;
       text-align: center;
       transition: all 0.3s ease;
@@ -82,18 +82,18 @@
      *******************************************************/
     .card {
       border-radius: 15px;
-      padding: 35px; /* 减小内边距 */
-      margin-bottom: 25px; /* 减小间距 */
+      padding: 30px; /* 进一步减小内边距 */
+      margin-bottom: 20px; /* 减小间距 */
       background: #fff;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      font-size: 1.1rem; /* 更大的基础字体 */
+      font-size: 1rem; /* 减小基础字体 */
     }
     .card:last-child {
       margin-bottom: 0;
     }
     .card h3 {
-      font-size: 1.8rem;
-      margin-bottom: 1.5rem;
+      font-size: 1.5rem; /* 减小标题字体 */
+      margin-bottom: 1.2rem;
     }
 
     /*******************************************************
@@ -101,7 +101,7 @@
      *******************************************************/
     #text-editor {
       width: 100%;
-      min-height: 400px; /* 减小高度 */
+      min-height: 350px; /* 进一步减小高度 */
       box-sizing: border-box;
       resize: vertical;      
       overflow: auto;        
@@ -109,9 +109,9 @@
       background: #fff;      
       border: 2px solid #e2e8f0;
       border-radius: 15px;
-      padding: 2rem;
-      font-size: 1.2rem; /* 稍微减小字体 */
-      line-height: 1.8;
+      padding: 1.5rem;
+      font-size: 1.1rem;
+      line-height: 1.6;
       color: #2d3748;
       transition: border-color 0.3s, box-shadow 0.3s;
     }
@@ -141,11 +141,11 @@
       color: red;
     }
     #event-log {
-      font-size: 1rem;
-      max-height: 250px; /* 减小高度 */
+      font-size: 0.9rem;
+      max-height: 200px;
       overflow-y: auto;
       background: #f9f9f9;
-      padding: 10px;
+      padding: 8px;
       border: 1px solid #ccc;
       border-radius: 5px;
     }
@@ -201,19 +201,19 @@
       position: fixed;
       bottom: 20px;
       left: 0; /* 贴合左边框 */
-      width: 220px; /* 减小宽度 */
+      width: 200px;
       display: flex;
       flex-direction: column;
-      gap: 12px; /* 增加按钮间距 */
+      gap: 10px; /* 增加按钮间距 */
       z-index: 3000;
       background: #007bff;
-      padding: 12px; /* 减小内边距 */
+      padding: 10px;
       border-radius: 0 8px 8px 0; /* 只保留右侧圆角 */
       box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* 更明显的阴影 */
       transition: transform 0.3s ease, opacity 0.3s ease;
     }
     .drawer-collapsed {
-      transform: translateX(-240px); /* 根据新宽度调整 */
+      transform: translateX(-220px);
       opacity: 0.9;
     }
     #drawer-toggle {
@@ -236,8 +236,8 @@
       background: #003e80;
     }
     #drawer button:not(#drawer-toggle) {
-      padding: 12px 15px; /* 增加内边距 */
-      font-size: 15px; /* 加大字号 */
+      padding: 10px 12px;
+      font-size: 0.9rem;
       border: none;
       border-radius: 6px;
       color: #007bff;
@@ -272,7 +272,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.9rem; /* 移动端小字体 */
+      font-size: 1.1rem;
       font-weight: normal; /* 移动端不加粗 */
     }
     .tip-content i {
@@ -282,12 +282,11 @@
     /* PC端样式增强 */
     @media (min-width: 481px) {
       .tip-content {
-        font-size: 1.2rem; /* PC端大字体 */
-        font-weight: 600; /* PC端加粗 */
+        font-size: 1.1rem;
       }
       
       #experience-mode .card {
-        padding: 35px; /* 减小内边距 */
+        padding: 30px;
       }
       
       #experience-undo-button,
@@ -307,8 +306,8 @@
       }
       
       .nav-button {
-        padding: 0.8rem 1.2rem; /* 减小内边距 */
-        font-size: 1.1rem; /* 减小字体 */
+        padding: 0.7rem 1rem;
+        font-size: 1rem;
         border-radius: 10px;
       }
       
@@ -317,19 +316,19 @@
       }
       
       #text-editor {
-        min-height: 400px; /* 减小高度 */
+        min-height: 350px;
       }
       
       #monitoring-card p {
-        font-size: 1.1rem;
-        margin: 0.8rem 0;
+        font-size: 1rem;
+        margin: 0.7rem 0;
       }
     }
 
     /* 体验模式卡片样式增强 */
     @media (min-width: 481px) { /* 只针对PC端 */
       #experience-mode .card {
-        padding: 35px; /* 减小内边距 */
+        padding: 30px;
       }
       
       /* 调整按钮样式 */
@@ -353,8 +352,8 @@
       
       /* 调整导航按钮 */
       .nav-button {
-        padding: 0.8rem 1.2rem; /* 减小内边距 */
-        font-size: 1.1rem; /* 减小字体 */
+        padding: 0.7rem 1rem;
+        font-size: 1rem;
         border-radius: 10px;
       }
     }
@@ -410,7 +409,7 @@
 
     /* 导航按钮基础样式 */
     .nav-button {
-      padding: 0.8rem 1.2rem;
+      padding: 0.7rem 1rem;
       border: none;
       border-radius: 8px;
       background: #007bff; /* 蓝色背景 */
