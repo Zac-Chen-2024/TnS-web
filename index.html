@@ -5,105 +5,128 @@
   <!-- Ensure proper scaling on mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tap&amp;Say Text Editor</title>
+
   <style>
-    /* Global Basic Styles */
+    /*******************************************************
+     * 0) 页面布局：页脚贴底 + 渐变背景 + PC端更大气
+     *******************************************************/
     html, body {
-      margin: 0; 
+      margin: 0;
       padding: 0;
       width: 100%;
-      max-width: 100%;
       box-sizing: border-box;
       overflow-x: hidden;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh; /* 保证页面至少与视窗等高 */
+    }
+    body {
       background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
-      min-height: 100vh;  /* 确保背景色填充整个视窗高度 */
     }
-
-    /* 移除所有容器的默认边距 */
-    .container, #app {
-      margin: 0;
-      padding: 0;
-      width: 100%;
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem 0; /* PC端时保留额外空白 */
     }
-
-    /* Header/Footer containers */
     #header-container, #footer-container {
       width: 100%;
-      text-align: center;
       margin: 0;
+      padding: 0;
+      flex-shrink: 0;
     }
-    #header-container h1 {
-      margin: 0;
+    .container {
+      width: 90%;
+      max-width: 900px; /* PC端稍微更宽 */
+      margin: 0 auto;
+      box-sizing: border-box;
     }
 
-    /* Mode buttons container */
+    /*******************************************************
+     * 1) 模式按钮容器 #mode-buttons => 大按钮 + 圆角
+     *******************************************************/
     #mode-buttons {
-      width: 90%;
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 0;
-      background: transparent;
-      box-shadow: none;
       display: flex;
       justify-content: space-between;
-      gap: 20px;
+      align-items: center;
+      margin: 1.5rem 0;
+      gap: 20px; /* 让按钮之间留空 */
+    }
+    .mode-button {
+      flex: 1;
+      padding: 1rem 1.2rem;
+      border: none;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: #4a5568;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .mode-button.active {
+      background: #4299e1;
+      color: #fff;
+    }
+    .mode-button:hover:not(.active) {
+      background: #f7fafc;
+      transform: translateY(-1px);
     }
 
-    /* Container + Card Layout */
-    .container {
-      flex: 1;
-      width: 90%;
-      max-width: 800px;
-      margin: 0 auto;
-    }
+    /*******************************************************
+     * 2) 卡片 .card => 圆角 + 阴影
+     *******************************************************/
     .card {
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 20px;
-      background: white;
+      background: #fff;
       box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      overflow: hidden; /* 防止内容溢出 */
-    }
-    /* 移除卡片的hover效果 */
-    .card:hover,
-    .mode-button:hover {
-      transform: none;
+      box-sizing: border-box;
     }
 
-    /* ========== Editor ========== */
+    /*******************************************************
+     * 3) #text-editor => 大气感 + 圆角 + 阴影
+     *******************************************************/
     #text-editor {
       width: 100%;
-      min-height: 300px;
+      min-height: 200px;
+      box-sizing: border-box;
+      resize: vertical;      
+      overflow: auto;        
+      margin: 0 auto;
+      background: #fff;      
       border: 2px solid #e2e8f0;
-      padding: 1.5rem;
       border-radius: 12px;
-      outline: none;
+      padding: 1.5rem;
       font-size: 1.1rem;
       line-height: 1.6;
       color: #2d3748;
-      background: white;
-      white-space: pre-wrap;
-      transition: all 0.3s ease;
-      -webkit-touch-callout: default; /* allow touch menu */
-      box-sizing: border-box; /* 确保padding不会导致宽度溢出 */
-      max-width: 100%; /* 确保不会超出父容器 */
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
     #text-editor:focus {
       border-color: #4299e1;
-      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
-      outline: none !important;  /* 去除可能的默认outline */
+      box-shadow: 0 0 0 3px rgba(66,153,225,0.15);
     }
-    #text-editor:empty:before {
-      content: "Use voice transcription to text to input, use Tap&Say to modify";
-      color: gray;
+    #text-editor, 
+    #text-editor * {
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent !important;
     }
 
-    /* Highlighted Sentence */
+    /*******************************************************
+     * 4) 高亮颜色 => 柔和黄
+     *******************************************************/
     .highlighted-sentence {
-      background-color: yellow;
+      background-color: #fff3cd; 
+      transition: background 0.3s;
     }
 
-    /* Recording / Event Log, etc. */
+    /*******************************************************
+     * 5) 监控 / 日志 => 圆角 + 简洁
+     *******************************************************/
     #mic-status {
       font-weight: bold;
       color: red;
@@ -118,59 +141,36 @@
       border-radius: 5px;
     }
 
-    /* Spinner Animation */
-    @keyframes spin {
-      from { transform: translate(-50%, -50%) rotate(0deg); }
-      to { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-    .spinner {
-      width: 150px;
-      height: 150px;
-      border: 8px solid #ccc;
-      border-top-color: #007bff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      position: relative;
-      top: 0;
-      left: 0;
-    }
-
-    /* Floating Suggestion Box */
+    /*******************************************************
+     * 6) 悬浮建议框 => 现代风格
+     *******************************************************/
     .suggestions-box-floating {
-      position: fixed; /* 改为fixed以确保正确定位 */
+      position: absolute;
       background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      padding: 5px;
       z-index: 2000;
       user-select: none;
       pointer-events: auto;
-      min-width: 200px;
-      max-width: 300px;
       max-height: 150px;
       overflow-y: auto;
-      overflow-x: hidden;
+      transition: all 0.3s ease;
     }
-    .suggestions-box-floating .suggestion-item {
-      padding: 8px 12px;
-      margin: 4px 0;
-      border-radius: 4px;
+    .suggestions-box-floating div {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
       cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 14px;
-      line-height: 1.4;
-      color: #2d3748;
-      background: #f8f9fa;
+      transition: background 0.3s;
     }
-    .suggestions-box-floating .suggestion-item:hover {
-      background: #edf2f7;
-    }
-    .suggestions-box-floating .suggestion-item:active {
-      background: #e2e8f0;
+    .suggestions-box-floating div:hover {
+      background: #f0f0f0;
     }
 
-    /* Toast Notification */
+    /*******************************************************
+     * 7) Toast => fixed 底部提示
+     *******************************************************/
     .toast {
       position: fixed;
       bottom: 20px;
@@ -185,67 +185,66 @@
       transition: opacity 0.5s ease;
     }
 
-    /* 新的mode按钮样式 */
-    .mode-button {
-      flex: 1;
-      padding: 1.5rem;
-      border: none;
-      border-radius: 12px;
-      background: white;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      cursor: pointer;
-      font-size: 1.25rem;  /* 增大字体大小 */
-      font-weight: 500;    /* 稍微加粗 */
-      color: #4a5568;      /* 深灰色文字 */
-      transition: all 0.3s ease;
-    }
-    .mode-button.active {
-      background: #4299e1;
-      color: white;
-      font-weight: 600;    /* 激活状态字体更粗 */
-    }
-    .mode-button:hover:not(.active) {
-      background: #f7fafc;
-      transform: translateY(-1px);
-    }
-
-    /* Editor suggestions in free-input mode */
-    #editor-suggestions {
-      margin-bottom: 10px;
-    }
-    #editor-suggestions h4 {
-      margin: 0 0 8px 0;
-      color: #4a5568;
-      font-size: 1rem;
-      font-weight: 500;
-    }
-    #editor-suggestions .suggestion-item {
+    /*******************************************************
+     * 8) Drawer => 左下角抽屉 + 圆角
+     *******************************************************/
+    #drawer {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 3000;
+      background: #007bff; 
       padding: 10px;
-      margin: 8px 0;
-      border: 1px solid #e2e8f0;
       border-radius: 8px;
-      min-height: 24px;
-      background-color: #fff;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .drawer-collapsed {
+      transform: translateX(-220px);
+      opacity: 0.9;
+    }
+    #drawer-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      background: #0056b3;
       cursor: pointer;
-      display: none; /* 默认隐藏，等有候选时再显示 */
+      padding: 8px 10px;
+      transition: background 0.3s;
+      margin-bottom: 5px;
+    }
+    #drawer-toggle:hover {
+      background: #003e80;
+    }
+    #drawer button:not(#drawer-toggle) {
+      padding: 10px 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      color: #007bff;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+      width: 100%;
+    }
+    #drawer button:not(#drawer-toggle):hover {
+      background: #e9f1ff;
+      color: #0056b3;
     }
 
-    /* Footer 样式优化 */
-    #footer-container {
-      text-align: center;
-      padding: 2rem;
-      color: #718096;
-      margin-top: 3rem;
-    }
-
-    /* Experience mode skip button文本 */
-    #skip-sentence-button {
-      content: "Press and hold near the error until highlighted, then speak your correction";
-    }
-    #skip-sentence-button.success {
-      content: "Well done! Next sentence";
-    }
-
+    /*******************************************************
+     * 9) 提示卡片 => 左侧彩条 + 圆角
+     *******************************************************/
     .tip-box {
       background: #f8f9fa;
       border-left: 4px solid #007bff;
@@ -264,424 +263,350 @@
       color: #ffc107;
     }
 
-    /* 目标句/错误句：去掉移动端长按出现的灰色边框或水波纹 */
-    #target-sentence, #error-sentence {
-      -webkit-tap-highlight-color: transparent !important;
-      outline: none !important;
-      box-shadow: none !important;
-      pointer-events: auto;
-    }
-    #target-sentence:focus, #error-sentence:focus {
-      outline: none !important;
-      box-shadow: none !important;
-    }
-
-    /* textarea整体样式（体验模式） */
-    #target-sentence, #error-sentence {
-      width: 100%;
-      min-height: 60px;
-      padding: 10px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
+    /*******************************************************
+     * 10) 箭头按钮 => nav-button
+     *******************************************************/
+    .nav-button {
+      background: #4299e1;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
       font-size: 1rem;
-      line-height: 1.5;
-      resize: none;
-      background-color: white;
-      box-sizing: border-box;
-      margin: 8px 0;
-      font-family: inherit;
+      padding: 0.5rem 0.8rem;
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    /* 目标句特有样式 */
-    #target-sentence {
-      cursor: default;
-      user-select: text;
-      background-color: #f8f9fa;  /* 稍微灰一点的背景色以区分 */
-    }
-    /* 错误句特有样式 */
-    #error-sentence {
-      cursor: text;
+    .nav-button:hover {
+      background: #307acc;
     }
 
-    /* 移动端自适应 */
-    @media screen and (max-width: 768px) {
-      .container, #mode-buttons {
-        width: 90%;
-        margin: 6px auto;
-      }
-
-      #mode-buttons {
-        gap: 6px;
-      }
-
-      /* 卡片样式紧凑化 */
+    /*******************************************************
+     * 响应式 => 小屏竖排
+     *******************************************************/
+    @media (max-width:480px){
       .card {
-        padding: 8px;
-        margin-bottom: 8px;
+        padding:16px;
       }
-      .card h3 {
-        margin: 0 0 6px 0;
-        font-size: 0.9rem;
+      #mode-buttons {
+        flex-direction:column;
       }
-
-      #target-sentence, 
-      #error-sentence {
-        padding: 6px;
-        margin: 4px 0;
-        min-height: 40px;
-        font-size: 0.9rem;
-      }
-
-      .card p {
-        margin: 4px 0;
-        font-size: 0.9rem;
-      }
-
-      #other-suggestions {
-        margin: 6px 0;
-        padding: 6px;
-      }
-      #other-suggestions h4 {
-        margin: 0 0 4px 0;
-        font-size: 0.9rem;
-      }
-      .suggestion-item {
-        padding: 6px;
-        margin: 3px 0;
-        min-height: 18px;
-        font-size: 0.9rem;
-      }
-
-      div[style*="justify-content: space-between"] {
-        margin: 6px 0 !important;
-      }
-
-      div[style*="display: flex; gap: 10px;"] {
-        display: flex;
-        justify-content: flex-end !important; /* 靠右 */
-        gap: 8px !important;
-        margin-top: 8px;
-      }
-
-      #experience-undo-button, #skip-sentence-button {
-        font-size: 14px;
-        padding: 8px 12px;
-        flex: 0 0 auto;
+      #mode-buttons .mode-button {
+        width:100%;
+        margin-bottom:8px;
       }
     }
   </style>
 </head>
 <body>
-  <header id="header-container">
-  </header>
+  <!-- header加载 -->
+  <header id="header-container"></header>
 
-  <!-- Mode Switch Buttons -->
-  <div id="mode-buttons">
-    <button id="mode-experience" class="mode-button active">Experience Mode</button>
-    <button id="mode-input" class="mode-button">Free Input Mode</button>
-  </div>
-
-  <!-- 第二排按钮：Show Monitoring, Show Event Log, IME toggle -->
-  <div id="mode-buttons" style="margin-top: 10px;">
-    <button id="toggle-monitoring" class="mode-button" style="
-      background: #007bff;
-      color: #fff;
-      font-size: 14px;
-    ">Show Monitoring</button>
-    <button id="toggle-log" class="mode-button" style="
-      background: #007bff;
-      color: #fff;
-      font-size: 14px;
-    ">Show Event Log</button>
-    <button id="toggle-ime" class="mode-button" style="
-      background: #007bff;
-      color: #fff;
-      font-size: 14px;
-    ">IME Shortcuts (Mobile): OFF</button>
-  </div>
-
-  <div class="container">
-    <!-- Monitoring Area -->
-    <div class="card" id="monitoring-card" style="display: none;">
-      <p><strong>Error Sentence:</strong> <span id="error-text">None</span></p>
-      <p><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
-      <p><strong>Touch Index (relative):</strong> <span id="touch-index">None</span></p>
-      <p><strong>Speech Input:</strong> <span id="voice-input">None</span></p>
-      <p><strong>Final Output:</strong> <span id="final-output">None</span></p>
-      <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Stopped</span></p>
-    </div>
-
-    <!-- Editor + Undo Button -->
-    <div class="card" id="input-mode">
-      <h3>Tap&amp;Say Text Editor</h3>
-      <!-- 自由输入模式的建议区域 -->
-      <div id="editor-suggestions">
-        <h4>Tap&Say Top-2,3 Suggestions:</h4>
-        <div class="suggestion-item"></div>
-        <div class="suggestion-item"></div>
-      </div>
-
-      <div id="text-editor" contenteditable="true"></div>
-
-      <button id="undo-button" style="
-        margin-top: 12px;
-        width: 100%;
-        padding: 14px;
-        font-size: 16px;
-        border: none;
-        border-radius: 6px;
-        background: #28a745;
-        color: #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        cursor: pointer;
-      ">Undo Last Change</button>
-    </div>
-
-    <!-- Experience Mode -->
-    <div class="card" id="experience-mode" style="display: none;">
-      <h3>Experience Mode</h3>
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <button class="nav-button" id="prev-sentence" style="visibility: hidden;">←</button>
-          <span id="sentence-index">1/5</span>
-          <button class="nav-button" id="next-sentence">→</button>
-        </div>
-        <p><strong>Target Sentence:</strong></p>
-        <textarea id="target-sentence" readonly></textarea>
-        <p><strong>Error Sentence:</strong></p>
-        <textarea id="error-sentence" readonly></textarea>
-
-        <div id="other-suggestions" class="suggestions-box">
-          <h4>Other Suggestions:</h4>
-          <div class="suggestion-item"></div>
-          <div class="suggestion-item"></div>
-        </div>
-        <div style="display: flex; gap: 10px; margin-top: 12px;">
-          <button id="experience-undo-button" style="
-            flex: 1;
-            padding: 14px;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            background: #28a745;
-            color: #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            cursor: pointer;
-          ">Restore Original Error</button>
-          <button id="skip-sentence-button" style="
-            flex: 1;
-            padding: 14px;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            background: #6c757d;
-            color: #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            cursor: pointer;
-          ">Press and hold near the error until highlighted, then speak your correction</button>
-        </div>
-        <button id="next-pair-button" style="
-          width: 100%;
-          margin-top: 10px;
-          padding: 14px;
-          font-size: 16px;
-          border: none;
-          border-radius: 6px;
-          background: #007bff;
-          color: #fff;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-          cursor: pointer;
-          display: none;
-        ">Next Sentence</button>
+  <!-- 主内容：撑开，让footer贴底 -->
+  <div class="main-content">
+    <div class="container">
+      <!-- 模式切换按钮 -->
+      <div id="mode-buttons">
+        <button id="mode-experience" class="mode-button active">Introduction mode</button>
+        <button id="mode-input" class="mode-button">Free-input mode</button>
       </div>
     </div>
 
-    <!-- Event Log Area -->
-    <div class="card" id="event-log-card" style="display: none;">
-      <h3>Event Log</h3>
-      <div id="event-log">No events recorded</div>
+    <!-- Drawer Container -->
+    <div id="drawer" class="drawer-collapsed">
+      <button id="drawer-toggle">
+        <span style="flex:1;"></span><span>&lt;</span>
+      </button>
+      <button id="toggle-monitoring">Show Monitoring</button>
+      <button id="toggle-log">Show Event Log</button>
+      <button id="toggle-ime">Disable IME Shortcuts: OFF</button>
+    </div>
+
+    <div class="container">
+      <!-- 监控区域 -->
+      <div class="card" id="monitoring-card">
+        <p><strong>Error Sentence:</strong> <span id="error-text">None</span></p>
+        <p><strong>Touch Index (relative):</strong> <span id="touch-index">None</span></p>
+        <p><strong>Final Output:</strong> <span id="final-output">None</span></p>
+        <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Stopped</span></p>
+        <p style="display:none;"><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
+        <p style="display:none;"><strong>Speech Input:</strong> <span id="voice-input">None</span></p>
+      </div>
+
+      <!-- 自由输入模式 -->
+      <div class="card" id="input-mode" style="display:none;">
+        <h3>Tap&amp;Say Text Editor</h3>
+        <div id="text-editor" contenteditable="true"></div>
+        <button id="undo-button" style="
+          margin-top:12px;
+          width:100%;
+          padding:14px;
+          font-size:16px;
+          border:none;
+          border-radius:6px;
+          background:#28a745;
+          color:#fff;
+          box-shadow:0 2px 6px rgba(0,0,0,0.2);
+          cursor:pointer;
+        ">Undo Last Change</button>
+      </div>
+
+      <!-- 体验模式 -->
+      <div class="card" id="experience-mode">
+        <h3>Introduction Mode</h3>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <button class="nav-button" id="prev-sentence" style="visibility:hidden;">←</button>
+            <span id="sentence-index">1/5</span>
+            <button class="nav-button" id="next-sentence">→</button>
+          </div>
+          <p><strong>Target Sentence:</strong> <span id="target-sentence" style="user-select:none;"></span></p>
+          <p><strong>Error Sentence:</strong> <span id="error-sentence" style="cursor:pointer;"></span></p>
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button id="experience-undo-button" style="
+              flex:1;
+              padding:14px;
+              font-size:16px;
+              border:none;
+              border-radius:6px;
+              background:#28a745;
+              color:#fff;
+              box-shadow:0 2px 6px rgba(0,0,0,0.2);
+              cursor:pointer;
+            ">Restore Error Sentence</button>
+            <button id="skip-sentence-button" style="
+              flex:1;
+              padding:14px;
+              font-size:16px;
+              border:none;
+              border-radius:6px;
+              background:#6c757d;
+              color:#fff;
+              box-shadow:0 2px 6px rgba(0,0,0,0.2);
+              cursor:pointer;
+            ">Follow the instruction</button>
+          </div>
+          <button id="next-pair-button" style="
+            width:100%;
+            margin-top:10px;
+            padding:14px;
+            font-size:16px;
+            border:none;
+            border-radius:6px;
+            background:#007bff;
+            color:#fff;
+            box-shadow:0 2px 6px rgba(0,0,0,0.2);
+            cursor:pointer;
+            display:none;
+          ">Next Sentence</button>
+        </div>
+      </div>
+
+      <!-- 事件日志区域 -->
+      <div class="card" id="event-log-card">
+        <h3>Event Log</h3>
+        <div id="event-log">No events recorded</div>
+      </div>
     </div>
   </div>
 
+  <!-- footer加载 -->
+  <footer id="footer-container"></footer>
+
+  <!-- 下面保留“我的代码”所有JS逻辑与结构，不改任何函数/ID -->
   <script>
     /*******************************************************
-     * 1) Global constants for API endpoints
+     * 1) 全局常量
      *******************************************************/
-    const API_URL = "https://tns.zacchen.win/correct";
+    const API_URL = "https://tns.zacchen.win/correct";  
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
 
     /*******************************************************
-     * 2) Monitoring / Event Log / IME toggles
+     * 2) Drawer 切换
      *******************************************************/
-    let disableIME = false;
-    const monitoringCard = document.getElementById("monitoring-card");
-    const eventLogCard = document.getElementById("event-log-card");
-
-    const monitoringBtn = document.getElementById("toggle-monitoring");
-    const eventLogBtn = document.getElementById("toggle-log");
-    const imeBtn = document.getElementById("toggle-ime");
-    monitoringBtn.addEventListener("click", () => {
-      monitoringCard.style.display = (monitoringCard.style.display === "none") ? "block" : "none";
-      monitoringBtn.innerText = (monitoringCard.style.display === "none") ? "Show Monitoring" : "Hide Monitoring";
-    });
-    eventLogBtn.addEventListener("click", () => {
-      eventLogCard.style.display = (eventLogCard.style.display === "none") ? "block" : "none";
-      eventLogBtn.innerText = (eventLogCard.style.display === "none") ? "Show Event Log" : "Hide Event Log";
-    });
-    imeBtn.addEventListener("click", () => {
-      disableIME = !disableIME;
-      imeBtn.innerText = disableIME ? "IME Shortcuts (Mobile): ON" : "IME Shortcuts (Mobile): OFF";
-      document.getElementById("text-editor").style.webkitTouchCallout = disableIME ? "none" : "default";
+    let drawerOpen=false;
+    const drawer=document.getElementById("drawer");
+    const drawerToggle=document.getElementById("drawer-toggle");
+    drawerToggle.addEventListener("click",()=>{
+      drawerOpen=!drawerOpen;
+      if(drawerOpen){
+        drawer.classList.remove("drawer-collapsed");
+        drawerToggle.innerHTML='<span style="flex:1;"></span><span>&gt;</span>';
+      } else {
+        drawer.classList.add("drawer-collapsed");
+        drawerToggle.innerHTML='<span style="flex:1;"></span><span>&lt;</span>';
+      }
     });
 
     /*******************************************************
-     * 3) Other global variables
+     * 3) 全局变量
      *******************************************************/
-    let selectOverlay = null;
-    let overlayTimer = null;
-    let pressTimer = null;
-    let tapTriggered = false;
-    let globalTapIndex = -1;  // Absolute index in the full text
-    let localTapIndex = -1;   // Relative index in the selected sentence
-    let initialX = 0, initialY = 0;
-    let currentMode = null;   // "tap" or "voice"
-    let recognition = null;
-    let isListening = false;
-    let silenceTimer = null;
-    let savedRange = null;    // For saving/restoring the cursor position
-    let originalSentence = "";
-    let suggestionsBox = null;
-    let suggestionsTimer = null;
-    let undoStack = [];
-    let isUserTyping = false; // 标志用户是否在输入
-    let lastHighlightedSentence = "";
-    let shouldMoveCaret = false;
-    let highlightTimeout = null;
-    let currentHighlightedSentence = "";
-    let initialErrorSentence = '';
-    let currentOriginalErrorSentence = '';
-    let currentTapSayTarget = '';
-    let currentSentenceState = '';
+    let disableIME=false;
+    let isListening=false;
+    let pressTimer=null;
+    let tapTriggered=false;
+    let recognition=null;
+    let silenceTimer=null;
 
-    const editor = document.getElementById("text-editor");
-    const errorText = document.getElementById("error-text");
-    const originalErrorSpan = document.getElementById("original-error-sentence");
-    const touchIndexSpan = document.getElementById("touch-index");
-    const voiceInputSpan = document.getElementById("voice-input");
-    const micStatusSpan = document.getElementById("mic-status");
-    const finalOutputSpan = document.getElementById("final-output");
-    const eventLog = document.getElementById("event-log");
-    const undoButton = document.getElementById("undo-button");
+    let globalTapIndex=-1;
+    let localTapIndex=-1;
+    let originalSentence="";
+    let lastHighlightedSentence="";
+    let highlightTimeout=null;
+    let suggestionsBox=null;
+    let suggestionsTimer=null;
+    let undoStack=[];
+    let currentMode=null;
 
-    // 定义句子和提示
-    const sentencePairs = [
+    /* 体验模式index */
+    let currentPairIndex=0;
+    const sentencePairs=[
       {
-        target: "Your best bet is to drop him and go after another player.",
-        error: "Your best bet is to drop him and go after another.",
-        tip: "Press and hold near the error until the sentence is highlighted, then speak your correction"
+        target:"Your best bet is to drop him and go after another player.",
+        error:"Your best bet is to drop him and go after another.",
+        tip:"Tap near the mistake to highlight, then speak correction"
       },
       {
-        target: "The team needs to focus on developing young talents.",
-        error: "The team needs to focus on develop young talents.",
-        tip: "Well done! Let's try another one"
+        target:"The team needs to focus on developing young talents.",
+        error:"The team needs to focus on develop young talents.",
+        tip:"Great! Try again"
       },
       {
-        target: "She has been living in Paris for the past five years.",
-        error: "She has lived in Paris since five years.",
-        tip: "For multiple errors, you can make corrections multiple times"
+        target:"She has been living in Paris for the past five years.",
+        error:"She has lived in Paris since five years.",
+        tip:"Multiple mistakes can be corrected multiple times"
       },
       {
-        target: "The cat sat on the mat. The dog chased the cat. The mouse ran away quickly.",
-        error: "The cat sat on the mat. The dog chase the cat. The mouse ran away quickly.",
-        tip: "This feature also works within paragraphs"
+        target:"The cat sat on the mat. The dog chased the cat. The mouse ran away quickly.",
+        error:"The cat sat on the mat. The dog chase the cat. The mouse ran away quickly.",
+        tip:"This also works for multi-sentence paragraphs"
       },
       {
-        target: "They were discussing the implications of the new policy.",
-        error: "They were discuss about the implications of the new policy.",
-        tip: "If the first suggestion isn't what you want, you can select the correct one from the candidates"
+        target:"They were discussing the implications of the new policy.",
+        error:"They were discuss about the implications of the new policy.",
+        tip:"If the first suggestion isn't correct, pick another from the list"
       }
     ];
 
-    let currentPairIndex = 0; // 当前句子索引
+    /*******************************************************
+     * 4) DOM references
+     *******************************************************/
+    const monitoringCard=document.getElementById("monitoring-card");
+    const eventLogCard=document.getElementById("event-log-card");
+    const editor=document.getElementById("text-editor");
+    const errorText=document.getElementById("error-text");
+    const originalErrorSpan=document.getElementById("original-error-sentence");
+    const touchIndexSpan=document.getElementById("touch-index");
+    const voiceInputSpan=document.getElementById("voice-input");
+    const micStatusSpan=document.getElementById("mic-status");
+    const finalOutputSpan=document.getElementById("final-output");
+    const eventLog=document.getElementById("event-log");
+
+    const undoButton=document.getElementById("undo-button");
+    const monitoringBtn=document.getElementById("toggle-monitoring");
+    const eventLogBtn=document.getElementById("toggle-log");
+    const imeBtn=document.getElementById("toggle-ime");
+
+    const modeInput=document.getElementById("mode-input");
+    const modeExperience=document.getElementById("mode-experience");
+    const inputMode=document.getElementById("input-mode");
+    const experienceMode=document.getElementById("experience-mode");
 
     /*******************************************************
-     * 4) onload: Load header/footer and get mic access
+     * 5) onload
      *******************************************************/
-    window.onload = function(){
+    window.onload=function(){
       loadHeaderFooter();
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
         navigator.mediaDevices.getUserMedia({audio:true})
-          .catch(err => {
-            showToast("Please allow microphone access to use Tap&Say.");
-            console.warn("Mic permission error:", err);
-          });
+        .catch(err=>{
+          showToast("Please allow microphone access to use Tap&Say.");
+          console.warn("Mic permission error:",err);
+        });
       }
-
-      // 初始化体验模式内容
       initializeExperienceMode();
-      
-      // 默认显示体验模式，并激活对应按钮
-      document.getElementById("input-mode").style.display = "none";
-      document.getElementById("experience-mode").style.display = "block";
-      document.getElementById("mode-experience").classList.add("active");
-      document.getElementById("mode-input").classList.remove("active");
-    };
 
+      // 默认展示体验模式
+      inputMode.style.display="none";
+      experienceMode.style.display="block";
+      modeExperience.classList.add("active");
+      modeInput.classList.remove("active");
+    };
     async function loadHeaderFooter(){
-      try {
-        // 只加载页眉
-        const headerRes = await fetch("header.html");
-        const headerHtml = await headerRes.text();
-        document.getElementById("header-container").innerHTML = headerHtml;
-      } catch(e) {
-        console.warn("Failed to load header:", e);
+      try{
+        const headerRes=await fetch("header.html");
+        const headerHtml=await headerRes.text();
+        document.getElementById("header-container").innerHTML=headerHtml;
+
+        const footerRes=await fetch("footer.html");
+        const footerHtml=await footerRes.text();
+        document.getElementById("footer-container").innerHTML=footerHtml;
+      } catch(e){
+        console.warn("Failed to load header/footer:",e);
       }
     }
 
     /*******************************************************
-     * 5) Toast and Event Log
+     * 6) 监控 / 日志 / IME
+     *******************************************************/
+    monitoringBtn.addEventListener("click",()=>{
+      monitoringCard.style.display=(monitoringCard.style.display==="none")?"block":"none";
+      monitoringBtn.innerText=(monitoringCard.style.display==="none")?"Show Monitoring":"Hide Monitoring";
+    });
+    eventLogBtn.addEventListener("click",()=>{
+      eventLogCard.style.display=(eventLogCard.style.display==="none")?"block":"none";
+      eventLogBtn.innerText=(eventLogCard.style.display==="none")?"Show Event Log":"Hide Event Log";
+    });
+    imeBtn.addEventListener("click",()=>{
+      disableIME=!disableIME;
+      imeBtn.innerText=disableIME?"Disable IME Shortcuts: ON":"Disable IME Shortcuts: OFF";
+      editor.style.webkitTouchCallout=disableIME?"none":"default";
+    });
+
+    /*******************************************************
+     * 7) Toast & logEvent
      *******************************************************/
     function showToast(msg){
-      const t = document.createElement("div");
-      t.className = "toast";
-      t.innerText = msg;
+      const t=document.createElement("div");
+      t.className="toast";
+      t.innerText=msg;
       document.body.appendChild(t);
-      requestAnimationFrame(() => { t.style.opacity = 1; });
-      setTimeout(() => {
-        t.style.opacity = 0;
-        setTimeout(() => { t.remove(); }, 500);
-      }, 2000);
+      requestAnimationFrame(()=>{ t.style.opacity=1; });
+      setTimeout(()=>{
+        t.style.opacity=0;
+        setTimeout(()=>{ t.remove();},500);
+      },2000);
     }
     function logEvent(message){
-      const p = document.createElement("p");
-      const now = new Date().toLocaleString("en-US", { hour12: false });
-      p.innerText = `[${now}] ${message}`;
+      const p=document.createElement("p");
+      const now=new Date().toLocaleString("en-US",{hour12:false});
+      p.innerText=`[${now}] ${message}`;
       eventLog.appendChild(p);
     }
 
     /*******************************************************
-     * 6) File Drag & Drop
+     * 8) File Drag & Drop
      *******************************************************/
-    ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
-      editor.addEventListener(evtName, e => {
+    ["dragenter","dragover","dragleave","drop"].forEach(evtName=>{
+      editor.addEventListener(evtName,e=>{
         e.preventDefault();
         e.stopPropagation();
-      }, false);
+      },false);
     });
-    editor.addEventListener("dragover", () => { editor.style.background = "#fafafa"; });
-    editor.addEventListener("dragleave", () => { editor.style.background = "white"; });
-    editor.addEventListener("drop", e => {
-      editor.style.background = "white";
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        const file = files[0];
-        const fname = file.name.toLowerCase();
-        if (fname.endsWith(".txt") || fname.endsWith(".doc")) {
-          let reader = new FileReader();
-          reader.onload = function(evt) {
-            editor.innerText = evt.target.result;
-            logEvent("File loaded: " + file.name);
+    editor.addEventListener("dragover",()=>{ editor.style.background="#fafafa";});
+    editor.addEventListener("dragleave",()=>{ editor.style.background="white";});
+    editor.addEventListener("drop",e=>{
+      editor.style.background="white";
+      const files=e.dataTransfer.files;
+      if(files.length>0){
+        const file=files[0];
+        const fname=file.name.toLowerCase();
+        if(fname.endsWith(".txt")||fname.endsWith(".doc")){
+          let reader=new FileReader();
+          reader.onload=function(evt){
+            editor.innerText=evt.target.result;
+            logEvent("File loaded: "+file.name);
           };
-          reader.readAsText(file, "UTF-8");
+          reader.readAsText(file,"UTF-8");
         } else {
           showToast("Only .txt or .doc files are supported.");
         }
@@ -689,331 +614,324 @@
     });
 
     /*******************************************************
-     * 7) Long Press in free input mode
+     * 9) 自由输入模式 - 长按 => Tap
      *******************************************************/
-    editor.addEventListener("mousedown", (e) => {
-      // 只在自由输入模式生效
-      if (document.getElementById("input-mode").style.display === "none") return;
-      
-      tapTriggered = false;
-      globalTapIndex = getCaretIndex(e.clientX, e.clientY);
-      initialX = e.clientX;
-      initialY = e.clientY;
-      
-      pressTimer = setTimeout(() => {
-        tapTriggered = true;
-        handleSelection("tap");
-      }, 600);
+    editor.addEventListener("mousedown",(e)=>{
+      if(inputMode.style.display==="none")return;
+      tapTriggered=false;
+      globalTapIndex=getCaretIndex(e.clientX,e.clientY);
+      pressTimer=setTimeout(()=>{
+        tapTriggered=true;
+        handleTapSayInFreeMode();
+      },600);
     });
-    editor.addEventListener("mouseup", (e) => {
-      if (pressTimer) clearTimeout(pressTimer);
-      tapTriggered = false;
+    editor.addEventListener("mouseup",()=>clearTimeout(pressTimer));
+    editor.addEventListener("mouseleave",()=>clearTimeout(pressTimer));
+    editor.addEventListener("touchstart",(e)=>{
+      if(inputMode.style.display==="none")return;
+      tapTriggered=false;
+      let t=e.touches[0];
+      globalTapIndex=getTouchIndex(t.clientX,t.clientY);
+      pressTimer=setTimeout(()=>{
+        tapTriggered=true;
+        handleTapSayInFreeMode();
+      },1000);
     });
-    editor.addEventListener("mouseleave", (e) => {
-      if (pressTimer) clearTimeout(pressTimer);
-      tapTriggered = false;
-    });
-    editor.addEventListener("touchstart", (e) => {
-      if (document.getElementById("input-mode").style.display === "none") return;
-      tapTriggered = false;
-      const touch = e.touches[0];
-      globalTapIndex = getTouchIndex(touch.clientX, touch.clientY);
-      initialX = touch.clientX;
-      initialY = touch.clientY;
-      
-      pressTimer = setTimeout(() => {
-        tapTriggered = true;
-        handleSelection("tap");
-      }, 1000);
-    });
-    editor.addEventListener("touchend", (e) => {
-      if (pressTimer) clearTimeout(pressTimer);
-      tapTriggered = false;
-    });
-    editor.addEventListener("touchcancel", (e) => {
-      if (pressTimer) clearTimeout(pressTimer);
-      tapTriggered = false;
-    });
-    function getTouchIndex(x, y){
-      let rect = editor.getBoundingClientRect();
-      let relativeX = x - rect.left;
-      let totalChars = editor.innerText.length;
-      if (totalChars === 0) return 0;
-      let ratio = relativeX / rect.width;
-      ratio = Math.max(0, Math.min(1, ratio));
-      return Math.floor(ratio * totalChars);
-    }
+    editor.addEventListener("touchend",()=>clearTimeout(pressTimer));
+    editor.addEventListener("touchcancel",()=>clearTimeout(pressTimer));
 
-    /*******************************************************
-     * 8) Handle selection (Tap/Voice)
-     *******************************************************/
-    function handleSelection(mode) {
-      removeSuggestionsBox();
-      currentMode = "tap";
-
-      let { sentence, relativeIndex } = getSelectedSentenceAndRelativeIndex(editor.innerText, globalTapIndex);
-      sentence = sentence.trim();
-      if (!sentence) {
-        logEvent("No valid sentence found for highlight");
+    function handleTapSayInFreeMode(){
+      currentMode="tap";
+      console.log('[Debug] handleTapSayInFreeMode => globalTapIndex:',globalTapIndex);
+      let {sentence,relativeIndex}=getSelectedSentenceAndRelativeIndex(editor.innerText,globalTapIndex);
+      console.log('[Debug] sentence chosen:',sentence,'relativeIndex:',relativeIndex);
+      sentence=sentence.trim();
+      if(!sentence){
+        logEvent("No valid sentence found");
         return;
       }
-
-      currentTapSayTarget = sentence;
-      currentSentenceState = sentence;
-      localTapIndex = relativeIndex;
-      touchIndexSpan.innerText = localTapIndex.toString();
-
-      errorText.innerText = sentence;
-      originalSentence = sentence;
-      originalErrorSpan.innerText = sentence;
+      localTapIndex=relativeIndex;
+      touchIndexSpan.innerText=String(localTapIndex);
+      errorText.innerText=sentence;
+      originalSentence=sentence;
+      originalErrorSpan.innerText=sentence;
       undoStack.push(editor.innerHTML);
 
       removeHighlight();
-      if (!highlightSentence(sentence)) {
-        logEvent("Highlight not found in editor => " + sentence);
+      if(!highlightSentence(sentence)){
+        logEvent("Highlight not found => "+sentence);
       }
-
-      setTimeout(() => {
+      setTimeout(()=>{
         moveCaretToEndOfTarget();
         editor.focus();
-      }, 50);
+      },50);
 
       startRecording();
+      setTimeout(()=>editor.focus(),0);
+    }
+
+    function getTouchIndex(x,y){
+      let rect=editor.getBoundingClientRect();
+      let rx=x-rect.left;
+      let total=editor.innerText.length;
+      if(!total)return 0;
+      let ratio=rx/rect.width;
+      ratio=Math.max(0,Math.min(1,ratio));
+      return Math.floor(ratio*total);
     }
 
     /*******************************************************
-     * 9) highlight / removeHighlight / replace
+     * 10) highlight / removeHighlight
      *******************************************************/
     function highlightSentence(sentence){
-      lastHighlightedSentence = sentence;
-      let html = editor.innerHTML;
-      let safe = sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(safe, "i");
-      if (!re.test(html)) return false;
-      editor.innerHTML = html.replace(re, `<span id="target-sentence" class="highlighted-sentence">$&</span>`);
+      lastHighlightedSentence=sentence;
+      let html=editor.innerHTML;
+      let safe=sentence.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      let re=new RegExp(safe,"i");
+      if(!re.test(html))return false;
+      editor.innerHTML=html.replace(re,`<span id="target-sentence" class="highlighted-sentence">$&</span>`);
       return true;
     }
     function removeHighlight(){
-      let html = editor.innerHTML;
-      html = html.replace(/<span id="target-sentence" class="highlighted-sentence">(.*?)<\/span>/i, "$1");
-      editor.innerHTML = html;
+      let html=editor.innerHTML;
+      html=html.replace(/<span id="target-sentence" class="highlighted-sentence">(.*?)<\/span>/i,"$1");
+      editor.innerHTML=html;
       moveCaretToEndOfTarget();
-    }
-    function replaceHighlightedSentence(newText){
-      let ts = document.getElementById("target-sentence");
-      if (ts) {
-        ts.innerText = newText;
-      } else {
-        // fallback
-        let textContent = editor.innerText;
-        if (currentTapSayTarget) {
-          editor.innerText = textContent.replace(currentTapSayTarget, newText);
-        }
-      }
-      // 更新 currentTapSayTarget
-      currentTapSayTarget = newText;
     }
 
     /*******************************************************
-     * 10) Start speech recognition
+     * 11) Start speech recognition
      *******************************************************/
     function startRecording(){
-      if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
+      if(!("SpeechRecognition" in window)&&!("webkitSpeechRecognition" in window)){
         showToast("Speech recognition not supported in this browser.");
         finalizeTapSay();
         return;
       }
-      let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "en-US";
+      let SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+      recognition=new SpeechRecognition();
+      recognition.continuous=false;
+      recognition.interimResults=false;
+      recognition.lang="en-US";
 
-      recognition.onstart = () => {
-        isListening = true;
-        micStatusSpan.innerText = "🟢 Recording...";
-        silenceTimer = setTimeout(() => {
-          if (isListening) recognition.stop();
-        }, 5000);
+      recognition.onstart=()=>{
+        isListening=true;
+        micStatusSpan.innerText="🟢 Recording...";
+        silenceTimer=setTimeout(()=>{
+          if(isListening)recognition.stop();
+        },5000);
       };
-      recognition.onresult = (e) => {
+      recognition.onresult=(e)=>{
         clearTimeout(silenceTimer);
-        let txt = "";
-        for (let i = e.resultIndex; i < e.results.length; i++){
-          txt += e.results[i][0].transcript;
+        let txt="";
+        for(let i=e.resultIndex;i<e.results.length;i++){
+          txt+=e.results[i][0].transcript;
         }
-        voiceInputSpan.innerText = txt;
+        voiceInputSpan.innerText=txt;
       };
-      recognition.onerror = (err) => {
-        micStatusSpan.innerText = "❌ Recording error";
-        if (isListening) recognition.stop();
-        logEvent("Speech recognition error => " + err.error);
+      recognition.onerror=(err)=>{
+        micStatusSpan.innerText="❌ Recording error";
+        if(isListening)recognition.stop();
+        logEvent("Speech recognition error => "+err.error);
       };
-      recognition.onend = () => {
-        isListening = false;
-        micStatusSpan.innerText = "🔴 Stopped";
+      recognition.onend=()=>{
+        isListening=false;
+        micStatusSpan.innerText="🔴 Stopped";
         finalizeTapSay();
       };
       recognition.start();
     }
 
     /*******************************************************
-     * 11) finalizeTapSay
+     * 12) finalizeTapSay
      *******************************************************/
     function finalizeTapSay(){
-      removeOverlay();
-      removeSuggestionsBox();
-      let transcript = voiceInputSpan.innerText.trim();
-      if (!transcript) {
+      let transcript=voiceInputSpan.innerText.trim();
+      if(!transcript){
         showToast("No speech input detected.");
-        currentTapSayTarget = '';
-        currentMode = null;
+        currentMode=null;
         return;
       }
+      undoStack.push(editor.innerHTML);
 
-      if (currentMode === "tap" && currentTapSayTarget) {
-        let textNoPunc = removePunctuation(transcript).trimEnd();
-        let merged = (currentTapSayTarget + " <||> " + textNoPunc).trimEnd();
-        finalOutputSpan.innerText = merged;
-        logEvent("Final output => " + merged);
+      let parted=errorText.innerText.trimEnd();
+      parted=parted.replace(/([.!?])(\S)/g,"$1 $2");
+      let textNoPunc=removePunctuation(transcript).trimEnd();
+      let merged=(parted+" <||> "+textNoPunc).trimEnd();
+      finalOutputSpan.innerText=merged;
+      logEvent("Final output => "+merged);
 
-        // 在体验模式下发送到API
-        if (document.getElementById("experience-mode").style.display !== "none") {
-          sendToAPI(merged, localTapIndex, true);
-        } else {
-          sendToAPI(merged, localTapIndex, false);
-        }
+      if(experienceMode.style.display!=="none"){
+        sendToAPI(merged,localTapIndex,true);
+      }else{
+        sendToAPI(merged,localTapIndex,false);
       }
-
-      currentMode = null;
-      voiceInputSpan.innerText = "";
+      currentMode=null;
+      voiceInputSpan.innerText="";
+      lastHighlightedSentence=errorText.innerText;
+      clearTimeout(highlightTimeout);
+      highlightTimeout=setTimeout(endTapSay,3000);
+    }
+    function endTapSay(){
+      clearTimeout(highlightTimeout);
+      removeHighlight();
     }
 
     /*******************************************************
-     * 12) /correct API call
+     * 13) /correct
      *******************************************************/
-    function sendToAPI(mergedStr, loc, isExperienceMode = false){
-      logEvent("Sending /correct => merged_string:" + mergedStr + ", touch_location:" + loc);
-      fetch(API_URL, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          merged_string: mergedStr,
-          touch_location: loc
+    function sendToAPI(mergedStr,loc,isExperienceMode=false){
+      logEvent("Sending /correct => merged_string:"+mergedStr+", touch_location:"+loc);
+      fetch(API_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          merged_string:mergedStr,
+          touch_location:loc
         })
-      })
-      .then(resp => resp.json())
-      .then(data => {
-        let corrs = data.corrections || [];
-        logEvent("API corrections => " + JSON.stringify(corrs));
-        removeOverlay();
-        applyFirstSuggestionAndShowBox(corrs, isExperienceMode);
-      })
-      .catch(err => {
-        logEvent("API call error => " + err);
-        removeOverlay();
+      }).then(resp=>resp.json()).then(data=>{
+        let corrs=data.corrections||[];
+        logEvent("API corrections => "+JSON.stringify(corrs));
+        applyFirstSuggestionAndShowBox(corrs,isExperienceMode);
+      }).catch(err=>{
+        logEvent("API call error => "+err);
       });
     }
 
     /*******************************************************
-     * 13) applyFirstSuggestionAndShowBox
+     * 14) applyFirstSuggestionAndShowBox
      *******************************************************/
-    function applyFirstSuggestionAndShowBox(corrections, isExperienceMode = false) {
-      if (!corrections.length) {
-        return;
+    function replaceFirstOccurrence(fullText, oldPart, newPart){
+      let safe=oldPart.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      let reg=new RegExp(safe,"i");
+      return fullText.replace(reg,newPart);
+    }
+
+    function applyFirstSuggestionAndShowBox(corrections,isExperienceMode=false){
+      if(!corrections.length)return;
+      let candidate=corrections[0].trimEnd();
+
+      if(isExperienceMode){
+        const errorSentence=document.getElementById("error-sentence");
+        if(!errorSentence)return;
+
+        let entireText=errorSentence.innerText;
+        let partialReplaced=replaceFirstOccurrence(entireText,originalSentence,candidate);
+
+        errorSentence.innerText=partialReplaced; 
+        errorSentence.classList.remove("highlighted-sentence");
+
+        /* 关键修复: 也更新 originalSentence */
+        originalSentence=candidate;
+
+        if(corrections.length>1){
+          let highlightSpan=document.querySelector("#error-sentence .highlighted-sentence");
+          let rect=null;
+          if(highlightSpan){
+            rect=highlightSpan.getBoundingClientRect();
+          } else {
+            rect=errorSentence.getBoundingClientRect();
+          }
+          suggestionsBox=createSuggestionBox(rect,corrections,true);
+          document.body.appendChild(suggestionsBox);
+          clearTimeout(suggestionsTimer);
+          suggestionsTimer=setTimeout(()=>{ removeSuggestionsBox(); },3000);
+        }
+        checkCompletion();
+      }else{
+        let html=editor.innerHTML;
+        let safe=originalSentence.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        let re=new RegExp(safe,"i");
+        if(!re.test(html))return;
+        editor.innerHTML=html.replace(re,candidate);
+        originalSentence=candidate;
+
+        removeHighlight();
+        highlightSentence(candidate);
+        setTimeout(()=>{ editor.focus(); },300);
+
+        if(corrections.length>1){
+          let ts=document.getElementById("target-sentence");
+          if(!ts)return;
+          let rect=ts.getBoundingClientRect();
+          suggestionsBox=createSuggestionBox(rect,corrections,false);
+          document.body.appendChild(suggestionsBox);
+          clearTimeout(suggestionsTimer);
+          suggestionsTimer=setTimeout(()=>{ removeSuggestionsBox(); },3000);
+        }
       }
-      console.log("applyFirstSuggestionAndShowBox => corrections:", corrections);
-      
-      let candidate = corrections[0].trimEnd();
+    }
 
-      if (isExperienceMode) {
-        /**** 体验模式逻辑 ****/
-        const errorSentence = document.getElementById("error-sentence");
-        const suggestionItems = document.querySelectorAll('#other-suggestions .suggestion-item');
-        
-        if (errorSentence) {
-          // 替换第1条
-          const fullText = errorSentence.value;
-          const index = fullText.indexOf(currentTapSayTarget);
-          if (index !== -1) {
-            // 用 candidate 替换
-            const newText = fullText.slice(0, index) + candidate + fullText.slice(index + currentTapSayTarget.length);
-            errorSentence.value = newText;
-            currentTapSayTarget = candidate;
+    function createSuggestionBox(rect,corrections,isExpMode=false){
+      let box=document.createElement("div");
+      box.className="suggestions-box-floating";
+      box.style.left=(rect.left+window.scrollX)+"px";
+      box.style.top=(rect.bottom+window.scrollY)+"px";
+      box.style.width=rect.width+"px";
 
-            // 更新第2和第3条
-            for (let i = 1; i < corrections.length && i <= 2; i++) {
-              let item = suggestionItems[i - 1];
-              if (item) {
-                item.style.display = 'block';
-                item.textContent = corrections[i].trimEnd();
-                item.onclick = () => {
-                  let chosen = corrections[i].trimEnd();
-                  const newText2 = errorSentence.value.replace(candidate, chosen);
-                  errorSentence.value = newText2;
-                  currentTapSayTarget = chosen;
-                  checkCompletion();
-                };
-              }
-            }
+      for(let i=1;i<corrections.length;i++){
+        let div=document.createElement("div");
+        div.innerText=corrections[i];
+        div.onclick=(evt)=>{
+          evt.preventDefault();
+          evt.stopPropagation();
+          let cand=corrections[i].trimEnd();
+
+          if(isExpMode){
+            let errorSentence=document.getElementById("error-sentence");
+            if(!errorSentence)return;
+            removeHighlightExp();
+
+            let entireText=errorSentence.innerText;
+            let updated=replaceFirstOccurrence(entireText,originalSentence,cand);
+            errorSentence.innerText=updated;
+
+            /* 同步更新 originalSentence */
+            originalSentence=cand;
+
+            highlightExpSentence(cand);
             checkCompletion();
+          }else{
+            removeHighlight();
+            let html=editor.innerHTML;
+            let safe=originalSentence.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+            let re=new RegExp(safe,"i");
+            editor.innerHTML=html.replace(re,cand);
+            originalSentence=cand;
+            highlightSentence(cand);
+            setTimeout(()=>{
+              moveCaretToEndOfTarget();
+              editor.focus();
+            },300);
           }
-        }
-      } else {
-        /**** 自由输入模式逻辑 ****/
-        // 1) 自动用第一条建议替换高亮的句子
-        replaceHighlightedSentence(candidate);
-
-        // 2) 如果只有1条建议，就不用显示其他
-        const suggestionDivs = document.querySelectorAll("#editor-suggestions .suggestion-item");
-        // 先全部隐藏
-        suggestionDivs.forEach(div => {
-          div.style.display = "none";
-          div.textContent = "";
-        });
-
-        if (corrections.length > 1) {
-          for (let i = 1; i < corrections.length && i - 1 < suggestionDivs.length; i++) {
-            let item = suggestionDivs[i - 1];
-            item.style.display = "block";
-            item.textContent = corrections[i].trimEnd();
-            // 点击后也要替换
-            item.onclick = () => {
-              replaceHighlightedSentence(corrections[i].trimEnd());
-            };
-          }
-        }
+          removeSuggestionsBox();
+        };
+        box.appendChild(div);
       }
+      return box;
+    }
+
+    function removeHighlightExp(){
+      const errorSentence=document.getElementById("error-sentence");
+      if(!errorSentence)return;
+      errorSentence.innerHTML=errorSentence.innerHTML.replace(/<span class="highlighted-sentence">(.*?)<\/span>/i,"$1");
+    }
+    function highlightExpSentence(txt){
+      const errorSentence=document.getElementById("error-sentence");
+      if(!errorSentence)return;
+      let html=errorSentence.innerHTML;
+      let safe=txt.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      let re=new RegExp(safe,"i");
+      errorSentence.innerHTML=html.replace(re,`<span class="highlighted-sentence">$&</span>`);
     }
 
     /*******************************************************
-     * 14) removeSuggestionsBox & endTapSay
+     * 15) Undo
      *******************************************************/
-    function removeSuggestionsBox(){
-      if (suggestionsBox) {
-        if (suggestionsBox.parentElement) {
-          suggestionsBox.parentElement.removeChild(suggestionsBox);
-        }
-        suggestionsBox = null;
-      }
-      if (suggestionsTimer) {
-        clearTimeout(suggestionsTimer);
-        suggestionsTimer = null;
-      }
-    }
-    function endTapSay() {
-      clearTimeout(highlightTimeout);
-      removeHighlight();
-      console.log("removeHighlight called.");
-    }
-
-    /*******************************************************
-     * 15) Undo logic
-     *******************************************************/
-    undoButton.addEventListener("click", function(){
-      if (undoStack.length > 0) {
-        let prevState = undoStack.pop();
-        editor.innerHTML = prevState;
+    undoButton.addEventListener("click",()=>{
+      if(undoStack.length>0){
+        let prev=undoStack.pop();
+        editor.innerHTML=prev;
         removeHighlight();
         showToast("Undo last change");
       } else {
@@ -1023,320 +941,284 @@
     });
 
     /*******************************************************
-     * 16) Utility Functions
+     * 16) moveCaretToEndOfTarget
      *******************************************************/
-    function getCaretIndex(x, y){
-      let range;
-      if (document.caretRangeFromPoint) {
-        range = document.caretRangeFromPoint(x, y);
-      } else if (document.caretPositionFromPoint) {
-        let pos = document.caretPositionFromPoint(x, y);
-        if (!pos) return -1;
-        range = document.createRange();
-        range.setStart(pos.offsetNode, pos.offset);
-        range.collapse(true);
-      }
-      if (!range) return -1;
-      let pre = range.cloneRange();
-      pre.selectNodeContents(editor);
-      pre.setEnd(range.startContainer, range.startOffset);
-      return pre.toString().length;
-    }
-    function removePunctuation(str){
-      return str.replace(/[^a-zA-Z0-9'\s]/g, "");
-    }
-    function getSelectedSentenceAndRelativeIndex(text, clickPosition) {
-      // 使用正则表达式匹配以.!?结尾的句子
-      const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-      let currentPosition = 0;
-      
-      for (let sentence of sentences) {
-        const endPosition = currentPosition + sentence.length;
-        if (clickPosition >= currentPosition && clickPosition <= endPosition) {
-          return {
-            sentence: sentence.trim(),
-            relativeIndex: clickPosition - currentPosition
-          };
-        }
-        currentPosition = endPosition;
-      }
-      // 如果点击位置超出了最后一句
-      if (sentences.length > 0) {
-        const lastSentence = sentences[sentences.length - 1];
-        return {
-          sentence: lastSentence.trim(),
-          relativeIndex: clickPosition - (text.length - lastSentence.length)
-        };
-      }
-      // 默认返回整个文本
-      return {
-        sentence: text.trim(),
-        relativeIndex: clickPosition
-      };
-    }
     function moveCaretToEndOfTarget(){
-      setTimeout(() => {
-        const ts = document.getElementById("target-sentence");
-        if (!ts && lastHighlightedSentence) {
-          const range = document.createRange();
-          const sel = window.getSelection();
-          const textNode = editor.firstChild;
-
-          if (textNode) {
-            const index = textNode.textContent.indexOf(lastHighlightedSentence);
-            if (index !== -1) {
-              range.setStart(textNode, index + lastHighlightedSentence.length);
+      setTimeout(()=>{
+        const ts=document.getElementById("target-sentence");
+        if(!ts && lastHighlightedSentence){
+          let range=document.createRange();
+          let sel=window.getSelection();
+          let txtNode=editor.firstChild;
+          if(txtNode){
+            let idx=txtNode.textContent.indexOf(lastHighlightedSentence);
+            if(idx!==-1){
+              range.setStart(txtNode,idx+lastHighlightedSentence.length);
               range.collapse(true);
               sel.removeAllRanges();
               sel.addRange(range);
             }
           }
-        } else if (ts) {
-          const range = document.createRange();
-          const sel = window.getSelection();
+        }else if(ts){
+          let range=document.createRange();
+          let sel=window.getSelection();
           range.setStartAfter(ts);
           range.collapse(true);
           sel.removeAllRanges();
           sel.addRange(range);
           editor.focus();
         }
-      }, 0);
+      },0);
     }
 
     /*******************************************************
-     * 17) Mode switching
+     * 17) 工具函数
      *******************************************************/
-    const modeInput = document.getElementById("mode-input");
-    const modeExperience = document.getElementById("mode-experience");
-    const inputMode = document.getElementById("input-mode");
-    const experienceMode = document.getElementById("experience-mode");
-
-    modeInput.addEventListener("click", () => {
-      inputMode.style.display = "block";
-      experienceMode.style.display = "none";
-      modeInput.classList.add("active");
-      modeExperience.classList.remove("active");
-    });
-    modeExperience.addEventListener("click", () => {
-      inputMode.style.display = "none";
-      experienceMode.style.display = "block";
-      modeExperience.classList.add("active");
-      modeInput.classList.remove("active");      
-      // 保存初始错误句
-      const errorSentence = document.getElementById("error-sentence");
-      if (errorSentence) {
-        initialErrorSentence = errorSentence.value;
+    function getCaretIndex(x,y){
+      console.log('[Debug] getCaretIndex:',{x,y});
+      let range;
+      if(document.caretRangeFromPoint){
+        range=document.caretRangeFromPoint(x,y);
+        console.log('[Debug] range from caretRangeFromPoint:',range);
+      } else if(document.caretPositionFromPoint){
+        let pos=document.caretPositionFromPoint(x,y);
+        if(!pos){
+          console.log('[Debug] No pos from caretPositionFromPoint!');
+          return -1;
+        }
+        range=document.createRange();
+        range.setStart(pos.offsetNode,pos.offset);
+        range.collapse(true);
+        console.log('[Debug] range from caretPositionFromPoint:',range);
       }
-    });
+      if(!range)return -1;
+      let pre=range.cloneRange();
+      pre.selectNodeContents(editor);
+      pre.setEnd(range.startContainer,range.startOffset);
 
-    /*******************************************************
-     * 18) Experience Mode Setup
-     *******************************************************/
-    function initializeExperienceMode() {
-      const experienceMode = document.getElementById("experience-mode");
-      experienceMode.innerHTML = `
-        <h3>Experience Mode</h3>
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <button class="nav-button" id="prev-sentence" style="visibility: hidden;">←</button>
-            <span id="sentence-index">1/5</span>
-            <button class="nav-button" id="next-sentence">→</button>
-          </div>
-          <p><strong>Target Sentence:</strong></p>
-          <textarea id="target-sentence" readonly></textarea>
-          <p><strong>Error Sentence:</strong></p>
-          <textarea id="error-sentence" readonly></textarea>
-          <div id="other-suggestions" class="suggestions-box">
-            <h4>Other Suggestions:</h4>
-            <div class="suggestion-item"></div>
-            <div class="suggestion-item"></div>
-          </div>
-          <div style="display: flex; gap: 10px; margin-top: 12px;">
-            <button id="experience-undo-button" style="
-              flex: 1;
-              padding: 14px;
-              font-size: 16px;
-              border: none;
-              border-radius: 6px;
-              background: #28a745;
-              color: #fff;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-              cursor: pointer;
-            ">Restore Original Error</button>
-            <button id="skip-sentence-button" style="
-              flex: 1;
-              padding: 14px;
-              font-size: 16px;
-              border: none;
-              border-radius: 6px;
-              background: #6c757d;
-              color: #fff;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-              cursor: pointer;
-            ">Press and hold near the error until highlighted, then speak your correction</button>
-          </div>
-          <button id="next-pair-button" style="
-            width: 100%;
-            margin-top: 10px;
-            padding: 14px;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            background: #007bff;
-            color: #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            cursor: pointer;
-            display: none;
-          ">Next Sentence</button>
-        </div>
-      `;
-      updateSentencePair(0);
-      attachEventListeners();
+      let caretIndex=pre.toString().length;
+      console.log('[Debug] caretIndex:',caretIndex);
+      return caretIndex;
     }
 
-    function attachEventListeners() {
-      const prevSentence = document.getElementById("prev-sentence");
-      const nextSentence = document.getElementById("next-sentence");
-      const skipBtn = document.getElementById("skip-sentence-button");
-      const nextPairBtn = document.getElementById("next-pair-button");
-      const expUndoBtn = document.getElementById("experience-undo-button");
-      if (!prevSentence || !nextSentence || !skipBtn || !nextPairBtn || !expUndoBtn) return;
+    function removePunctuation(str){
+      return str.replace(/[^a-zA-Z0-9'\s]/g,"");
+    }
+    function removeSuggestionsBox(){
+      if(suggestionsBox){
+        suggestionsBox.remove();
+        suggestionsBox=null;
+      }
+      if(suggestionsTimer){
+        clearTimeout(suggestionsTimer);
+        suggestionsTimer=null;
+      }
+    }
 
-      prevSentence.addEventListener("click", () => {
-        if (currentPairIndex > 0) {
+    function getSelectedSentenceAndRelativeIndex(text,pos){
+      console.log('[Debug] getSelectedSentenceAndRelativeIndex => pos:',pos);
+      const sentences=text.match(/[^.!?]+[.!?]+/g)||[text];
+      console.log('[Debug] splitted sentences:',sentences);
+
+      let current=0;
+      for(let s of sentences){
+        let end=current+s.length;
+        console.log('[Debug] checking sentence:',s,'start:',current,'end:',end);
+        if(pos>=current&&pos<=end){
+          console.log('[Debug] matched =>',s,'relativeIndex =>',pos-current);
+          return{sentence:s,relativeIndex:pos-current};
+        }
+        current=end+1;
+      }
+      console.log('[Debug] no match, fallback =>',sentences[0]);
+      return{sentence:sentences[0],relativeIndex:0};
+    }
+
+    /*******************************************************
+     * 18) 体验模式
+     *******************************************************/
+    function initializeExperienceMode(){
+      updateSentencePair(0);
+      attachExpListeners();
+    }
+    function attachExpListeners(){
+      const prev=document.getElementById("prev-sentence");
+      const next=document.getElementById("next-sentence");
+      const skip=document.getElementById("skip-sentence-button");
+      const nextPair=document.getElementById("next-pair-button");
+      const expUndo=document.getElementById("experience-undo-button");
+      const errorSentence=document.getElementById("error-sentence");
+      if(!prev||!next||!skip||!nextPair||!expUndo||!errorSentence)return;
+
+      // 上一题
+      prev.addEventListener("click",()=>{
+        if(currentPairIndex>0){
           currentPairIndex--;
           updateSentencePair(currentPairIndex);
         }
       });
-      nextSentence.addEventListener("click", () => {
-        if (currentPairIndex < sentencePairs.length - 1) {
+      // 下一题
+      next.addEventListener("click",()=>{
+        if(currentPairIndex<sentencePairs.length-1){
           currentPairIndex++;
           updateSentencePair(currentPairIndex);
         }
       });
-      skipBtn.addEventListener("click", () => {
-        const errorSentence = document.getElementById("error-sentence");
-        const targetSentence = document.getElementById("target-sentence");
-        if (errorSentence && targetSentence && errorSentence.value.trim() === targetSentence.value.trim()) {
-          if (currentPairIndex < sentencePairs.length - 1) {
-            currentPairIndex++;
-            updateSentencePair(currentPairIndex);
-          } else {
-            showToast("Congratulations on completing all sentences!");
-          }
-        }
-      });
-      nextPairBtn.addEventListener("click", () => {
-        if (currentPairIndex < sentencePairs.length - 1) {
+      // skip
+      skip.addEventListener("click",()=>{
+        if(currentPairIndex<sentencePairs.length-1){
           currentPairIndex++;
           updateSentencePair(currentPairIndex);
+          showToast("Skipped current sentence");
+        }else{
+          showToast("This is the last sentence");
+        }
+      });
+      // nextPair
+      nextPair.addEventListener("click",()=>{
+        if(currentPairIndex<sentencePairs.length-1){
+          currentPairIndex++;
+          updateSentencePair(currentPairIndex);
+        }else{
+          showToast("Congratulations, you have completed all sentences!");
+        }
+      });
+      expUndo.addEventListener("click",()=>{
+        if(errorSentence){
+          removeHighlightExp();
+          errorSentence.classList.remove("highlighted-sentence");
+          errorSentence.innerText=sentencePairs[currentPairIndex].error;
+          showToast("Restored error sentence");
+          originalSentence=sentencePairs[currentPairIndex].error;
+        }
+      });
+
+      // 长按 => tap
+      let pressTimerExp=null;
+      errorSentence.addEventListener("mousedown",(e)=>{
+        e.preventDefault();
+        const rect=e.target.getBoundingClientRect();
+        let clickX=e.clientX-rect.left;
+        let text=errorSentence.innerText;
+        let textLen=text.length;
+        if(textLen>0){
+          let ratio=clickX/rect.width;
+          ratio=Math.max(0,Math.min(1,ratio));
+          localTapIndex=Math.floor(ratio*textLen);
         } else {
-          showToast("Congratulations on completing all sentences!");
+          localTapIndex=0;
         }
+        console.log('[Debug] localTapIndex (char-based):',localTapIndex);
+        pressTimerExp=setTimeout(handleExpLongPress,600);
       });
-      expUndoBtn.addEventListener("click", () => {
-        const errorSentence = document.getElementById("error-sentence");
-        if (errorSentence && currentOriginalErrorSentence) {
-          errorSentence.value = currentOriginalErrorSentence;
-          showToast("Restored to original error sentence");
+      errorSentence.addEventListener("mouseup",()=>clearTimeout(pressTimerExp));
+      errorSentence.addEventListener("mouseleave",()=>clearTimeout(pressTimerExp));
+
+      errorSentence.addEventListener("touchstart",(e)=>{
+        e.preventDefault();
+        const rect=e.target.getBoundingClientRect();
+        let t=e.touches[0];
+        let clickX=t.clientX-rect.left;
+        let text=errorSentence.innerText;
+        let textLen=text.length;
+        if(textLen>0){
+          let ratio=clickX/rect.width;
+          ratio=Math.max(0,Math.min(1,ratio));
+          localTapIndex=Math.floor(ratio*textLen);
+        } else {
+          localTapIndex=0;
         }
+        console.log('[Debug] localTapIndex (char-based, touch):',localTapIndex);
+        pressTimerExp=setTimeout(handleExpLongPress,1000);
       });
-
-      // 长按事件（错误句）
-      const errorSentence = document.getElementById("error-sentence");
-      if (errorSentence) {
-        let pressTimer = null;
-        errorSentence.addEventListener("mousedown", (e) => {
-          pressTimer = setTimeout(() => handleLongPress(), 600);
-        });
-        errorSentence.addEventListener("mouseup", () => {
-          clearTimeout(pressTimer);
-        });
-        errorSentence.addEventListener("mouseleave", () => {
-          clearTimeout(pressTimer);
-        });
-        errorSentence.addEventListener("touchstart", (e) => {
-          pressTimer = setTimeout(() => handleLongPress(), 1000);
-        });
-        errorSentence.addEventListener("touchend", () => {
-          clearTimeout(pressTimer);
-        });
-        errorSentence.addEventListener("touchcancel", () => {
-          clearTimeout(pressTimer);
-        });
-      }
+      errorSentence.addEventListener("touchend",()=>clearTimeout(pressTimerExp));
+      errorSentence.addEventListener("touchcancel",()=>clearTimeout(pressTimerExp));
     }
 
-    function handleLongPress() {
-      const errorSentence = document.getElementById("error-sentence");
-      if (!errorSentence) return;
+    function handleExpLongPress(){
+      const errorSentence=document.getElementById("error-sentence");
+      if(!errorSentence)return;
+      let text=errorSentence.innerText;
 
-      const start = errorSentence.selectionStart || 0;
-      const fullText = errorSentence.value;
-      const { sentence, relativeIndex } = getSelectedSentenceAndRelativeIndex(fullText, start);
+      console.log('[Debug] handleExpLongPress => localTapIndex:',localTapIndex);
 
-      currentTapSayTarget = sentence.trim();
-      localTapIndex = relativeIndex;
-      touchIndexSpan.innerText = localTapIndex.toString();
+      const {sentence,startPos,endPos}=findNearestSentenceExp(text,localTapIndex);
+      console.log('[Debug] findNearestSentenceExp =>',{sentence,startPos,endPos});
 
-      errorText.innerText = currentTapSayTarget;
-      originalErrorSpan.innerText = currentTapSayTarget;
-      originalSentence = currentTapSayTarget;
+      if(sentence){
+        let relativeIndex=Math.min(localTapIndex-startPos,sentence.length);
+        console.log('[Debug] final relativeIndex in sentence =>',relativeIndex);
 
-      // 选中该句
-      const sentenceStart = fullText.indexOf(currentTapSayTarget);
-      if (sentenceStart !== -1) {
-        errorSentence.setSelectionRange(sentenceStart, sentenceStart + currentTapSayTarget.length);
+        originalSentence=sentence.trim();
+        errorText.innerText=originalSentence;
+        originalErrorSpan.innerText=originalSentence;
+        localTapIndex=relativeIndex;
+
+        errorSentence.innerHTML=text.replace(sentence,`<span class="highlighted-sentence">${sentence}</span>`);
+        currentMode="tap";
+        startRecording();
       }
-
-      currentMode = "tap";
-      startRecording();
+    }
+    function findNearestSentenceExp(text,clickPos){
+      const sentences=text.match(/[^.!?]+[.!?]+/g)||[text];
+      let curr=0;
+      let nearestSent=null;
+      let nearestStart=0;
+      let nearestEnd=0;
+      let minDist=Infinity;
+      for(let s of sentences){
+        let startPos=curr;
+        let endPos=startPos+s.length;
+        let mid=(startPos+endPos)/2;
+        let dist=Math.abs(clickPos-mid);
+        if(clickPos>=startPos&&clickPos<=endPos){
+          return{sentence:s,startPos,endPos};
+        }
+        if(dist<minDist){
+          minDist=dist;
+          nearestSent=s;
+          nearestStart=startPos;
+          nearestEnd=endPos;
+        }
+        curr=endPos+1;
+      }
+      return{
+        sentence:nearestSent||sentences[0],
+        startPos:nearestStart,
+        endPos:nearestEnd
+      };
     }
 
-    function updateSentencePair(index) {
-      const targetSentence = document.getElementById("target-sentence");
-      const errorSentence = document.getElementById("error-sentence");
-      const indexSpan = document.getElementById("sentence-index");
-      const prevButton = document.getElementById("prev-sentence");
-      const nextButton = document.getElementById("next-sentence");
-      const skipButton = document.getElementById("skip-sentence-button");
+    function updateSentencePair(index){
+      const targetSentence=document.getElementById("target-sentence");
+      const errorSentence=document.getElementById("error-sentence");
+      const indexSpan=document.getElementById("sentence-index");
+      const prev=document.getElementById("prev-sentence");
+      const next=document.getElementById("next-sentence");
 
-      // 清空 other-suggestions
-      const suggestionItems = document.querySelectorAll('#other-suggestions .suggestion-item');
-      suggestionItems.forEach(item => {
-        item.textContent = '';
-        item.style.display = 'block';
-      });
+      const oldTip=document.querySelector('.tip-box');
+      if(oldTip)oldTip.remove();
 
-      // 移除旧的 tip-box
-      const oldTip = document.querySelector('.tip-box');
-      if (oldTip) oldTip.remove();
+      const container=document.getElementById("experience-mode");
+      container.insertBefore(addTipBox(sentencePairs[index].tip),container.firstChild);
 
-      // 插入新的 tip-box
-      const container = document.querySelector('#experience-mode');
-      container.insertBefore(addTipBox(sentencePairs[index].tip), container.firstChild);
-
-      // 更新目标句和错误句
-      if (targetSentence) targetSentence.value = sentencePairs[index].target;
-      if (errorSentence) {
-        errorSentence.value = sentencePairs[index].error;
-        currentOriginalErrorSentence = sentencePairs[index].error;
+      if(targetSentence) targetSentence.textContent=sentencePairs[index].target;
+      if(errorSentence){
+        errorSentence.textContent=sentencePairs[index].error;
+        originalSentence=sentencePairs[index].error;
       }
+      if(indexSpan) indexSpan.textContent=(index+1)+"/"+sentencePairs.length;
+      if(prev) prev.style.visibility=(index===0)?"hidden":"visible";
+      if(next) next.style.visibility=(index===sentencePairs.length-1)?"hidden":"visible";
 
-      if (indexSpan) indexSpan.textContent = `${index + 1}/5`;
-      if (prevButton) prevButton.style.visibility = index === 0 ? "hidden" : "visible";
-      if (nextButton) nextButton.style.visibility = index === sentencePairs.length - 1 ? "hidden" : "visible";
-
-      skipButton.textContent = "Press and hold near the error until highlighted, then speak your correction";
-      skipButton.style.background = "#6c757d";
-      currentTapSayTarget = '';
-      currentSentenceState = '';
+      const skipBtn=document.getElementById("skip-sentence-button");
+      skipBtn.textContent="Follow the instruction";
+      skipBtn.style.background="#6c757d";
     }
-
-    function addTipBox(tip) {
-      const tipBox = document.createElement('div');
-      tipBox.className = 'tip-box';
-      tipBox.innerHTML = `
+    function addTipBox(tip){
+      const tipBox=document.createElement('div');
+      tipBox.className='tip-box';
+      tipBox.innerHTML=`
         <div class="tip-content">
           <i class="fas fa-lightbulb"></i>
           ${tip}
@@ -1345,22 +1227,71 @@
       return tipBox;
     }
 
-    function checkCompletion() {
-      const targetSentence = document.getElementById("target-sentence");
-      const errorSentence = document.getElementById("error-sentence");
-      const skipButton = document.getElementById("skip-sentence-button");
-      if (!targetSentence || !errorSentence) return;
+    function checkCompletion(){
+      const targetSentence=document.getElementById("target-sentence");
+      const errorSentence=document.getElementById("error-sentence");
+      const skipBtn=document.getElementById("skip-sentence-button");
+      if(!targetSentence||!errorSentence)return;
+      if(errorSentence.textContent.trim()===targetSentence.textContent.trim()){
+        showToast("Tap&Say succeeded!");
+        let newBtn=skipBtn.cloneNode(false);
+        skipBtn.parentNode.replaceChild(newBtn,skipBtn);
 
-      if (errorSentence.value.trim() === targetSentence.value.trim()) {
-        skipButton.textContent = "Well done! Next sentence";
-        skipButton.style.background = "#28a745";
-        showToast("Correct!");
-      } else {
-        skipButton.textContent = "Press and hold near the error until highlighted, then speak your correction";
-        skipButton.style.background = "#6c757d";
+        if(currentPairIndex===sentencePairs.length-1){
+          newBtn.textContent="Switch to Free-input mode?";
+          newBtn.style.background="#28a745";
+          newBtn.addEventListener("click",()=>{
+            modeInput.click();
+            showToast("Switched to Free-input mode");
+          });
+        }else{
+          newBtn.textContent="Next Sentence";
+          newBtn.style.background="#007bff";
+          newBtn.addEventListener("click",function nextHandler(){
+            currentPairIndex++;
+            updateSentencePair(currentPairIndex);
+            this.textContent="Follow the instruction";
+            this.style.background="#6c757d";
+            this.removeEventListener("click",nextHandler);
+          });
+        }
       }
     }
 
+    /*******************************************************
+     * 19) Undo
+     *******************************************************/
+    undoButton.addEventListener("click",()=>{
+      if(undoStack.length>0){
+        let prev=undoStack.pop();
+        editor.innerHTML=prev;
+        removeHighlight();
+        showToast("Undo last change");
+      } else {
+        showToast("No change to undo!");
+      }
+      editor.focus();
+    });
+
+    /*******************************************************
+     * 20) 模式切换
+     *******************************************************/
+    modeInput.addEventListener("click",()=>{
+      inputMode.style.display="block";
+      experienceMode.style.display="none";
+      modeInput.classList.add("active");
+      modeExperience.classList.remove("active");
+    });
+    modeExperience.addEventListener("click",()=>{
+      inputMode.style.display="none";
+      experienceMode.style.display="block";
+      modeExperience.classList.add("active");
+      modeInput.classList.remove("active");
+      const errSent=document.getElementById("error-sentence");
+      if(errSent){
+        originalSentence=errSent.innerText; 
+      }
+    });
   </script>
 </body>
 </html>
