@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>  
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -41,6 +41,15 @@
       max-width: 900px; /* 进一步减小最大宽度 */
       margin: 0 auto;
       box-sizing: border-box;
+    }
+
+    /*******************************************************
+     * 新增一个类，用来在JS里动态切换，禁用长按菜单/文本选中
+     *******************************************************/
+    .disable-ime {
+      -webkit-touch-callout: none; /* 禁用iOS长按弹出菜单 */
+      -webkit-user-select: none;   /* 禁止iOS选中文字 */
+      user-select: none;           /* 禁止Android/PC选中文字 */
     }
 
     /*******************************************************
@@ -692,10 +701,16 @@
       eventLogCard.style.display=(eventLogCard.style.display==="none")?"block":"none";
       eventLogBtn.innerText=(eventLogCard.style.display==="none")?"Show Event Log":"Hide Event Log";
     });
+
     imeBtn.addEventListener("click",()=>{
       disableIME=!disableIME;
       updateIMEButtonText(disableIME);
-      editor.style.webkitTouchCallout=disableIME?"none":"default";
+      // 改动：不再用editor.style，而是切换 .disable-ime 类
+      if(disableIME){
+        editor.classList.add("disable-ime");
+      } else {
+        editor.classList.remove("disable-ime");
+      }
     });
 
     /*******************************************************
@@ -885,7 +900,6 @@
       let transcript=voiceInputSpan.innerText.trim();
       if(!transcript){
         showToast("No speech input detected.");
-        /* 修复：无语音输入时也要去除高亮 */
         endTapSay(); 
         currentMode=null;
         return;
@@ -913,7 +927,6 @@
     function endTapSay(){
       clearTimeout(highlightTimeout);
       removeHighlight();
-      /* 修复：同时清理体验模式中的高亮 */
       removeHighlightExp();
     }
 
@@ -961,7 +974,6 @@
         errorSentence.innerText=partialReplaced; 
         errorSentence.classList.remove("highlighted-sentence");
 
-        /* 关键修复: 也更新 originalSentence */
         originalSentence=candidate;
 
         if(corrections.length>1){
@@ -1026,7 +1038,6 @@
             let updated=replaceFirstOccurrence(entireText,originalSentence,cand);
             errorSentence.innerText=updated;
 
-            /* 同步更新 originalSentence */
             originalSentence=cand;
 
             highlightExpSentence(cand);
