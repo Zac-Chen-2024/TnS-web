@@ -200,20 +200,20 @@
     #drawer {
       position: fixed;
       bottom: 20px;
-      left: 20px;
-      width: 200px;
+      left: 0; /* 贴合左边框 */
+      width: 250px; /* 稍微加宽 */
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px; /* 增加按钮间距 */
       z-index: 3000;
-      background: #007bff; 
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      background: #007bff;
+      padding: 15px; /* 增加内边距 */
+      border-radius: 0 8px 8px 0; /* 只保留右侧圆角 */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* 更明显的阴影 */
       transition: transform 0.3s ease, opacity 0.3s ease;
     }
     .drawer-collapsed {
-      transform: translateX(-220px);
+      transform: translateX(-220px); /* 根据新宽度调整 */
       opacity: 0.9;
     }
     #drawer-toggle {
@@ -221,34 +221,39 @@
       justify-content: space-between;
       align-items: center;
       width: 100%;
-      font-size: 14px;
+      font-size: 15px; /* 稍微加大字号 */
       border: none;
       border-radius: 6px;
       color: #fff;
       background: #0056b3;
       cursor: pointer;
-      padding: 8px 10px;
+      padding: 10px 15px; /* 增加内边距 */
       transition: background 0.3s;
       margin-bottom: 5px;
+      font-weight: 500; /* 稍微加粗 */
     }
     #drawer-toggle:hover {
       background: #003e80;
     }
     #drawer button:not(#drawer-toggle) {
-      padding: 10px 12px;
-      font-size: 14px;
+      padding: 12px 15px; /* 增加内边距 */
+      font-size: 15px; /* 加大字号 */
       border: none;
       border-radius: 6px;
       color: #007bff;
       background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15); /* 更明显的阴影 */
       cursor: pointer;
-      transition: background 0.3s, color 0.3s;
+      transition: all 0.3s ease;
       width: 100%;
+      font-weight: 500; /* 稍微加粗 */
+      text-align: left; /* 文本左对齐 */
     }
     #drawer button:not(#drawer-toggle):hover {
-      background: #e9f1ff;
+      background: #f0f7ff;
       color: #0056b3;
+      transform: translateY(-1px); /* 悬浮效果 */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     /*******************************************************
@@ -302,8 +307,9 @@
       }
       
       .nav-button {
-        padding: 0.8rem 1.2rem;
+        padding: 1rem 1.5rem;
         font-size: 1.2rem;
+        border-radius: 10px;
       }
       
       #input-mode .card {
@@ -311,7 +317,7 @@
       }
       
       #text-editor {
-        min-height:335px; /* PC端更大的初始高度 */
+        min-height: 500px; /* PC端更大的初始高度 */
       }
     }
 
@@ -342,8 +348,9 @@
       
       /* 调整导航按钮 */
       .nav-button {
-        padding: 0.8rem 1.2rem;
+        padding: 1rem 1.5rem;
         font-size: 1.2rem;
+        border-radius: 10px;
       }
     }
 
@@ -394,6 +401,31 @@
         margin-bottom: 15px; /* 更小的按钮间距 */
         gap: 10px;
       }
+    }
+
+    /* 导航按钮基础样式 */
+    .nav-button {
+      padding: 0.8rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      background: #007bff; /* 蓝色背景 */
+      box-shadow: 0 2px 6px rgba(0,123,255,0.3); /* 蓝色阴影 */
+      cursor: pointer;
+      color: #ffffff; /* 白色文字 */
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .nav-button:hover {
+      background: #0056b3; /* 深蓝色悬停效果 */
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,123,255,0.4);
+    }
+
+    .nav-button:active {
+      transform: translateY(0);
+      background: #004494; /* 更深的蓝色点击效果 */
+      box-shadow: 0 2px 4px rgba(0,123,255,0.2);
     }
   </style>
 </head>
@@ -658,7 +690,7 @@
     });
     imeBtn.addEventListener("click",()=>{
       disableIME=!disableIME;
-      imeBtn.innerText=disableIME?"Disable IME Shortcuts: ON":"Disable IME Shortcuts: OFF";
+      updateIMEButtonText(disableIME);
       editor.style.webkitTouchCallout=disableIME?"none":"default";
     });
 
@@ -1392,6 +1424,17 @@
         originalSentence=errSent.innerText; 
       }
     });
+
+    /* IME开关按钮文本更新 */
+    function updateIMEButtonText(enabled) {
+      const button = document.getElementById('toggle-ime');
+      if (button) {
+        button.textContent = enabled ? 'Disable IME' : 'Enable IME';
+      }
+    }
+
+    // 初始化按钮文本
+    updateIMEButtonText(disableIME);
   </script>
 </body>
 </html>
