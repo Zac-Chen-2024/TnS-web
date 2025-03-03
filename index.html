@@ -28,7 +28,7 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 2rem 0; /* PC端时保留额外空白 */
+      padding: 1.5rem 0; /* 减小上下内边距 */
     }
     #header-container, #footer-container {
       width: 100%;
@@ -37,8 +37,8 @@
       flex-shrink: 0;
     }
     .container {
-      width: 90%;
-      max-width: 900px; /* PC端稍微更宽 */
+      width: 95%;
+      max-width: 1200px; /* 更宽的PC端容器 */
       margin: 0 auto;
       box-sizing: border-box;
     }
@@ -48,20 +48,22 @@
      *******************************************************/
     #mode-buttons {
       display: flex;
-      justify-content: space-between;
+      justify-content: space-between; /* 改为两端对齐 */
       align-items: center;
-      margin: 1.5rem 0;
-      gap: 20px; /* 让按钮之间留空 */
+      margin-bottom: 30px; /* 统一和其他card的间距 */
+      gap: 20px; /* 按钮之间的间距 */
+      width: 100%; /* 确保宽度和container一致 */
     }
     .mode-button {
-      flex: 1;
-      padding: 1rem 1.2rem;
+      flex: 1; /* 让按钮平均分配空间 */
+      max-width: calc(50% - 10px); /* 确保两个按钮不会太宽 */
+      padding: 1.5rem 2.5rem; /* 更大的按钮 */
       border: none;
-      border-radius: 12px;
+      border-radius: 15px;
       background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       cursor: pointer;
-      font-size: 1.1rem;
+      font-size: 1.4rem; /* 更大的按钮文字 */
       color: #4a5568;
       text-align: center;
       transition: all 0.3s ease;
@@ -79,12 +81,19 @@
      * 2) 卡片 .card => 圆角 + 阴影
      *******************************************************/
     .card {
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
+      border-radius: 15px;
+      padding: 40px; /* PC端更大的内边距 */
+      margin-bottom: 30px;
       background: #fff;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      box-sizing: border-box;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      font-size: 1.1rem; /* 更大的基础字体 */
+    }
+    .card:last-child {
+      margin-bottom: 0;
+    }
+    .card h3 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
     }
 
     /*******************************************************
@@ -92,17 +101,17 @@
      *******************************************************/
     #text-editor {
       width: 100%;
-      min-height: 200px;
+      min-height: 400px; /* 更高的编辑器 */
       box-sizing: border-box;
       resize: vertical;      
       overflow: auto;        
       margin: 0 auto;
       background: #fff;      
       border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 1.5rem;
-      font-size: 1.1rem;
-      line-height: 1.6;
+      border-radius: 15px;
+      padding: 2.5rem;
+      font-size: 1.3rem;
+      line-height: 1.8;
       color: #2d3748;
       transition: border-color 0.3s, box-shadow 0.3s;
     }
@@ -120,7 +129,7 @@
      * 4) 高亮颜色 => 柔和黄
      *******************************************************/
     .highlighted-sentence {
-      background-color: #fff3cd; 
+      background-color: #cce7ff; /* 改为浅蓝色 */
       transition: background 0.3s;
     }
 
@@ -132,8 +141,8 @@
       color: red;
     }
     #event-log {
-      font-size: 14px;
-      max-height: 200px;
+      font-size: 1.1rem;
+      max-height: 300px; /* 更高的日志区域 */
       overflow-y: auto;
       background: #f9f9f9;
       padding: 10px;
@@ -246,7 +255,7 @@
      * 9) 提示卡片 => 左侧彩条 + 圆角
      *******************************************************/
     .tip-box {
-      background: #f8f9fa;
+      background: #f0f2f4; /* 加深背景色 - 原来是 #f8f9fa */
       border-left: 4px solid #007bff;
       padding: 12px 16px;
       margin-bottom: 16px;
@@ -258,41 +267,132 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      font-size: 0.9rem; /* 移动端小字体 */
+      font-weight: normal; /* 移动端不加粗 */
     }
     .tip-content i {
       color: #ffc107;
     }
 
-    /*******************************************************
-     * 10) 箭头按钮 => nav-button
-     *******************************************************/
-    .nav-button {
-      background: #4299e1;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      padding: 0.5rem 0.8rem;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .nav-button:hover {
-      background: #307acc;
+    /* PC端样式增强 */
+    @media (min-width: 481px) {
+      .tip-content {
+        font-size: 1.2rem; /* PC端大字体 */
+        font-weight: 600; /* PC端加粗 */
+      }
+      
+      #experience-mode .card {
+        padding: 50px;
+      }
+      
+      #experience-undo-button,
+      #skip-sentence-button {
+        padding: 20px !important;
+        font-size: 1.2rem !important;
+      }
+      
+      #target-sentence,
+      #error-sentence {
+        font-size: 1.3rem;
+        line-height: 1.8;
+      }
+      
+      #sentence-index {
+        font-size: 1.2rem;
+      }
+      
+      .nav-button {
+        padding: 0.8rem 1.2rem;
+        font-size: 1.2rem;
+      }
+      
+      #input-mode .card {
+        padding: 50px; /* 与体验模式卡片保持一致的内边距 */
+      }
+      
+      #text-editor {
+        min-height:335px; /* PC端更大的初始高度 */
+      }
     }
 
-    /*******************************************************
-     * 响应式 => 小屏竖排
-     *******************************************************/
-    @media (max-width:480px){
+    /* 体验模式卡片样式增强 */
+    @media (min-width: 481px) { /* 只针对PC端 */
+      #experience-mode .card {
+        padding: 50px; /* 更大的内边距 */
+      }
+      
+      /* 调整按钮样式 */
+      #experience-undo-button,
+      #skip-sentence-button {
+        padding: 20px !important; /* 更高的按钮 */
+        font-size: 1.2rem !important; /* 更大的按钮文字 */
+      }
+      
+      /* 调整目标句子和错误句子的字体 */
+      #target-sentence,
+      #error-sentence {
+        font-size: 1.3rem;
+        line-height: 1.8;
+      }
+      
+      /* 调整句子索引样式 */
+      #sentence-index {
+        font-size: 1.2rem;
+      }
+      
+      /* 调整导航按钮 */
+      .nav-button {
+        padding: 0.8rem 1.2rem;
+        font-size: 1.2rem;
+      }
+    }
+
+    /* 移动端保持原样 */
+    @media (max-width: 480px) {
+      .main-content {
+        padding: 1rem 0; /* 更小的整体间距 */
+      }
+      
+      .container {
+        width: 94%; /* 稍微增加宽度利用率 */
+      }
+      
       .card {
-        padding:16px;
+        padding: 15px; /* 更小的卡片内边距 */
+        margin-bottom: 15px; /* 更小的卡片间距 */
+        font-size: 0.9rem; /* 更小的字体 */
       }
+      
+      .card h3 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+      }
+      
+      #text-editor {
+        min-height: 200px;
+        padding: 1rem;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+      
+      .mode-button {
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+      }
+      
+      #monitoring-card p {
+        font-size: 0.9rem;
+        margin: 0.5rem 0;
+      }
+      
+      #event-log {
+        font-size: 0.85rem;
+        max-height: 150px;
+      }
+      
       #mode-buttons {
-        flex-direction:column;
-      }
-      #mode-buttons .mode-button {
-        width:100%;
-        margin-bottom:8px;
+        margin-bottom: 15px; /* 更小的按钮间距 */
+        gap: 10px;
       }
     }
   </style>
@@ -412,7 +512,7 @@
   <!-- footer加载 -->
   <footer id="footer-container"></footer>
 
-  <!-- 下面保留“我的代码”所有JS逻辑与结构，不改任何函数/ID -->
+  <!-- 下面保留"我的代码"所有JS逻辑与结构，不改任何函数/ID -->
   <script>
     /*******************************************************
      * 1) 全局常量
