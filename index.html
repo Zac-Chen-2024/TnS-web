@@ -943,9 +943,15 @@
           touch_location:loc
         })
       }).then(resp=>resp.json()).then(data=>{
-        let corrs=data.corrections||[];
+        // 这里改成从 data.filtered_corrections 获取候选
+        let corrs = data.filtered_corrections || [];
         logEvent("API corrections => "+JSON.stringify(corrs));
-        applyFirstSuggestionAndShowBox(corrs,isExperienceMode);
+
+        // 只需要候选文本字符串
+        let corrStrings = corrs.map(item => item.corrected_text);
+
+        // 将字符串数组传给 applyFirstSuggestionAndShowBox
+        applyFirstSuggestionAndShowBox(corrStrings,isExperienceMode);
       }).catch(err=>{
         logEvent("API call error => "+err);
       });
