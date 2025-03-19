@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>   
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -8,7 +8,7 @@
 
   <style>
     /*******************************************************
-     * 0) 页面布局：页脚贴底 + 渐变背景 + PC端更大气
+     * 0) 页面布局：页脚贴底 + 渐变背景
      *******************************************************/
     html, body {
       margin: 0;
@@ -106,7 +106,7 @@
     }
 
     /*******************************************************
-     * 3) #text-editor => 大气感 + 圆角 + 阴影
+     * 3) #text-editor
      *******************************************************/
     #text-editor {
       width: 100%;
@@ -557,7 +557,6 @@
   <!-- footer加载 -->
   <footer id="footer-container"></footer>
 
-  <!-- 下面保留"我的代码"所有JS逻辑与结构，不改任何函数/ID -->
   <script>
     /*******************************************************
      * 1) 全局常量
@@ -655,6 +654,23 @@
     const modeExperience=document.getElementById("mode-experience");
     const inputMode=document.getElementById("input-mode");
     const experienceMode=document.getElementById("experience-mode");
+
+    /*******************************************************
+     * 新增：underlineDiffRanges 函数
+     * 根据返回的 diff_ranges 数组，对文本中所有不同部分添加下划蓝色线
+     *******************************************************/
+    function underlineDiffRanges(text, diffRanges) {
+      let result = "";
+      let currentIndex = 0;
+      diffRanges.forEach(function(range) {
+         let [start, end] = range;
+         result += text.substring(currentIndex, start);
+         result += '<span style="border-bottom: 2px solid blue;">' + text.substring(start, end) + '</span>';
+         currentIndex = end;
+      });
+      result += text.substring(currentIndex);
+      return result;
+    }
 
     /*******************************************************
      * 5) onload
@@ -933,6 +949,7 @@
     /*******************************************************
      * 13) /correct
      *******************************************************/
+    // 修改 sendToAPI：传递完整的候选对象数组（包含 diff_ranges 数组）
     function sendToAPI(mergedStr,loc,isExperienceMode=false){
       logEvent("Sending /correct => merged_string:"+mergedStr+", touch_location:"+loc);
       fetch(API_URL,{
@@ -943,15 +960,11 @@
           touch_location:loc
         })
       }).then(resp=>resp.json()).then(data=>{
-        // 这里改成从 data.filtered_corrections 获取候选
+        // 直接从 data.filtered_corrections 获取候选对象数组
         let corrs = data.filtered_corrections || [];
         logEvent("API corrections => "+JSON.stringify(corrs));
 
-        // 只需要候选文本字符串
-        let corrStrings = corrs.map(item => item.corrected_text);
-
-        // 将字符串数组传给 applyFirstSuggestionAndShowBox
-        applyFirstSuggestionAndShowBox(corrStrings,isExperienceMode);
+        applyFirstSuggestionAndShowBox(corrs,isExperienceMode);
       }).catch(err=>{
         logEvent("API call error => "+err);
       });
@@ -959,6 +972,8 @@
 
     /*******************************************************
      * 14) applyFirstSuggestionAndShowBox
+     * 修改后：根据候选对象中的 diff_ranges 对返回文本进行下划线标记，
+     * 替换候选项时同样显示修改部分下划线效果。
      *******************************************************/
     function replaceFirstOccurrence(fullText, oldPart, newPart){
       let safe=oldPart.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -968,7 +983,13 @@
 
     function applyFirstSuggestionAndShowBox(corrections,isExperienceMode=false){
       if(!corrections.length)return;
-      let candidate=corrections[0].trimEnd();
+      let candidateObj = corrections[0];
+      let candidate = candidateObj.corrected_text.trimEnd();
+      let diffRanges = candidateObj.diff_ranges; // diff_ranges 数组
+      let candidateHighlighted = candidate;
+      if(diffRanges && diffRanges.length > 0) {
+         candidateHighlighted = underlineDiffRanges(candidate, diffRanges);
+      }
 
       if(isExperienceMode){
         const errorSentence=document.getElementById("error-sentence");
@@ -976,8 +997,7 @@
 
         let entireText=errorSentence.innerText;
         let partialReplaced=replaceFirstOccurrence(entireText,originalSentence,candidate);
-
-        errorSentence.innerText=partialReplaced; 
+        errorSentence.innerHTML = underlineDiffRanges(partialReplaced, diffRanges);
         errorSentence.classList.remove("highlighted-sentence");
 
         originalSentence=candidate;
@@ -1001,7 +1021,7 @@
         let safe=originalSentence.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
         let re=new RegExp(safe,"i");
         if(!re.test(html))return;
-        editor.innerHTML=html.replace(re,candidate);
+        editor.innerHTML=html.replace(re,candidateHighlighted);
         originalSentence=candidate;
 
         removeHighlight();
@@ -1020,6 +1040,7 @@
       }
     }
 
+    // 修改：候选建议框中显示候选项时也使用 underlineDiffRanges
     function createSuggestionBox(rect,corrections,isExpMode=false){
       let box=document.createElement("div");
       box.className="suggestions-box-floating";
@@ -1028,13 +1049,19 @@
       box.style.width=rect.width+"px";
 
       for(let i=1;i<corrections.length;i++){
+        let candidateObj = corrections[i];
+        let candidate = candidateObj.corrected_text.trimEnd();
+        let diffRanges = candidateObj.diff_ranges;
+        let candidateHighlighted = candidate;
+        if(diffRanges && diffRanges.length > 0) {
+           candidateHighlighted = underlineDiffRanges(candidate, diffRanges);
+        }
         let div=document.createElement("div");
-        div.innerText=corrections[i];
+        div.innerHTML = candidateHighlighted;
         div.onclick=(evt)=>{
           evt.preventDefault();
           evt.stopPropagation();
-          let cand=corrections[i].trimEnd();
-
+          let cand = candidateObj.corrected_text.trimEnd();
           if(isExpMode){
             let errorSentence=document.getElementById("error-sentence");
             if(!errorSentence)return;
@@ -1042,7 +1069,7 @@
 
             let entireText=errorSentence.innerText;
             let updated=replaceFirstOccurrence(entireText,originalSentence,cand);
-            errorSentence.innerText=updated;
+            errorSentence.innerHTML = underlineDiffRanges(updated, diffRanges);
 
             originalSentence=cand;
 
@@ -1053,7 +1080,7 @@
             let html=editor.innerHTML;
             let safe=originalSentence.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
             let re=new RegExp(safe,"i");
-            editor.innerHTML=html.replace(re,cand);
+            editor.innerHTML=html.replace(re,underlineDiffRanges(cand, diffRanges));
             originalSentence=cand;
             highlightSentence(cand);
             setTimeout(()=>{
