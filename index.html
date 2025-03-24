@@ -665,31 +665,40 @@
     function underlineDiffRanges(text, diffRanges) {
       let result = "";
       let currentIndex = 0;
-      diffRanges.forEach(function(range) {
-         let [start, end] = range;
-         let diffText = text.substring(start, end);
-         
-         // Check if the diff segment starts with a space
-         let leadingSpaceMatch = diffText.match(/^(\s+)/);
-         let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
-         
-         // Add text before the diff segment
-         result += text.substring(currentIndex, start);
-         
-         if (leadingSpaceLength > 0) {
-           // Add the leading spaces without underline
-           result += diffText.substring(0, leadingSpaceLength);
-           // Underline the remaining part if any
-           if (leadingSpaceLength < diffText.length) {
-             result += '<span style="border-bottom: 2px solid blue;">' + 
-                       diffText.substring(leadingSpaceLength) + '</span>';
-           }
-         } else {
-           // Underline the entire diff segment
-           result += '<span style="border-bottom: 2px solid blue;">' + diffText + '</span>';
-         }
-         
-         currentIndex = end;
+      
+      // 确保差异范围在文本长度范围内
+      const validRanges = diffRanges.filter(range => 
+        range[0] >= 0 && range[0] < text.length && range[1] > 0 && range[1] <= text.length
+      );
+      
+      validRanges.forEach(function(range) {
+        let [start, end] = range;
+        // 确保范围不超出文本长度
+        end = Math.min(end, text.length);
+        
+        let diffText = text.substring(start, end);
+        
+        // 检查差异部分是否以空格开头
+        let leadingSpaceMatch = diffText.match(/^(\s+)/);
+        let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
+        
+        // 添加差异前的文本
+        result += text.substring(currentIndex, start);
+        
+        if (leadingSpaceLength > 0) {
+          // 先添加开头的空格（不带下划线）
+          result += diffText.substring(0, leadingSpaceLength);
+          // 再添加剩余部分（带下划线）
+          if (leadingSpaceLength < diffText.length) {
+            result += '<span style="border-bottom: 2px solid blue;">' + 
+                      diffText.substring(leadingSpaceLength) + '</span>';
+          }
+        } else {
+          // 没有开头空格，正常添加下划线
+          result += '<span style="border-bottom: 2px solid blue;">' + diffText + '</span>';
+        }
+        
+        currentIndex = end;
       });
       result += text.substring(currentIndex);
       return result;
@@ -990,6 +999,19 @@
         let corrs = data.filtered_corrections || [];
         logEvent("API corrections => " + JSON.stringify(corrs));
 
+        // 在这里处理差异范围，确保它们相对于选定的句子
+        if (corrs.length > 0 && isExperienceMode) {
+          // 对于体验模式，我们需要确保差异范围是相对于选定的句子
+          corrs.forEach(correction => {
+            if (correction.diff_ranges && correction.diff_ranges.length > 0) {
+              // 确保差异范围在选定句子的范围内
+              correction.diff_ranges = correction.diff_ranges.filter(range => 
+                range[0] >= 0 && range[0] < originalSentence.length
+              );
+            }
+          });
+        }
+
         applyFirstSuggestionAndShowBox(corrs, isExperienceMode);
       }).catch(err => {
         logEvent("API call error => " + err);
@@ -1011,31 +1033,103 @@
       if (!corrections.length) return;
       let candidateObj = corrections[0];
       let candidate = candidateObj.corrected_text.trimEnd();
-      let diffRanges = candidateObj.diff_ranges; // diff_ranges array
-      let candidateHighlighted = candidate;
-      if (diffRanges && diffRanges.length > 0) {
-         candidateHighlighted = underlineDiffRanges(candidate, diffRanges);
-      }
-
+      let diffRanges = candidateObj.diff_ranges; // diff_ranges 数组
+      
       if (isExperienceMode) {
         const errorSentence = document.getElementById("error-sentence");
         if (!errorSentence) return;
-
+        
+        // 获取原始文本和目标句子
         let entireText = errorSentence.innerText;
-        let partialReplaced = replaceFirstOccurrence(entireText, originalSentence, candidate);
-        errorSentence.innerHTML = underlineDiffRanges(partialReplaced, diffRanges);
-        errorSentence.classList.remove("highlighted-sentence");
-
-        originalSentence = candidate;
-
-        if (corrections.length > 1) {
-          let highlightSpan = document.querySelector("#error-sentence .highlighted-sentence");
-          let rect = null;
-          if (highlightSpan) {
-            rect = highlightSpan.getBoundingClientRect();
-          } else {
-            rect = errorSentence.getBoundingClientRect();
+        
+        // 找到原始句子在文本中的位置
+        let sentenceIndex = entireText.indexOf(originalSentence);
+        
+        // 替换原始句子为新句子
+        let updatedText = replaceFirstOccurrence(entireText, originalSentence, candidate);
+        
+        // 先将文本设置为纯文本（无下划线）
+        errorSentence.innerText = updatedText;
+        
+        // 如果有差异范围，添加下划线
+        if (diffRanges && diffRanges.length > 0 && sentenceIndex >= 0) {
+          // 找到新句子在更新后文本中的位置
+          let newSentenceIndex = updatedText.indexOf(candidate);
+          
+          if (newSentenceIndex >= 0) {
+            // 创建一个文档片段来构建HTML
+            let fragment = document.createDocumentFragment();
+            let textNode = document.createTextNode(updatedText.substring(0, newSentenceIndex));
+            fragment.appendChild(textNode);
+            
+            // 为新句子创建一个容器
+            let sentenceSpan = document.createElement('span');
+            
+            // 处理新句子中的差异部分
+            let sentenceText = candidate;
+            let lastIndex = 0;
+            
+            // 对每个差异范围应用下划线
+            diffRanges.forEach(range => {
+              let [start, end] = range;
+              
+              // 确保范围有效
+              if (start < 0 || end > sentenceText.length) return;
+              
+              // 添加差异前的文本
+              if (start > lastIndex) {
+                sentenceSpan.appendChild(document.createTextNode(sentenceText.substring(lastIndex, start)));
+              }
+              
+              // 检查差异部分是否以空格开头
+              let diffText = sentenceText.substring(start, end);
+              let leadingSpaceMatch = diffText.match(/^(\s+)/);
+              let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
+              
+              if (leadingSpaceLength > 0) {
+                // 添加开头的空格（不带下划线）
+                sentenceSpan.appendChild(document.createTextNode(diffText.substring(0, leadingSpaceLength)));
+                
+                // 添加剩余部分（带下划线）
+                if (leadingSpaceLength < diffText.length) {
+                  let underlineSpan = document.createElement('span');
+                  underlineSpan.style.borderBottom = '2px solid blue';
+                  underlineSpan.textContent = diffText.substring(leadingSpaceLength);
+                  sentenceSpan.appendChild(underlineSpan);
+                }
+              } else {
+                // 没有开头空格，正常添加下划线
+                let underlineSpan = document.createElement('span');
+                underlineSpan.style.borderBottom = '2px solid blue';
+                underlineSpan.textContent = diffText;
+                sentenceSpan.appendChild(underlineSpan);
+              }
+              
+              lastIndex = end;
+            });
+            
+            // 添加剩余的文本
+            if (lastIndex < sentenceText.length) {
+              sentenceSpan.appendChild(document.createTextNode(sentenceText.substring(lastIndex)));
+            }
+            
+            fragment.appendChild(sentenceSpan);
+            
+            // 添加句子后的文本
+            textNode = document.createTextNode(updatedText.substring(newSentenceIndex + candidate.length));
+            fragment.appendChild(textNode);
+            
+            // 清空并应用新内容
+            errorSentence.innerHTML = '';
+            errorSentence.appendChild(fragment);
           }
+        }
+        
+        errorSentence.classList.remove("highlighted-sentence");
+        originalSentence = candidate;
+        
+        if (corrections.length > 1) {
+          let rect = errorSentence.getBoundingClientRect();
           suggestionsBox = createSuggestionBox(rect, corrections, true);
           document.body.appendChild(suggestionsBox);
           clearTimeout(suggestionsTimer);
@@ -1043,17 +1137,24 @@
         }
         checkCompletion();
       } else {
+        // 自由输入模式的处理保持不变
         let html = editor.innerHTML;
         let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         let re = new RegExp(safe, "i");
         if (!re.test(html)) return;
+        
+        let candidateHighlighted = candidate;
+        if (diffRanges && diffRanges.length > 0) {
+          candidateHighlighted = underlineDiffRanges(candidate, diffRanges);
+        }
+        
         editor.innerHTML = html.replace(re, candidateHighlighted);
         originalSentence = candidate;
-
+        
         removeHighlight();
         highlightSentence(candidate);
         setTimeout(() => { editor.focus(); }, 300);
-
+        
         if (corrections.length > 1) {
           let ts = document.getElementById("target-sentence");
           if (!ts) return;
@@ -1066,58 +1167,183 @@
       }
     }
 
-    // Modified: When displaying candidate suggestions in the suggestion box, also apply underlineDiffRanges
+    // 同样需要修改建议框中的处理
     function createSuggestionBox(rect, corrections, isExpMode = false) {
       let box = document.createElement("div");
       box.className = "suggestions-box-floating";
       box.style.left = (rect.left + window.scrollX) + "px";
       box.style.top = (rect.bottom + window.scrollY) + "px";
       box.style.width = rect.width + "px";
-
+      
       for (let i = 1; i < corrections.length; i++) {
         let candidateObj = corrections[i];
         let candidate = candidateObj.corrected_text.trimEnd();
         let diffRanges = candidateObj.diff_ranges;
-        let candidateHighlighted = candidate;
-        if (diffRanges && diffRanges.length > 0) {
-           candidateHighlighted = underlineDiffRanges(candidate, diffRanges);
-        }
+        
         let div = document.createElement("div");
-        div.innerHTML = candidateHighlighted;
+        
+        if (isExpMode && diffRanges && diffRanges.length > 0) {
+          // 对于体验模式，我们使用与上面相同的方法处理差异
+          let sentenceText = candidate;
+          let lastIndex = 0;
+          let fragment = document.createDocumentFragment();
+          
+          diffRanges.forEach(range => {
+            let [start, end] = range;
+            
+            // 确保范围有效
+            if (start < 0 || end > sentenceText.length) return;
+            
+            // 添加差异前的文本
+            if (start > lastIndex) {
+              fragment.appendChild(document.createTextNode(sentenceText.substring(lastIndex, start)));
+            }
+            
+            // 检查差异部分是否以空格开头
+            let diffText = sentenceText.substring(start, end);
+            let leadingSpaceMatch = diffText.match(/^(\s+)/);
+            let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
+            
+            if (leadingSpaceLength > 0) {
+              // 添加开头的空格（不带下划线）
+              fragment.appendChild(document.createTextNode(diffText.substring(0, leadingSpaceLength)));
+              
+              // 添加剩余部分（带下划线）
+              if (leadingSpaceLength < diffText.length) {
+                let underlineSpan = document.createElement('span');
+                underlineSpan.style.borderBottom = '2px solid blue';
+                underlineSpan.textContent = diffText.substring(leadingSpaceLength);
+                fragment.appendChild(underlineSpan);
+              }
+            } else {
+              // 没有开头空格，正常添加下划线
+              let underlineSpan = document.createElement('span');
+              underlineSpan.style.borderBottom = '2px solid blue';
+              underlineSpan.textContent = diffText;
+              fragment.appendChild(underlineSpan);
+            }
+            
+            lastIndex = end;
+          });
+          
+          // 添加剩余的文本
+          if (lastIndex < sentenceText.length) {
+            fragment.appendChild(document.createTextNode(sentenceText.substring(lastIndex)));
+          }
+          
+          div.appendChild(fragment);
+        } else {
+          // 自由输入模式保持不变
+          if (diffRanges && diffRanges.length > 0) {
+            div.innerHTML = underlineDiffRanges(candidate, diffRanges);
+          } else {
+            div.innerText = candidate;
+          }
+        }
+        
         div.onclick = (evt) => {
           evt.preventDefault();
           evt.stopPropagation();
-          let cand = candidateObj.corrected_text.trimEnd();
+          
           if (isExpMode) {
             let errorSentence = document.getElementById("error-sentence");
             if (!errorSentence) return;
             removeHighlightExp();
-
+            
             let entireText = errorSentence.innerText;
-            let updated = replaceFirstOccurrence(entireText, originalSentence, cand);
-            errorSentence.innerHTML = underlineDiffRanges(updated, diffRanges);
-
-            originalSentence = cand;
-
-            highlightExpSentence(cand);
+            let updated = replaceFirstOccurrence(entireText, originalSentence, candidate);
+            
+            // 使用与上面相同的方法应用下划线
+            errorSentence.innerText = updated;
+            
+            if (diffRanges && diffRanges.length > 0) {
+              let newSentenceIndex = updated.indexOf(candidate);
+              
+              if (newSentenceIndex >= 0) {
+                let fragment = document.createDocumentFragment();
+                let textNode = document.createTextNode(updated.substring(0, newSentenceIndex));
+                fragment.appendChild(textNode);
+                
+                let sentenceSpan = document.createElement('span');
+                let sentenceText = candidate;
+                let lastIndex = 0;
+                
+                diffRanges.forEach(range => {
+                  let [start, end] = range;
+                  
+                  if (start < 0 || end > sentenceText.length) return;
+                  
+                  if (start > lastIndex) {
+                    sentenceSpan.appendChild(document.createTextNode(sentenceText.substring(lastIndex, start)));
+                  }
+                  
+                  let diffText = sentenceText.substring(start, end);
+                  let leadingSpaceMatch = diffText.match(/^(\s+)/);
+                  let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
+                  
+                  if (leadingSpaceLength > 0) {
+                    sentenceSpan.appendChild(document.createTextNode(diffText.substring(0, leadingSpaceLength)));
+                    
+                    if (leadingSpaceLength < diffText.length) {
+                      let underlineSpan = document.createElement('span');
+                      underlineSpan.style.borderBottom = '2px solid blue';
+                      underlineSpan.textContent = diffText.substring(leadingSpaceLength);
+                      sentenceSpan.appendChild(underlineSpan);
+                    }
+                  } else {
+                    let underlineSpan = document.createElement('span');
+                    underlineSpan.style.borderBottom = '2px solid blue';
+                    underlineSpan.textContent = diffText;
+                    sentenceSpan.appendChild(underlineSpan);
+                  }
+                  
+                  lastIndex = end;
+                });
+                
+                if (lastIndex < sentenceText.length) {
+                  sentenceSpan.appendChild(document.createTextNode(sentenceText.substring(lastIndex)));
+                }
+                
+                fragment.appendChild(sentenceSpan);
+                
+                textNode = document.createTextNode(updated.substring(newSentenceIndex + candidate.length));
+                fragment.appendChild(textNode);
+                
+                errorSentence.innerHTML = '';
+                errorSentence.appendChild(fragment);
+              }
+            }
+            
+            originalSentence = candidate;
+            highlightExpSentence(candidate);
             checkCompletion();
           } else {
+            // 自由输入模式保持不变
             removeHighlight();
             let html = editor.innerHTML;
             let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             let re = new RegExp(safe, "i");
-            editor.innerHTML = html.replace(re, underlineDiffRanges(cand, diffRanges));
-            originalSentence = cand;
-            highlightSentence(cand);
+            
+            if (diffRanges && diffRanges.length > 0) {
+              editor.innerHTML = html.replace(re, underlineDiffRanges(candidate, diffRanges));
+            } else {
+              editor.innerHTML = html.replace(re, candidate);
+            }
+            
+            originalSentence = candidate;
+            highlightSentence(candidate);
             setTimeout(() => {
               moveCaretToEndOfTarget();
               editor.focus();
             }, 300);
           }
+          
           removeSuggestionsBox();
         };
+        
         box.appendChild(div);
       }
+      
       return box;
     }
 
@@ -1362,8 +1588,12 @@
         originalSentence = sentence.trim();
         errorText.innerText = originalSentence;
         originalErrorSpan.innerText = originalSentence;
+        
+        // 保存句子在整个文本中的起始位置，用于后续调整差异范围
+        window.sentenceStartPosition = startPos;
+        
         localTapIndex = relativeIndex;
-        touchIndexSpan.innerText = String(localTapIndex); // Update display
+        touchIndexSpan.innerText = String(localTapIndex); // 更新显示
 
         errorSentence.innerHTML = text.replace(sentence, `<span class="highlighted-sentence">${sentence}</span>`);
         currentMode = "tap";
@@ -1468,41 +1698,6 @@
         }
       }
     }
-
-    /*******************************************************
-     * 19) Undo Action (Duplicate of 15)
-     *******************************************************/
-    undoButton.addEventListener("click", () => {
-      if (undoStack.length > 0) {
-        let prev = undoStack.pop();
-        editor.innerHTML = prev;
-        removeHighlight();
-        showToast("Undo last change");
-      } else {
-        showToast("No change to undo!");
-      }
-      editor.focus();
-    });
-
-    /*******************************************************
-     * 20) Mode Switching
-     *******************************************************/
-    modeInput.addEventListener("click", () => {
-      inputMode.style.display = "block";
-      experienceMode.style.display = "none";
-      modeInput.classList.add("active");
-      modeExperience.classList.remove("active");
-    });
-    modeExperience.addEventListener("click", () => {
-      inputMode.style.display = "none";
-      experienceMode.style.display = "block";
-      modeExperience.classList.add("active");
-      modeInput.classList.remove("active");
-      const errSent = document.getElementById("error-sentence");
-      if (errSent) {
-        originalSentence = errSent.innerText; 
-      }
-    });
 
     /* Update IME Toggle Button Text */
     function updateIMEButtonText(enabled) {
