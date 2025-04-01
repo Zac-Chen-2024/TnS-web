@@ -1478,6 +1478,11 @@
             newHtml += underlineDiffRanges(candidate, diffRanges);
             newHtml += updatedText.substring(newSentenceIndex + candidate.length);
             errorSentenceEl.innerHTML = newHtml;
+            
+            // 2秒后移除下划线效果
+            setTimeout(() => {
+              errorSentenceEl.innerText = errorSentenceEl.innerText;
+            }, 2000);
           }
         }
 
@@ -1638,6 +1643,11 @@
                 newHtml += underlineDiffRanges(candidate, candidateObj.diff_ranges);
                 newHtml += updated.substring(newSentenceIndex + candidate.length);
                 errorSentenceEl.innerHTML = newHtml;
+                
+                // 2秒后移除下划线效果
+                setTimeout(() => {
+                  errorSentenceEl.innerText = errorSentenceEl.innerText;
+                }, 2000);
               }
             }
 
@@ -1973,6 +1983,9 @@
         return;
       }
 
+      // 重要：重置 selectedSentence
+      selectedSentence = "";
+
       isDragging = true;
       element.classList.add("dragging");
       showCursorAtPosition();
@@ -1986,6 +1999,7 @@
           const range = document.caretRangeFromPoint(e.clientX, e.clientY);
           if (range && range.startContainer === element.firstChild) {
             localTapIndex = range.startOffset;
+            console.log('[Transcription] New index from range:', localTapIndex);
           }
         } else {
           // 回退方案
@@ -2002,15 +2016,15 @@
         const text = element.innerText;
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
 
-        console.log('[Transcription] Mouse move:', {
-          clientX: e.clientX,
-          localTapIndex: localTapIndex
-        });
-
-        const selectedSentence = getCurrentSentenceForTranscription(text, localTapIndex);
-        errorText.innerText = selectedSentence;
-        originalSentence = selectedSentence;
-        originalErrorSpan.innerText = selectedSentence;
+        // 获取当前选中的句子
+        const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
+        console.log('[Transcription] Current sentence:', currentSentence);
+        
+        // 更新显示和状态
+        errorText.innerText = currentSentence;
+        originalSentence = currentSentence;
+        originalErrorSpan.innerText = currentSentence;
+        selectedSentence = currentSentence; // 更新 selectedSentence
 
         showCursorAtPosition();
       };
