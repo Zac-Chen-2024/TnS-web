@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <!-- Ensure proper scaling on mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tap&amp;Say Text Editor</title>
+  <title>Tap&Say Text Editor</title>
 
   <style>
     /*******************************************************
@@ -93,8 +93,8 @@
      *******************************************************/
     .card {
       border-radius: 15px;
-      padding: 30px; /* Reduce inner padding */
-      margin-bottom: 20px; /* Reduce spacing */
+      padding: 30px; /* Maintain consistent internal padding */
+      margin-bottom: 20px; /* Reduce spacing between cards */
       background: #fff;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       font-size: 1rem; /* Smaller base font size */
@@ -151,6 +151,12 @@
       font-weight: bold;
       color: red;
     }
+    #mic-status.recording {
+      color: #28a745; /* Green */
+    }
+    #mic-status.recording-active {
+      color: #28a745; /* Green */
+    }
     #event-log {
       font-size: 0.9rem;
       max-height: 200px;
@@ -166,26 +172,42 @@
      *******************************************************/
     .suggestions-box-floating {
       position: absolute;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      padding: 5px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+      padding: 6px;
       z-index: 2000;
       user-select: none;
       pointer-events: auto;
-      max-height: 150px;
+      max-height: 160px;
       overflow-y: auto;
       transition: all 0.3s ease;
     }
     .suggestions-box-floating div {
-      padding: 8px;
-      border-bottom: 1px solid #eee;
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: all 0.2s;
+      background-color: rgba(176, 196, 255, 0.2); /* Light blue background */
+      border-left: 3px solid rgba(65, 105, 225, 0.5); /* Add a left border */
+    }
+    .suggestions-box-floating div:nth-child(2n) {
+      background-color: rgba(186, 159, 255, 0.2); /* Light purple background */
+      border-left: 3px solid rgba(138, 43, 226, 0.5);
+    }
+    .suggestions-box-floating div:nth-child(3n) {
+      background-color: rgba(255, 160, 160, 0.2); /* Light red background */
+      border-left: 3px solid rgba(220, 20, 60, 0.5);
     }
     .suggestions-box-floating div:hover {
-      background: #f0f0f0;
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background-color: rgba(178, 235, 242, 0.4); /* Slightly darker on hover */
+    }
+    .suggestions-box-floating div:active {
+      transform: translateY(0);
     }
 
     /*******************************************************
@@ -211,20 +233,20 @@
     #drawer {
       position: fixed;
       bottom: 20px;
-      left: 0; /* Attach to left border */
+      left: 0; 
       width: 200px;
       display: flex;
       flex-direction: column;
-      gap: 10px; /* Increase spacing between buttons */
+      gap: 10px;
       z-index: 3000;
       background: #007bff;
       padding: 10px;
-      border-radius: 0 8px 8px 0; /* Rounded corners on the right only */
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* More pronounced shadow */
+      border-radius: 0 8px 8px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       transition: transform 0.3s ease, opacity 0.3s ease;
     }
     .drawer-collapsed {
-      transform: translateX(-190px); /* Adjusted collapse translation */
+      transform: translateX(-190px);
       opacity: 0.9;
     }
     #drawer-toggle {
@@ -232,16 +254,16 @@
       justify-content: space-between;
       align-items: center;
       width: 100%;
-      font-size: 15px; /* Slightly larger font size */
+      font-size: 15px;
       border: none;
       border-radius: 6px;
       color: #fff;
       background: #0056b3;
       cursor: pointer;
-      padding: 10px 15px; /* Increased padding */
+      padding: 10px 15px;
       transition: background 0.3s;
       margin-bottom: 5px;
-      font-weight: 500; /* Slightly bolder */
+      font-weight: 500;
     }
     #drawer-toggle:hover {
       background: #003e80;
@@ -253,17 +275,17 @@
       border-radius: 6px;
       color: #007bff;
       background: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15); /* More pronounced shadow */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       cursor: pointer;
       transition: all 0.3s ease;
       width: 100%;
-      font-weight: 500; /* Slightly bolder */
-      text-align: left; /* Left-align text */
+      font-weight: 500;
+      text-align: left;
     }
     #drawer button:not(#drawer-toggle):hover {
       background: #f0f7ff;
       color: #0056b3;
-      transform: translateY(-1px); /* Hover effect */
+      transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
@@ -271,7 +293,7 @@
      * 9) Tip Card: Colored Left Border + Rounded Corners
      *******************************************************/
     .tip-box {
-      background: #f0f2f4; /* Darker background - originally #f8f9fa */
+      background: #f0f2f4; /* Darker background */
       border-left: 4px solid #007bff;
       padding: 12px 16px;
       margin-bottom: 16px;
@@ -284,7 +306,7 @@
       align-items: center;
       gap: 8px;
       font-size: 1.1rem;
-      font-weight: normal; /* No bold on mobile */
+      font-weight: normal; 
     }
     .tip-content i {
       color: #ffc107;
@@ -323,7 +345,7 @@
       }
       
       #input-mode .card {
-        padding: 50px; /* Consistent padding with Experience Mode card */
+        padding: 50px; /* match Experience Mode card spacing */
       }
       
       #text-editor {
@@ -345,8 +367,8 @@
       /* Adjust button styles */
       #experience-undo-button,
       #skip-sentence-button {
-        padding: 20px !important; /* Larger buttons */
-        font-size: 1.2rem !important; /* Larger button text */
+        padding: 20px !important;
+        font-size: 1.2rem !important;
       }
       
       /* Adjust target and error sentence fonts */
@@ -372,17 +394,17 @@
     /* Mobile styles remain unchanged */
     @media (max-width: 480px) {
       .main-content {
-        padding: 1rem 0; /* Smaller overall spacing */
+        padding: 1rem 0; 
       }
       
       .container {
-        width: 94%; /* Slightly increased width usage */
+        width: 94%;
       }
       
       .card {
-        padding: 15px; /* Smaller card padding */
-        margin-bottom: 15px; /* Smaller card spacing */
-        font-size: 0.9rem; /* Smaller font size */
+        padding: 15px;
+        margin-bottom: 15px; 
+        font-size: 0.9rem; 
       }
       
       .card h3 {
@@ -413,7 +435,7 @@
       }
       
       #mode-buttons {
-        margin-bottom: 15px; /* Smaller button spacing */
+        margin-bottom: 15px; 
         gap: 10px;
       }
     }
@@ -423,24 +445,186 @@
       padding: 0.7rem 1rem;
       border: none;
       border-radius: 8px;
-      background: #007bff; /* Blue background */
-      box-shadow: 0 2px 6px rgba(0,123,255,0.3); /* Blue shadow */
+      background: #007bff;
+      box-shadow: 0 2px 6px rgba(0,123,255,0.3);
       cursor: pointer;
-      color: #ffffff; /* White text */
+      color: #ffffff;
       font-size: 1rem;
       transition: all 0.3s ease;
     }
 
     .nav-button:hover {
-      background: #0056b3; /* Darker blue on hover */
+      background: #0056b3;
       transform: translateY(-1px);
       box-shadow: 0 4px 8px rgba(0,123,255,0.4);
     }
 
     .nav-button:active {
       transform: translateY(0);
-      background: #004494; /* Even darker blue on click */
+      background: #004494;
       box-shadow: 0 2px 4px rgba(0,123,255,0.2);
+    }
+
+    /*******************************************************
+     * New: Error sentence text box style
+     *******************************************************/
+    .editable-sentence-box {
+      width: 100%;
+      min-height: 150px; 
+      padding: 12px 15px;
+      background: #f8f9fa;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      cursor: text;
+      transition: all 0.2s ease;
+      box-sizing: border-box; 
+      
+      /* Enhanced text selection disabling for experience mode */
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      -webkit-touch-callout: none !important;
+      -webkit-user-drag: none !important;
+      pointer-events: auto !important;
+    }
+    
+    .editable-sentence-box:hover {
+      background: #f1f3f5;
+      border-color: #cbd5e0;
+    }
+    
+    .editable-sentence-box.active {
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66,153,225,0.15);
+    }
+    
+    .edit-indicator {
+      display: inline-block;
+      margin-left: 8px;
+      font-size: 0.8rem;
+      color: #666;
+      font-style: italic;
+    }
+
+    /*******************************************************
+     * New: Cursor feedback at click position
+     *******************************************************/
+    .cursor-indicator {
+      display: inline-block;
+      width: 2px;
+      height: 1.5em; 
+      background-color: #E6B422;
+      animation: blink 1s infinite;
+      position: absolute;
+      z-index: 10;
+      pointer-events: none; 
+      margin-top: 0; 
+      border-radius: 1px; 
+      box-shadow: 0 0 3px rgba(230, 180, 34, 0.5);
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .dragging {
+      cursor: text !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+
+    /* Only enable text selection if .dragging is applied with higher priority */
+    .editable-sentence-box.dragging {
+      cursor: text !important;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+    }
+
+    /* Prevent iOS from text selection on long-press in experience mode */
+    @media (hover: none) {
+      .editable-sentence-box {
+        touch-action: manipulation; 
+      }
+    }
+
+    /* Animation keyframes for long-press feedback */
+    @keyframes pulsate {
+      0% { transform: scale(0.8); opacity: 0.7; }
+      50% { transform: scale(1.2); opacity: 0.5; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    /* 删除原来的 drawer 样式,添加新的悬浮按钮和菜单样式 */
+    #float-menu-button {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 25px;
+      background: #007bff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: all 0.3s ease;
+      z-index: 3000;
+    }
+
+    #float-menu-button:hover {
+      transform: scale(1.1);
+      background: #0056b3;
+    }
+
+    #float-menu {
+      position: fixed;
+      bottom: 80px;
+      left: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 3000;
+      min-width: 180px;
+    }
+
+    #float-menu button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: #f8f9fa;
+      color: #495057;
+      cursor: pointer;
+      text-align: left;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #float-menu button:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+
+    #float-menu button i {
+      font-size: 1.1rem;
+      color: #007bff;
     }
   </style>
 </head>
@@ -448,12 +632,12 @@
   <!-- Header Load -->
   <header id="header-container"></header>
 
-  <!-- Main Content: Expands to push footer to bottom -->
+  <!-- Main Content -->
   <div class="main-content">
     <div class="container">
       <!-- Mode Switch Buttons -->
       <div id="mode-buttons">
-        <button id="mode-experience" class="mode-button active">Introduction mode</button>
+        <button id="mode-experience" class="mode-button active">Transcription mode</button>
         <button id="mode-input" class="mode-button">Free-input mode</button>
       </div>
     </div>
@@ -471,7 +655,7 @@
     <div class="container">
       <!-- Monitoring Area -->
       <div class="card" id="monitoring-card">
-        <p><strong>Touched Sentence:</strong> <span id="error-text">None</span></p>
+        <p><strong>Erroneous Sentence:</strong> <span id="error-text">None</span></p>
         <p><strong>Touch Location (character index):</strong> <span id="touch-index">None</span></p>
         <p><strong>Correction Command:</strong> <span id="final-output">None</span></p>
         <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Stopped</span></p>
@@ -481,9 +665,26 @@
 
       <!-- Free Input Mode -->
       <div class="card" id="input-mode" style="display:none;">
-        <h3>Tap&amp;Say Text Editor</h3>
-        <div id="text-editor" contenteditable="true"></div>
-        <button id="undo-button" style="
+        <h3>Tap&amp;Say Text Editor (Free Input)</h3>
+        
+        <textarea id="simple-editor" style="
+          width: 100%;
+          min-height: 350px;
+          box-sizing: border-box;
+          resize: vertical;      
+          overflow: auto;        
+          margin: 0 auto;
+          background: #fff;      
+          border: 2px solid #e2e8f0;
+          border-radius: 15px;
+          padding: 1.5rem;
+          font-size: 1.1rem;
+          line-height: 1.6;
+          color: #2d3748;
+          transition: border-color 0.3s, box-shadow 0.3s;
+        "></textarea>
+        
+        <button id="simple-undo-button" style="
           margin-top:12px;
           width:100%;
           padding:14px;
@@ -497,17 +698,21 @@
         ">Undo Last Change</button>
       </div>
 
-      <!-- Experience Mode -->
+      <!-- Experience (Transcription) Mode -->
       <div class="card" id="experience-mode">
-        <h3>Introduction Mode</h3>
+        <h3>Transcription Mode</h3>
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
             <button class="nav-button" id="prev-sentence" style="visibility:hidden;">←</button>
             <span id="sentence-index">1/5</span>
             <button class="nav-button" id="next-sentence">→</button>
           </div>
-          <p><strong>Target Sentence:</strong> <span id="target-sentence" style="user-select:none;"></span></p>
-          <p><strong>Touched Sentence:</strong> <span id="error-sentence" style="cursor:pointer;"></span></p>
+          <div>
+            <p><strong>Target Sentence:</strong></p>
+            <div id="target-sentence" style="user-select:none; margin-bottom: 15px;"></div>
+          </div>
+          <p><strong>Erroneous Sentence:</strong> <span class="edit-indicator">(long press to edit)</span></p>
+          <div id="error-sentence" class="editable-sentence-box"></div>
           <div style="display:flex;gap:10px;margin-top:12px;">
             <button id="experience-undo-button" style="
               flex:1;
@@ -563,8 +768,15 @@
     /*******************************************************
      * 1) Global Constants
      *******************************************************/
-    const API_URL = "https://tns.zacchen.win/correct";  
+    const API_URL = "https://tns.zacchen.win/correct";
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
+
+    // Two Mode Constants
+    const MODE_EXPERIENCE = "experience";
+    const MODE_INPUT = "input";
+
+    // Current active mode
+    let activeMode = MODE_EXPERIENCE; // default
 
     /*******************************************************
      * 2) Drawer Toggle
@@ -588,22 +800,27 @@
      *******************************************************/
     let disableIME = false;
     let isListening = false;
+    let isRecording = false; 
     let pressTimer = null;
-    let tapTriggered = false;
     let recognition = null;
     let silenceTimer = null;
 
     let globalTapIndex = -1;
     let localTapIndex = -1;
+    let tapStartIndex = -1; 
     let originalSentence = "";
     let lastHighlightedSentence = "";
     let highlightTimeout = null;
     let suggestionsBox = null;
     let suggestionsTimer = null;
     let undoStack = [];
-    let currentMode = null;
 
-    /* Experience Mode Index */
+    // For dragging/cursor
+    let isDragging = false;
+    let cursorElement = null;
+    let cursorTimeout = null;
+
+    // For Experience Mode data
     let currentPairIndex = 0;
     const sentencePairs = [
       {
@@ -634,7 +851,7 @@
     ];
 
     /*******************************************************
-     * 4) DOM References
+     * 4) DOM Elements
      *******************************************************/
     const monitoringCard = document.getElementById("monitoring-card");
     const eventLogCard = document.getElementById("event-log-card");
@@ -652,49 +869,39 @@
     const eventLogBtn = document.getElementById("toggle-log");
     const imeBtn = document.getElementById("toggle-ime");
 
-    const modeInput = document.getElementById("mode-input");
-    const modeExperience = document.getElementById("mode-experience");
-    const inputMode = document.getElementById("input-mode");
-    const experienceMode = document.getElementById("experience-mode");
+    const modeExperienceContainer = document.getElementById("experience-mode");
+    const modeInputContainer = document.getElementById("input-mode");
+
+    const modeExperienceBtn = document.getElementById("mode-experience");
+    const modeInputBtn = document.getElementById("mode-input");
 
     /*******************************************************
-     * New: underlineDiffRanges Function
-     * Adds a blue underline to all differing segments in the text based on the diff_ranges array.
-     * Modification: Skip any leading spaces in the differing segments.
+     * 5) underlineDiffRanges
      *******************************************************/
     function underlineDiffRanges(text, diffRanges) {
       let result = "";
       let currentIndex = 0;
-      
-      // 确保差异范围在文本长度范围内
       const validRanges = diffRanges.filter(range => 
         range[0] >= 0 && range[0] < text.length && range[1] > 0 && range[1] <= text.length
       );
       
       validRanges.forEach(function(range) {
         let [start, end] = range;
-        // 确保范围不超出文本长度
         end = Math.min(end, text.length);
         
         let diffText = text.substring(start, end);
-        
-        // 检查差异部分是否以空格开头
         let leadingSpaceMatch = diffText.match(/^(\s+)/);
         let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
         
-        // 添加差异前的文本
         result += text.substring(currentIndex, start);
         
         if (leadingSpaceLength > 0) {
-          // 先添加开头的空格（不带下划线）
           result += diffText.substring(0, leadingSpaceLength);
-          // 再添加剩余部分（带下划线）
           if (leadingSpaceLength < diffText.length) {
-            result += '<span style="border-bottom: 2px solid blue;">' + 
-                      diffText.substring(leadingSpaceLength) + '</span>';
+            result += '<span style="border-bottom: 2px solid blue;">'
+                      + diffText.substring(leadingSpaceLength) + '</span>';
           }
         } else {
-          // 没有开头空格，正常添加下划线
           result += '<span style="border-bottom: 2px solid blue;">' + diffText + '</span>';
         }
         
@@ -705,10 +912,20 @@
     }
 
     /*******************************************************
-     * 5) onLoad
+     * 6) onLoad
      *******************************************************/
     window.onload = function() {
       loadHeaderFooter();
+
+      // 默认隐藏 monitoring 和 event log
+      monitoringCard.style.display = "none";
+      eventLogCard.style.display = "none";
+      monitoringBtn.innerText = "Show Monitoring";
+      eventLogBtn.innerText = "Show Event Log";
+
+      initializeExperienceMode();
+      
+      // mic check
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({audio: true})
         .catch(err => {
@@ -716,14 +933,72 @@
           console.warn("Mic permission error:", err);
         });
       }
-      initializeExperienceMode();
+      
+      // default transcription
+      modeExperienceContainer.style.display = "block";
+      modeInputContainer.style.display = "none";
+      modeExperienceBtn.classList.add("active");
+      modeInputBtn.classList.remove("active");
+      activeMode = MODE_EXPERIENCE;
 
-      // Default to showing Experience Mode
-      inputMode.style.display = "none";
-      experienceMode.style.display = "block";
-      modeExperience.classList.add("active");
-      modeInput.classList.remove("active");
+      // --- Only remove selection if in EXPERIENCE mode and not dragging ---
+      document.addEventListener('mouseup', () => {
+        if (activeMode === MODE_EXPERIENCE && !isDragging) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const errorSentenceEl = document.getElementById("error-sentence");
+            if (errorSentenceEl && errorSentenceEl.classList.contains('dragging')) {
+              // in dragging mode, do nothing
+            } else {
+              selection.removeAllRanges();
+            }
+          }
+        }
+      });
+
+      document.addEventListener('selectionchange', () => {
+        if (activeMode === MODE_EXPERIENCE && !isDragging) {
+          const errorSentenceEl = document.getElementById("error-sentence");
+          if (errorSentenceEl && !errorSentenceEl.classList.contains('dragging')) {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              if (errorSentenceEl.contains(range.commonAncestorContainer)) {
+                selection.removeAllRanges();
+              }
+            }
+          }
+        }
+      });
+
+      // Switch mode
+      modeExperienceBtn.addEventListener("click", function() {
+        if (!this.classList.contains("active")) {
+          this.classList.add("active");
+          modeInputBtn.classList.remove("active");
+          modeExperienceContainer.style.display = "block";
+          modeInputContainer.style.display = "none";
+          activeMode = MODE_EXPERIENCE;
+          showToast("Switched to Transcription mode");
+        }
+      });
+      modeInputBtn.addEventListener("click", function() {
+        if (!this.classList.contains("active")) {
+          this.classList.add("active");
+          modeExperienceBtn.classList.remove("active");
+          modeExperienceContainer.style.display = "none";
+          modeInputContainer.style.display = "block";
+          activeMode = MODE_INPUT;
+          showToast("Switched to Free-input mode");
+        }
+      });
+
+      // Attach free input logic
+      attachFreeInputListeners();
+
+      logEvent("Application initialized - Monitoring and logs are visible by default");
     };
+
     async function loadHeaderFooter(){
       try {
         const headerRes = await fetch("header.html");
@@ -739,7 +1014,7 @@
     }
 
     /*******************************************************
-     * 6) Monitoring / Log / IME
+     * 7) Monitoring / Log / IME
      *******************************************************/
     monitoringBtn.addEventListener("click", () => {
       monitoringCard.style.display = (monitoringCard.style.display === "none") ? "block" : "none";
@@ -753,17 +1028,13 @@
     imeBtn.addEventListener("click", () => {
       disableIME = !disableIME;
       updateIMEButtonText(disableIME);
-      // Instead of changing editor.style, toggle the .disable-ime class
       if (disableIME) {
-        editor.classList.add("disable-ime");
+        editor?.classList.add("disable-ime");
       } else {
-        editor.classList.remove("disable-ime");
+        editor?.classList.remove("disable-ime");
       }
     });
 
-    /*******************************************************
-     * 7) Toast & logEvent
-     *******************************************************/
     function showToast(msg) {
       const t = document.createElement("div");
       t.className = "toast";
@@ -781,247 +1052,378 @@
       p.innerText = `[${now}] ${message}`;
       eventLog.appendChild(p);
     }
+    function updateIMEButtonText(enabled) {
+      const button = document.getElementById('toggle-ime');
+      if (button) {
+        button.textContent = enabled ? 'Disable IME' : 'Enable IME';
+      }
+    }
 
     /*******************************************************
-     * 8) File Drag & Drop
+     * 8) attachFreeInputListeners
      *******************************************************/
-    ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
-      editor.addEventListener(evtName, e => {
+    function attachFreeInputListeners() {
+      const textarea = document.getElementById('simple-editor');
+      if (!textarea) return;
+      
+      let pressTimer = null;
+      let isDraggingFreeInput = false;
+      let currentIndex = -1;
+      
+      textarea.addEventListener('mousedown', (e) => {
+        if (activeMode !== MODE_INPUT) return;
+        if (isDraggingFreeInput) return;
+        
+        removeFreeInputCursor();
+        
+        // 直接使用 textarea 的 selectionStart 属性获取点击位置
+        textarea.focus();
+        const clickX = e.clientX - textarea.getBoundingClientRect().left;
+        const clickY = e.clientY - textarea.getBoundingClientRect().top;
+        
+        // 设置选择位置
+        textarea.setSelectionRange(textarea.selectionStart, textarea.selectionStart);
+        currentIndex = textarea.selectionStart;
+        
+        console.log('[FreeInput] Initial click position:', {
+          x: clickX,
+          y: clickY,
+          index: currentIndex
+        });
+        
+        pressTimer = setTimeout(() => {
+          console.log('[FreeInput] Long press activated');
+          isDraggingFreeInput = true;
+          
+          // 禁用编辑但保持可选择状态
+          textarea.readOnly = true;
+          
+          // 获取当前句子
+          const text = textarea.value;
+          const sentenceInfo = getFreeInputSentence(text, currentIndex);
+          console.log('[FreeInput] Selected sentence:', sentenceInfo);
+          
+          errorText.innerText = sentenceInfo.sentence;
+          freeInputSelectedSentence = sentenceInfo.sentence;
+          touchIndexSpan.innerText = String(currentIndex);
+          
+          showFreeInputCursor(textarea, currentIndex);
+        }, 500);
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!isDraggingFreeInput) return;
         e.preventDefault();
-        e.stopPropagation();
-      }, false);
-    });
-    editor.addEventListener("dragover", () => { editor.style.background = "#fafafa"; });
-    editor.addEventListener("dragleave", () => { editor.style.background = "white"; });
-    editor.addEventListener("drop", e => {
-      editor.style.background = "white";
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        const file = files[0];
-        const fname = file.name.toLowerCase();
-        if (fname.endsWith(".txt") || fname.endsWith(".doc")) {
-          let reader = new FileReader();
-          reader.onload = function(evt) {
-            editor.innerText = evt.target.result;
-            logEvent("File loaded: " + file.name);
-          };
-          reader.readAsText(file, "UTF-8");
-        } else {
-          showToast("Only .txt or .doc files are supported.");
+        
+        const textarea = document.getElementById('simple-editor');
+        if (!textarea) return;
+        
+        // 更新选择位置
+        const rect = textarea.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // 获取鼠标位置对应的文本索引
+        textarea.focus();
+        const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+        if (range) {
+          currentIndex = textarea.selectionStart;
+          console.log('[FreeInput] Drag position:', {
+            x: mouseX,
+            y: mouseY,
+            index: currentIndex
+          });
+          
+          const text = textarea.value;
+          const sentenceInfo = getFreeInputSentence(text, currentIndex);
+          console.log('[FreeInput] Current sentence:', sentenceInfo);
+          
+          errorText.innerText = sentenceInfo.sentence;
+          freeInputSelectedSentence = sentenceInfo.sentence;
+          touchIndexSpan.innerText = String(currentIndex);
+          
+          showFreeInputCursor(textarea, currentIndex);
+        }
+      });
+      
+      document.addEventListener('mouseup', () => {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+        
+        if (isDraggingFreeInput) {
+          isDraggingFreeInput = false;
+          
+          const textarea = document.getElementById('simple-editor');
+          if (!textarea) return;
+          
+          const text = textarea.value;
+          const sentenceInfo = getFreeInputSentence(text, currentIndex);
+          console.log('[FreeInput] Final sentence:', sentenceInfo);
+          
+          errorText.innerText = sentenceInfo.sentence;
+          originalSentence = sentenceInfo.sentence;
+          originalErrorSpan.innerText = sentenceInfo.sentence;
+          
+          // 恢复文本框状态
+          textarea.readOnly = false;
+          
+          showToast("请说出你的纠正短语...");
+        setTimeout(() => {
+          startRecording();
+        }, 200);
+        }
+      });
+    }
+
+    // Free Input 专用的分句和光标处理函数
+    function getFreeInputSentence(text, position) {
+      console.log('[FreeInput] Getting sentence at position:', position);
+      
+      const sentenceSeparators = /[.!?]/;
+      let startPos = 0;
+      
+      // 向前查找句子开始
+      for (let i = position - 1; i >= 0; i--) {
+        if (sentenceSeparators.test(text[i]) &&
+          (i + 1 >= text.length || text[i + 1] === ' ' || text[i + 1] === '\n')) {
+          startPos = i + 1;
+          while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
+            startPos++;
+          }
+          break;
         }
       }
-    });
-
-    /*******************************************************
-     * 9) Free Input Mode - Long Press => Tap
-     *******************************************************/
-    editor.addEventListener("mousedown", (e) => {
-      if (inputMode.style.display === "none") return;
-      tapTriggered = false;
-      globalTapIndex = getCaretIndex(e.clientX, e.clientY);
-      pressTimer = setTimeout(() => {
-        tapTriggered = true;
-        handleTapSayInFreeMode();
-      }, 600);
-    });
-    editor.addEventListener("mouseup", () => clearTimeout(pressTimer));
-    editor.addEventListener("mouseleave", () => clearTimeout(pressTimer));
-    editor.addEventListener("touchstart", (e) => {
-      if (inputMode.style.display === "none") return;
-      tapTriggered = false;
-      let t = e.touches[0];
-      globalTapIndex = getTouchIndex(t.clientX, t.clientY);
-      pressTimer = setTimeout(() => {
-        tapTriggered = true;
-        handleTapSayInFreeMode();
-      }, 1000);
-    });
-    editor.addEventListener("touchend", () => clearTimeout(pressTimer));
-    editor.addEventListener("touchcancel", () => clearTimeout(pressTimer));
-
-    function handleTapSayInFreeMode() {
-      currentMode = "tap";
-      console.log('[Debug] handleTapSayInFreeMode => globalTapIndex:', globalTapIndex);
-      let {sentence, relativeIndex} = getSelectedSentenceAndRelativeIndex(editor.innerText, globalTapIndex);
-      console.log('[Debug] sentence chosen:', sentence, 'relativeIndex:', relativeIndex);
-      sentence = sentence.trim();
-      if (!sentence) {
-        logEvent("No valid sentence found");
-        return;
+      
+      // 向后查找句子结束
+      let endPos = text.length;
+      for (let i = position; i < text.length; i++) {
+        if (sentenceSeparators.test(text[i])) {
+          endPos = i + 1;
+          break;
+        }
       }
-      localTapIndex = relativeIndex;
-      touchIndexSpan.innerText = String(localTapIndex); // Ensure this line updates correctly
-      errorText.innerText = sentence;
-      originalSentence = sentence;
-      originalErrorSpan.innerText = sentence;
-      undoStack.push(editor.innerHTML);
+      
+      return { sentence: text.substring(startPos, endPos).trim(), startPos: startPos, endPos: endPos };
+    }
 
-      removeHighlight();
-      if (!highlightSentence(sentence)) {
-        logEvent("Highlight not found => " + sentence);
+    // Free Input 专用的光标显示函数
+    function showFreeInputCursor(textarea, index) {
+      console.log('[FreeInput] Showing cursor at index:', index);
+      removeFreeInputCursor();
+      
+      try {
+        const text = textarea.value;
+        const tempDiv = document.createElement('div');
+        tempDiv.style.cssText = window.getComputedStyle(textarea).cssText;
+        tempDiv.style.height = 'auto';
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.visibility = 'hidden';
+        tempDiv.style.whiteSpace = 'pre-wrap';
+        tempDiv.style.wordWrap = 'break-word';
+        tempDiv.textContent = text.substring(0, index);
+        document.body.appendChild(tempDiv);
+        
+        const range = document.createRange();
+        const textNode = tempDiv.firstChild;
+        if (textNode) {
+          range.setStart(textNode, index);
+          range.collapse(true);
+          
+          const rect = range.getBoundingClientRect();
+          const textareaRect = textarea.getBoundingClientRect();
+          
+          freeInputCursorElement = document.createElement("span");
+          freeInputCursorElement.className = "cursor-indicator";
+          freeInputCursorElement.style.position = "absolute";
+          freeInputCursorElement.style.left = (rect.left + window.scrollX) + "px";
+          freeInputCursorElement.style.top = (rect.top + window.scrollY) + "px";
+          freeInputCursorElement.style.height = rect.height + "px";
+          
+          document.body.appendChild(freeInputCursorElement);
+        }
+        
+        document.body.removeChild(tempDiv);
+        
+        console.log('[FreeInput] Cursor positioned at:', {
+          left: freeInputCursorElement.style.left,
+          top: freeInputCursorElement.style.top,
+          index: index
+        });
+        
+      } catch (e) {
+        console.error("[FreeInput] Error creating cursor:", e);
       }
-      setTimeout(() => {
-        moveCaretToEndOfTarget();
-        editor.focus();
-      }, 50);
-
-      startRecording();
-      setTimeout(() => editor.focus(), 0);
-    }
-
-    function getTouchIndex(x, y) {
-      let rect = editor.getBoundingClientRect();
-      let rx = x - rect.left;
-      let total = editor.innerText.length;
-      if (!total) return 0;
-      let ratio = rx / rect.width;
-      ratio = Math.max(0, Math.min(1, ratio));
-      return Math.floor(ratio * total);
     }
 
     /*******************************************************
-     * 10) Highlight / Remove Highlight
-     *******************************************************/
-    function highlightSentence(sentence) {
-      lastHighlightedSentence = sentence;
-      let html = editor.innerHTML;
-      let safe = sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      let re = new RegExp(safe, "i");
-      if (!re.test(html)) return false;
-      editor.innerHTML = html.replace(re, `<span id="target-sentence" class="highlighted-sentence">$&</span>`);
-      return true;
-    }
-    function removeHighlight() {
-      let html = editor.innerHTML;
-      html = html.replace(/<span id="target-sentence" class="highlighted-sentence">(.*?)<\/span>/i, "$1");
-      editor.innerHTML = html;
-      moveCaretToEndOfTarget();
-    }
-
-    /*******************************************************
-     * 11) Start Speech Recognition
+     * 9) Start Speech Recognition
      *******************************************************/
     function startRecording() {
       if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
         showToast("Speech recognition not supported in this browser.");
-        finalizeTapSay();
         return;
       }
-      let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "en-US";
-
-      recognition.onstart = () => {
-        isListening = true;
-        micStatusSpan.innerText = "🟢 Recording...";
-        silenceTimer = setTimeout(() => {
-          if (isListening) recognition.stop();
-        }, 5000);
-      };
-      recognition.onresult = (e) => {
-        clearTimeout(silenceTimer);
-        let txt = "";
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          txt += e.results[i][0].transcript;
+      if (isRecording) {
+        if (recognition) {
+          try { recognition.abort(); } catch(e) { console.error(e); }
         }
-        voiceInputSpan.innerText = txt;
-      };
-      recognition.onerror = (err) => {
-        micStatusSpan.innerText = "❌ Recording error";
-        if (isListening) recognition.stop();
-        logEvent("Speech recognition error => " + err.error);
-      };
-      recognition.onend = () => {
+        endTapSay();
+        return;
+      }
+      isRecording = true;
+      isListening = true;
+
+      micStatusSpan.innerHTML = "🟢 Recording...";
+      micStatusSpan.className = "recording-active";
+
+      try {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+          isRecording = true;
+          isListening = true;
+          clearTimeout(silenceTimer);
+          silenceTimer = setTimeout(() => {
+            if (recognition && isRecording) {
+              try { recognition.stop(); } catch (e) { console.error(e); }
+            }
+          }, 5000);
+        };
+
+        recognition.onresult = (event) => {
+          clearTimeout(silenceTimer);
+          const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+          voiceInputSpan.innerText = transcript;
+          finalOutputSpan.innerText = transcript;
+
+          if (!event.results[0].isFinal && recognition) {
+            setTimeout(() => {
+              try { recognition.stop(); } catch (e) { console.error(e); }
+            }, 800);
+          }
+        };
+
+        recognition.onend = () => {
+          clearTimeout(silenceTimer);
+          isRecording = false;
+          isListening = false;
+          micStatusSpan.innerHTML = "🔴 Stopped";
+          micStatusSpan.className = "";
+
+          removeCursor();
+
+          if (voiceInputSpan.innerText.trim()) {
+            setTimeout(finalizeTapSay, 100);
+          } else {
+            endTapSay();
+            showToast("No speech detected");
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.error("[Global] recognition error =>", event.error);
+          clearTimeout(silenceTimer);
+          isRecording = false;
+          isListening = false;
+          micStatusSpan.innerHTML = "🔴 Error";
+          micStatusSpan.className = "";
+          removeCursor();
+          endTapSay();
+          showToast("Speech recognition error: " + event.error);
+        };
+
+        recognition.start();
+      } catch (e) {
+        isRecording = false;
         isListening = false;
-        micStatusSpan.innerText = "🔴 Stopped";
-        finalizeTapSay();
-      };
-      recognition.start();
+        micStatusSpan.innerHTML = "🔴 Error";
+        micStatusSpan.className = "";
+        removeCursor();
+        showToast("Could not start speech recognition: " + e.message);
+      }
     }
 
     /*******************************************************
-     * 12) Finalize TapSay
+     * 10) Finalize TapSay
      *******************************************************/
     function finalizeTapSay() {
-      let transcript = voiceInputSpan.innerText.trim();
+      const transcript = (voiceInputSpan.innerText || "").trim();
       if (!transcript) {
         showToast("No speech input detected.");
-        endTapSay(); 
-        currentMode = null;
+        endTapSay();
         return;
       }
-      undoStack.push(editor.innerHTML);
-
       let parted = errorText.innerText.trimEnd();
       parted = parted.replace(/([.!?])(\S)/g, "$1 $2");
       let textNoPunc = removePunctuation(transcript).trimEnd();
       let merged = (parted + " <||> " + textNoPunc).trimEnd();
-      
-      // Only display the speech input part (after <||>)
       finalOutputSpan.innerText = textNoPunc;
-      
-      logEvent("Final output => " + merged);
 
-      if (experienceMode.style.display !== "none") {
-        sendToAPI(merged, localTapIndex, true);
-      } else {
-        sendToAPI(merged, localTapIndex, false);
-      }
-      currentMode = null;
+      let finalIndex = (activeMode === MODE_INPUT) ? localTapIndex :
+                       (tapStartIndex !== -1 ? tapStartIndex : localTapIndex);
+
+      sendToAPI(merged, finalIndex, activeMode === MODE_EXPERIENCE);
       voiceInputSpan.innerText = "";
       lastHighlightedSentence = errorText.innerText;
+      tapStartIndex = -1;
+
       clearTimeout(highlightTimeout);
-      highlightTimeout = setTimeout(endTapSay, 3000);
+      highlightTimeout = setTimeout(() => {
+        removeCursor();
+      }, 3000);
     }
+
     function endTapSay() {
       clearTimeout(highlightTimeout);
-      removeHighlight();
-      removeHighlightExp();
+      clearTimeout(silenceTimer);
+      if (recognition) {
+        try {
+          recognition.onend = null;
+          recognition.abort();
+        } catch(e) {
+          console.error("[Global] endTapSay => error stopping:", e);
+        }
+        recognition = null;
+      }
+      isRecording = false;
+      isListening = false;
+      micStatusSpan.innerHTML = "🔴 Stopped";
+      micStatusSpan.className = "";
+      removeCursor();
+      voiceInputSpan.innerText = "";
     }
 
     /*******************************************************
-     * 13) /correct API Call
+     * 11) /correct API
      *******************************************************/
-    // Modified sendToAPI: Pass the full candidate objects array (including diff_ranges)
-    function sendToAPI(mergedStr, loc, isExperienceMode = false) {
-      logEvent("Sending /correct => merged_string:" + mergedStr + ", touch_location:" + loc);
+    function sendToAPI(mergedStr, loc, isExperienceMode) {
+      let finalLoc = parseInt(loc, 10) || 0;
+      logEvent(`Sending /correct => merged_string:${mergedStr}, touch_location:${finalLoc}, isExpMode:${isExperienceMode}`);
       fetch(API_URL, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          merged_string: mergedStr,
-          touch_location: loc
-        })
-      }).then(resp => resp.json()).then(data => {
-        // Retrieve candidate objects array from data.filtered_corrections
+        body: JSON.stringify({ merged_string: mergedStr, touch_location: finalLoc })
+      })
+      .then(resp => resp.json())
+      .then(data => {
         let corrs = data.filtered_corrections || [];
         logEvent("API corrections => " + JSON.stringify(corrs));
-
-        // 在这里处理差异范围，确保它们相对于选定的句子
-        if (corrs.length > 0 && isExperienceMode) {
-          // 对于体验模式，我们需要确保差异范围是相对于选定的句子
-          corrs.forEach(correction => {
-            if (correction.diff_ranges && correction.diff_ranges.length > 0) {
-              // 确保差异范围在选定句子的范围内
-              correction.diff_ranges = correction.diff_ranges.filter(range => 
-                range[0] >= 0 && range[0] < originalSentence.length
-              );
-            }
-          });
-        }
-
         applyFirstSuggestionAndShowBox(corrs, isExperienceMode);
-      }).catch(err => {
+      })
+      .catch(err => {
         logEvent("API call error => " + err);
       });
     }
 
     /*******************************************************
-     * 14) applyFirstSuggestionAndShowBox
-     * Modified: Underlines the changed segments in the returned text based on diff_ranges.
-     * The underline effect is also applied when replacing candidate suggestions.
+     * 12) applyFirstSuggestionAndShowBox
      *******************************************************/
     function replaceFirstOccurrence(fullText, oldPart, newPart) {
       let safe = oldPart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1029,478 +1431,362 @@
       return fullText.replace(reg, newPart);
     }
 
-    function applyFirstSuggestionAndShowBox(corrections, isExperienceMode = false) {
-      if (!corrections.length) return;
-      let candidateObj = corrections[0];
-      let candidate = candidateObj.corrected_text.trimEnd();
-      let diffRanges = candidateObj.diff_ranges; // diff_ranges 数组
+    function applyFirstSuggestionAndShowBox(corrections, isExperienceMode) {
+      console.log('[API] Received corrections:', corrections);
+      
+      if (!corrections.length) {
+        console.warn('[API] No corrections received');
+        return;
+      }
       
       if (isExperienceMode) {
-        const errorSentence = document.getElementById("error-sentence");
-        if (!errorSentence) return;
+        const errorSentenceEl = document.getElementById("error-sentence");
+        if (!errorSentenceEl) {
+          console.warn('[Transcription] Error: errorSentenceEl not found');
+          return;
+        }
         
-        // 获取原始文本和目标句子
-        let entireText = errorSentence.innerText;
+      let candidateObj = corrections[0];
+      let candidate = candidateObj.corrected_text.trimEnd();
+      let diffRanges = candidateObj.diff_ranges;
+
+        console.log('[Transcription] Applying correction:', {
+          selectedSentence: selectedSentence,
+          candidate: candidate,
+          currentText: errorSentenceEl.innerText
+        });
+
+        // 用第一个建议替换选中的句子
+        let entireText = errorSentenceEl.innerText;
+        let updatedText = replaceFirstOccurrence(entireText, selectedSentence, candidate);
         
-        // 找到原始句子在文本中的位置
-        let sentenceIndex = entireText.indexOf(originalSentence);
+        console.log('[Transcription] After replacement:', {
+          updatedText: updatedText,
+          replacementSuccessful: updatedText !== entireText
+        });
         
-        // 替换原始句子为新句子
-        let updatedText = replaceFirstOccurrence(entireText, originalSentence, candidate);
-        
-        // 先将文本设置为纯文本（无下划线）
-        errorSentence.innerText = updatedText;
-        
+        errorSentenceEl.innerText = updatedText;
+
+        // 更新选中句为当前建议
+        selectedSentence = candidate;
+
         // 如果有差异范围，添加下划线
-        if (diffRanges && diffRanges.length > 0 && sentenceIndex >= 0) {
-          // 找到新句子在更新后文本中的位置
+        if (diffRanges && diffRanges.length > 0) {
           let newSentenceIndex = updatedText.indexOf(candidate);
-          
           if (newSentenceIndex >= 0) {
-            // 创建一个文档片段来构建HTML
-            let fragment = document.createDocumentFragment();
-            let textNode = document.createTextNode(updatedText.substring(0, newSentenceIndex));
-            fragment.appendChild(textNode);
-            
-            // 为新句子创建一个容器
-            let sentenceSpan = document.createElement('span');
-            
-            // 处理新句子中的差异部分
-            let sentenceText = candidate;
-            let lastIndex = 0;
-            
-            // 对每个差异范围应用下划线
-            diffRanges.forEach(range => {
-              let [start, end] = range;
-              
-              // 确保范围有效
-              if (start < 0 || end > sentenceText.length) return;
-              
-              // 添加差异前的文本
-              if (start > lastIndex) {
-                sentenceSpan.appendChild(document.createTextNode(sentenceText.substring(lastIndex, start)));
-              }
-              
-              // 检查差异部分是否以空格开头
-              let diffText = sentenceText.substring(start, end);
-              let leadingSpaceMatch = diffText.match(/^(\s+)/);
-              let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
-              
-              if (leadingSpaceLength > 0) {
-                // 添加开头的空格（不带下划线）
-                sentenceSpan.appendChild(document.createTextNode(diffText.substring(0, leadingSpaceLength)));
-                
-                // 添加剩余部分（带下划线）
-                if (leadingSpaceLength < diffText.length) {
-                  let underlineSpan = document.createElement('span');
-                  underlineSpan.style.borderBottom = '2px solid blue';
-                  underlineSpan.textContent = diffText.substring(leadingSpaceLength);
-                  sentenceSpan.appendChild(underlineSpan);
-                }
-              } else {
-                // 没有开头空格，正常添加下划线
-                let underlineSpan = document.createElement('span');
-                underlineSpan.style.borderBottom = '2px solid blue';
-                underlineSpan.textContent = diffText;
-                sentenceSpan.appendChild(underlineSpan);
-              }
-              
-              lastIndex = end;
-            });
-            
-            // 添加剩余的文本
-            if (lastIndex < sentenceText.length) {
-              sentenceSpan.appendChild(document.createTextNode(sentenceText.substring(lastIndex)));
-            }
-            
-            fragment.appendChild(sentenceSpan);
-            
-            // 添加句子后的文本
-            textNode = document.createTextNode(updatedText.substring(newSentenceIndex + candidate.length));
-            fragment.appendChild(textNode);
-            
-            // 清空并应用新内容
-            errorSentence.innerHTML = '';
-            errorSentence.appendChild(fragment);
+            let newHtml = updatedText.substring(0, newSentenceIndex);
+            newHtml += underlineDiffRanges(candidate, diffRanges);
+            newHtml += updatedText.substring(newSentenceIndex + candidate.length);
+            errorSentenceEl.innerHTML = newHtml;
           }
         }
-        
-        errorSentence.classList.remove("highlighted-sentence");
-        originalSentence = candidate;
-        
+
+        // 显示其他建议
         if (corrections.length > 1) {
-          let rect = errorSentence.getBoundingClientRect();
+          console.log('[Transcription] Creating suggestion box for additional corrections');
+          let rect = errorSentenceEl.getBoundingClientRect();
           suggestionsBox = createSuggestionBox(rect, corrections, true);
+          if (suggestionsBox) {
+            console.log('[Transcription] Appending suggestion box to body');
           document.body.appendChild(suggestionsBox);
           clearTimeout(suggestionsTimer);
-          suggestionsTimer = setTimeout(() => { removeSuggestionsBox(); }, 3000);
+          suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
+          } else {
+            console.warn('[Transcription] Failed to create suggestion box');
         }
+        }
+
         checkCompletion();
       } else {
-        // 自由输入模式的处理保持不变
-        let html = editor.innerHTML;
-        let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        let re = new RegExp(safe, "i");
-        if (!re.test(html)) return;
+        // Free input mode
+        const simpleEditor = document.getElementById('simple-editor');
+        if (!simpleEditor) return;
         
-        let candidateHighlighted = candidate;
-        if (diffRanges && diffRanges.length > 0) {
-          candidateHighlighted = underlineDiffRanges(candidate, diffRanges);
-        }
-        
-        editor.innerHTML = html.replace(re, candidateHighlighted);
+        let candidateObj = corrections[0];
+        let candidate = candidateObj.corrected_text.trimEnd();
+        let diffRanges = candidateObj.diff_ranges;
+
+        if (window.replaceSentenceInSimpleEditor(originalSentence, candidate)) {
         originalSentence = candidate;
-        
-        removeHighlight();
-        highlightSentence(candidate);
-        setTimeout(() => { editor.focus(); }, 300);
-        
+          simpleEditor.focus();
+
         if (corrections.length > 1) {
-          let ts = document.getElementById("target-sentence");
-          if (!ts) return;
-          let rect = ts.getBoundingClientRect();
-          suggestionsBox = createSuggestionBox(rect, corrections, false);
+            const rect = simpleEditor.getBoundingClientRect();
+            const suggestionsBox = document.createElement('div');
+            suggestionsBox.className = 'suggestions-box-floating';
+            suggestionsBox.style.left = rect.left + 'px';
+            suggestionsBox.style.top = (rect.bottom + 10) + 'px';
+            suggestionsBox.style.width = rect.width + 'px';
+            
+            for (let i = 1; i < corrections.length; i++) {
+              const suggObj = corrections[i];
+              const suggText = suggObj.corrected_text.trimEnd();
+              
+              const suggDiv = document.createElement('div');
+              suggDiv.innerText = suggText;
+              
+              suggDiv.onclick = () => {
+                window.replaceSentenceInSimpleEditor(originalSentence, suggText);
+                originalSentence = suggText;
+                suggestionsBox.remove();
+                simpleEditor.focus();
+              };
+              suggestionsBox.appendChild(suggDiv);
+            }
           document.body.appendChild(suggestionsBox);
-          clearTimeout(suggestionsTimer);
-          suggestionsTimer = setTimeout(() => { removeSuggestionsBox(); }, 3000);
+            setTimeout(() => {
+              if (suggestionsBox.parentNode) {
+                suggestionsBox.remove();
+              }
+            }, 3000);
+          }
         }
       }
     }
 
-    // 同样需要修改建议框中的处理
-    function createSuggestionBox(rect, corrections, isExpMode = false) {
+    function createSuggestionBox(rect, corrections, isExpMode) {
+      console.log('[SuggestionBox] Creating box with:', {
+        isExpMode: isExpMode,
+        correctionsCount: corrections.length
+      });
+      
       let box = document.createElement("div");
       box.className = "suggestions-box-floating";
-      box.style.left = (rect.left + window.scrollX) + "px";
-      box.style.top = (rect.bottom + window.scrollY) + "px";
-      box.style.width = rect.width + "px";
       
+      // 获取第一个建议的文本
+      const firstSuggestion = corrections[0].corrected_text.trimEnd();
+      console.log('[SuggestionBox] First suggestion:', firstSuggestion);
+      
+      if (isExpMode) {
+        const errorSentenceEl = document.getElementById("error-sentence");
+        if (errorSentenceEl) {
+          const text = errorSentenceEl.innerText;
+          const range = document.createRange();
+          const textNode = errorSentenceEl.firstChild;
+          
+          if (textNode) {
+            const startIndex = text.indexOf(firstSuggestion);
+            if (startIndex !== -1) {
+              try {
+                // 使用建议文本的位置来定位建议栏
+                range.setStart(textNode, startIndex);
+                range.setEnd(textNode, startIndex + 1); // 只需要起始位置即可
+                const selectedRect = range.getBoundingClientRect();
+                
+                // 设置建议框位置在选中句子下方
+                const boxLeft = selectedRect.left + window.scrollX;
+                const boxTop = selectedRect.bottom + window.scrollY + 5;
+                
+                // 不限制宽度,让建议栏根据内容自动调整
+                box.style.left = boxLeft + "px";
+                box.style.top = boxTop + "px";
+                box.style.minWidth = selectedRect.width + "px"; // 最小宽度设为原文宽度
+                box.style.width = "auto"; // 允许宽度自动增长
+                box.style.maxWidth = "500px"; // 设置一个最大宽度以防止过长
+              } catch (e) {
+                console.error('[SuggestionBox] Error setting range:', e);
+              }
+            }
+          }
+        }
+      }
+
+      // 添加建议选项前的状态
+      console.log('[SuggestionBox] Box styles before adding suggestions:', {
+        left: box.style.left,
+        top: box.style.top,
+        width: box.style.width
+      });
+
+      // 添加建议选项(从第二个建议开始)
       for (let i = 1; i < corrections.length; i++) {
         let candidateObj = corrections[i];
         let candidate = candidateObj.corrected_text.trimEnd();
-        let diffRanges = candidateObj.diff_ranges;
-        
+        console.log('[SuggestionBox] Adding suggestion:', candidate);
+
         let div = document.createElement("div");
-        
-        if (isExpMode && diffRanges && diffRanges.length > 0) {
-          // 对于体验模式，我们使用与上面相同的方法处理差异
-          let sentenceText = candidate;
-          let lastIndex = 0;
-          let fragment = document.createDocumentFragment();
-          
-          diffRanges.forEach(range => {
-            let [start, end] = range;
-            
-            // 确保范围有效
-            if (start < 0 || end > sentenceText.length) return;
-            
-            // 添加差异前的文本
-            if (start > lastIndex) {
-              fragment.appendChild(document.createTextNode(sentenceText.substring(lastIndex, start)));
-            }
-            
-            // 检查差异部分是否以空格开头
-            let diffText = sentenceText.substring(start, end);
-            let leadingSpaceMatch = diffText.match(/^(\s+)/);
-            let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
-            
-            if (leadingSpaceLength > 0) {
-              // 添加开头的空格（不带下划线）
-              fragment.appendChild(document.createTextNode(diffText.substring(0, leadingSpaceLength)));
-              
-              // 添加剩余部分（带下划线）
-              if (leadingSpaceLength < diffText.length) {
-                let underlineSpan = document.createElement('span');
-                underlineSpan.style.borderBottom = '2px solid blue';
-                underlineSpan.textContent = diffText.substring(leadingSpaceLength);
-                fragment.appendChild(underlineSpan);
-              }
-            } else {
-              // 没有开头空格，正常添加下划线
-              let underlineSpan = document.createElement('span');
-              underlineSpan.style.borderBottom = '2px solid blue';
-              underlineSpan.textContent = diffText;
-              fragment.appendChild(underlineSpan);
-            }
-            
-            lastIndex = end;
-          });
-          
-          // 添加剩余的文本
-          if (lastIndex < sentenceText.length) {
-            fragment.appendChild(document.createTextNode(sentenceText.substring(lastIndex)));
-          }
-          
-          div.appendChild(fragment);
+        if (candidateObj.diff_ranges && candidateObj.diff_ranges.length > 0) {
+          div.innerHTML = underlineDiffRanges(candidate, candidateObj.diff_ranges);
         } else {
-          // 自由输入模式保持不变
-          if (diffRanges && diffRanges.length > 0) {
-            div.innerHTML = underlineDiffRanges(candidate, diffRanges);
-          } else {
-            div.innerText = candidate;
-          }
+          div.innerText = candidate;
         }
-        
+
         div.onclick = (evt) => {
           evt.preventDefault();
           evt.stopPropagation();
-          
           if (isExpMode) {
-            let errorSentence = document.getElementById("error-sentence");
-            if (!errorSentence) return;
-            removeHighlightExp();
-            
-            let entireText = errorSentence.innerText;
-            let updated = replaceFirstOccurrence(entireText, originalSentence, candidate);
-            
-            // 使用与上面相同的方法应用下划线
-            errorSentence.innerText = updated;
-            
-            if (diffRanges && diffRanges.length > 0) {
+            const errorSentenceEl = document.getElementById("error-sentence");
+            if (!errorSentenceEl) {
+              console.warn('[SuggestionBox] Error sentence element not found during click');
+              return;
+            }
+
+            console.log('[SuggestionBox] Replacing text:', {
+              current: selectedSentence,
+              new: candidate
+            });
+
+            let entireText = errorSentenceEl.innerText;
+            let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+            errorSentenceEl.innerText = updated;
+            selectedSentence = candidate;
+
+            if (candidateObj.diff_ranges && candidateObj.diff_ranges.length > 0) {
               let newSentenceIndex = updated.indexOf(candidate);
-              
               if (newSentenceIndex >= 0) {
-                let fragment = document.createDocumentFragment();
-                let textNode = document.createTextNode(updated.substring(0, newSentenceIndex));
-                fragment.appendChild(textNode);
-                
-                let sentenceSpan = document.createElement('span');
-                let sentenceText = candidate;
-                let lastIndex = 0;
-                
-                diffRanges.forEach(range => {
-                  let [start, end] = range;
-                  
-                  if (start < 0 || end > sentenceText.length) return;
-                  
-                  if (start > lastIndex) {
-                    sentenceSpan.appendChild(document.createTextNode(sentenceText.substring(lastIndex, start)));
-                  }
-                  
-                  let diffText = sentenceText.substring(start, end);
-                  let leadingSpaceMatch = diffText.match(/^(\s+)/);
-                  let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
-                  
-                  if (leadingSpaceLength > 0) {
-                    sentenceSpan.appendChild(document.createTextNode(diffText.substring(0, leadingSpaceLength)));
-                    
-                    if (leadingSpaceLength < diffText.length) {
-                      let underlineSpan = document.createElement('span');
-                      underlineSpan.style.borderBottom = '2px solid blue';
-                      underlineSpan.textContent = diffText.substring(leadingSpaceLength);
-                      sentenceSpan.appendChild(underlineSpan);
-                    }
-                  } else {
-                    let underlineSpan = document.createElement('span');
-                    underlineSpan.style.borderBottom = '2px solid blue';
-                    underlineSpan.textContent = diffText;
-                    sentenceSpan.appendChild(underlineSpan);
-                  }
-                  
-                  lastIndex = end;
-                });
-                
-                if (lastIndex < sentenceText.length) {
-                  sentenceSpan.appendChild(document.createTextNode(sentenceText.substring(lastIndex)));
-                }
-                
-                fragment.appendChild(sentenceSpan);
-                
-                textNode = document.createTextNode(updated.substring(newSentenceIndex + candidate.length));
-                fragment.appendChild(textNode);
-                
-                errorSentence.innerHTML = '';
-                errorSentence.appendChild(fragment);
+                let newHtml = updated.substring(0, newSentenceIndex);
+                newHtml += underlineDiffRanges(candidate, candidateObj.diff_ranges);
+                newHtml += updated.substring(newSentenceIndex + candidate.length);
+                errorSentenceEl.innerHTML = newHtml;
               }
             }
-            
-            originalSentence = candidate;
-            highlightExpSentence(candidate);
+
             checkCompletion();
-          } else {
-            // 自由输入模式保持不变
-            removeHighlight();
-            let html = editor.innerHTML;
-            let safe = originalSentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            let re = new RegExp(safe, "i");
-            
-            if (diffRanges && diffRanges.length > 0) {
-              editor.innerHTML = html.replace(re, underlineDiffRanges(candidate, diffRanges));
-            } else {
-              editor.innerHTML = html.replace(re, candidate);
-            }
-            
-            originalSentence = candidate;
-            highlightSentence(candidate);
-            setTimeout(() => {
-              moveCaretToEndOfTarget();
-              editor.focus();
-            }, 300);
           }
-          
           removeSuggestionsBox();
         };
-        
         box.appendChild(div);
       }
-      
+
       return box;
     }
 
-    function removeHighlightExp() {
-      const errorSentence = document.getElementById("error-sentence");
-      if (!errorSentence) return;
-      errorSentence.innerHTML = errorSentence.innerHTML.replace(/<span class="highlighted-sentence">(.*?)<\/span>/i, "$1");
-    }
-    function highlightExpSentence(txt) {
-      const errorSentence = document.getElementById("error-sentence");
-      if (!errorSentence) return;
-      let html = errorSentence.innerHTML;
-      let safe = txt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      let re = new RegExp(safe, "i");
-      errorSentence.innerHTML = html.replace(re, `<span class="highlighted-sentence">$&</span>`);
-    }
-
-    /*******************************************************
-     * 15) Undo Action
-     *******************************************************/
-    undoButton.addEventListener("click", () => {
-      if (undoStack.length > 0) {
-        let prev = undoStack.pop();
-        editor.innerHTML = prev;
-        removeHighlight();
-        showToast("Undo last change");
-      } else {
-        showToast("No change to undo!");
-      }
-      editor.focus();
-    });
-
-    /*******************************************************
-     * 16) Move Caret to End of Target
-     *******************************************************/
-    function moveCaretToEndOfTarget() {
-      setTimeout(() => {
-        const ts = document.getElementById("target-sentence");
-        if (!ts && lastHighlightedSentence) {
-          let range = document.createRange();
-          let sel = window.getSelection();
-          let txtNode = editor.firstChild;
-          if (txtNode) {
-            let idx = txtNode.textContent.indexOf(lastHighlightedSentence);
-            if (idx !== -1) {
-              range.setStart(txtNode, idx + lastHighlightedSentence.length);
-              range.collapse(true);
-              sel.removeAllRanges();
-              sel.addRange(range);
-            }
-          }
-        } else if (ts) {
-          let range = document.createRange();
-          let sel = window.getSelection();
-          range.setStartAfter(ts);
-          range.collapse(true);
-          sel.removeAllRanges();
-          sel.addRange(range);
-          editor.focus();
-        }
-      }, 0);
-    }
-
-    /*******************************************************
-     * 17) Utility Functions
-     *******************************************************/
-    function getCaretIndex(x, y) {
-      console.log('[Debug] getCaretIndex:', {x, y});
-      let range;
-      if (document.caretRangeFromPoint) {
-        range = document.caretRangeFromPoint(x, y);
-        console.log('[Debug] range from caretRangeFromPoint:', range);
-      } else if (document.caretPositionFromPoint) {
-        let pos = document.caretPositionFromPoint(x, y);
-        if (!pos) {
-          console.log('[Debug] No pos from caretPositionFromPoint!');
-          return -1;
-        }
-        range = document.createRange();
-        range.setStart(pos.offsetNode, pos.offset);
-        range.collapse(true);
-        console.log('[Debug] range from caretPositionFromPoint:', range);
-      }
-      if (!range) return -1;
-      let pre = range.cloneRange();
-      pre.selectNodeContents(editor);
-      pre.setEnd(range.startContainer, range.startOffset);
-
-      let caretIndex = pre.toString().length;
-      console.log('[Debug] caretIndex:', caretIndex);
-      return caretIndex;
-    }
-
-    function removePunctuation(str) {
-      return str.replace(/[^a-zA-Z0-9'\s]/g, "");
-    }
     function removeSuggestionsBox() {
       if (suggestionsBox) {
         suggestionsBox.remove();
         suggestionsBox = null;
       }
-      if (suggestionsTimer) {
-        clearTimeout(suggestionsTimer);
-        suggestionsTimer = null;
-      }
-    }
-
-    function getSelectedSentenceAndRelativeIndex(text, pos) {
-      console.log('[Debug] getSelectedSentenceAndRelativeIndex => pos:', pos);
-      const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-      console.log('[Debug] splitted sentences:', sentences);
-
-      let current = 0;
-      for (let s of sentences) {
-        let end = current + s.length;
-        console.log('[Debug] checking sentence:', s, 'start:', current, 'end:', end);
-        if (pos >= current && pos <= end) {
-          console.log('[Debug] matched =>', s, 'relativeIndex =>', pos - current);
-          return {sentence: s, relativeIndex: pos - current};
-        }
-        current = end + 1;
-      }
-      console.log('[Debug] no match, fallback =>', sentences[0]);
-      return {sentence: sentences[0], relativeIndex: 0};
     }
 
     /*******************************************************
-     * 18) Experience Mode
+     * 13) highlight / removeHighlight for free input
+     *******************************************************/
+    function highlightSentence(sentence) {
+      let html = editor.innerHTML;
+      let safe = sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let re = new RegExp(safe, "i");
+      if (!re.test(html)) return false;
+      editor.innerHTML = html.replace(
+        re, `<span id="target-sentence" class="highlighted-sentence">$&</span>`
+      );
+      lastHighlightedSentence = sentence;
+      return true;
+    }
+
+    /*******************************************************
+     * 14) Cursor logic for Experience Mode
+     *******************************************************/
+    function showCursorAtPosition() {
+      removeCursor();
+      const element = document.getElementById("error-sentence");
+      if (!element) return;
+
+      const text = element.textContent;
+      const textNode = element.firstChild;
+      if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+
+      try {
+        // 获取元素的计算样式
+        const style = window.getComputedStyle(element);
+        const paddingLeft = parseFloat(style.paddingLeft);
+        const borderLeft = parseFloat(style.borderLeftWidth);
+        
+        // 创建一个范围来获取准确的文本位置
+        const range = document.createRange();
+        range.setStart(textNode, localTapIndex);
+        range.collapse(true);
+
+        const elementRect = element.getBoundingClientRect();
+        const rangeRect = range.getBoundingClientRect();
+        
+        // 创建光标元素
+        cursorElement = document.createElement("span");
+        cursorElement.className = "cursor-indicator";
+        cursorElement.style.position = "absolute";
+
+        // 计算精确的光标位置，考虑内边距和边框
+        cursorElement.style.left = (rangeRect.left + window.scrollX) + "px";
+        cursorElement.style.top = (rangeRect.top + window.scrollY) + "px";
+        cursorElement.style.height = rangeRect.height + "px";
+
+        document.body.appendChild(cursorElement);
+        cursorElement.dataset.index = localTapIndex.toString();
+        cursorElement.dataset.elementId = "error-sentence";
+
+        if (!isRecording && !isDragging) {
+          cursorTimeout = setTimeout(() => { removeCursor(); }, 6000);
+        }
+        touchIndexSpan.innerText = String(localTapIndex);
+        
+      } catch (e) {
+        console.error("[Transcription] Error creating cursor:", e);
+      }
+    }
+
+    function removeCursor() {
+      if (cursorTimeout) {
+        clearTimeout(cursorTimeout);
+        cursorTimeout = null;
+      }
+      if (cursorElement) {
+        cursorElement.remove();
+        cursorElement = null;
+      }
+    }
+
+    /*******************************************************
+     * 15) Utility
+     *******************************************************/
+    function removePunctuation(str) {
+      return str.replace(/[^a-zA-Z0-9'\s]/g, "");
+    }
+
+    /*******************************************************
+     * 16) Experience Mode
      *******************************************************/
     function initializeExperienceMode() {
       updateSentencePair(0);
       attachExpListeners();
     }
+
     function attachExpListeners() {
       const prev = document.getElementById("prev-sentence");
       const next = document.getElementById("next-sentence");
       const skip = document.getElementById("skip-sentence-button");
       const nextPair = document.getElementById("next-pair-button");
       const expUndo = document.getElementById("experience-undo-button");
-      const errorSentence = document.getElementById("error-sentence");
-      if (!prev || !next || !skip || !nextPair || !expUndo || !errorSentence) return;
+      const errorSentenceEl = document.getElementById("error-sentence");
 
-      // Previous Sentence
+      if (!prev || !next || !skip || !nextPair || !expUndo || !errorSentenceEl) return;
+
+      // block context menu / text select
+      errorSentenceEl.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        return false;
+      });
+      errorSentenceEl.addEventListener('dblclick', e => {
+        e.preventDefault();
+        return false;
+      });
+      errorSentenceEl.addEventListener('selectstart', e => {
+        if (!isDragging) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
       prev.addEventListener("click", () => {
         if (currentPairIndex > 0) {
           currentPairIndex--;
           updateSentencePair(currentPairIndex);
         }
       });
-      // Next Sentence
       next.addEventListener("click", () => {
         if (currentPairIndex < sentencePairs.length - 1) {
           currentPairIndex++;
           updateSentencePair(currentPairIndex);
         }
       });
-      // Skip
       skip.addEventListener("click", () => {
         if (currentPairIndex < sentencePairs.length - 1) {
           currentPairIndex++;
@@ -1510,129 +1796,397 @@
           showToast("This is the last sentence");
         }
       });
-      // Next Sentence Pair
       nextPair.addEventListener("click", () => {
         if (currentPairIndex < sentencePairs.length - 1) {
           currentPairIndex++;
           updateSentencePair(currentPairIndex);
         } else {
-          showToast("Congratulations, you have completed all sentences!");
+          showToast("All sentences completed!");
         }
       });
       expUndo.addEventListener("click", () => {
-        if (errorSentence) {
-          removeHighlightExp();
-          errorSentence.classList.remove("highlighted-sentence");
-          errorSentence.innerText = sentencePairs[currentPairIndex].error;
-          showToast("Restored error sentence");
-          originalSentence = sentencePairs[currentPairIndex].error;
+        console.log('[Transcription] Restore button clicked');
+        
+        const errorSentenceEl = document.getElementById("error-sentence");
+        if (!errorSentenceEl) {
+          console.warn('[Transcription] Error: errorSentenceEl not found');
+          return;
         }
+        
+        console.log('[Transcription] Before restore:', {
+          currentText: errorSentenceEl.innerText,
+          selectedSentence: selectedSentence
+        });
+
+        // 直接用原始错误句子替换整个内容
+        const originalErrorSentence = sentencePairs[currentPairIndex].error;
+        errorSentenceEl.innerText = originalErrorSentence;
+        
+        // 重置选中句
+        selectedSentence = "";
+        
+        // 重置Skip按钮状态
+        const skipBtn = document.getElementById("skip-sentence-button");
+        if (skipBtn) {
+          skipBtn.textContent = "Follow the instruction";
+          skipBtn.style.background = "#6c757d";
+          skipBtn.style.opacity = "0.7";
+          skipBtn.style.pointerEvents = "none";
+          skipBtn.style.cursor = "default";
+        }
+        
+        // 重置错误句子框的样式
+        errorSentenceEl.style.background = "";
+        errorSentenceEl.style.borderColor = "";
+        
+        showToast("Restored to original error sentence");
       });
 
-      // Long Press => Tap (for Experience Mode)
+      attachTranscriptionLongPress(errorSentenceEl);
+    }
+
+    function attachTranscriptionLongPress(errorSentenceEl) {
       let pressTimerExp = null;
-      errorSentence.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        const rect = e.target.getBoundingClientRect();
-        let clickX = e.clientX - rect.left;
-        let text = errorSentence.innerText;
-        let textLen = text.length;
-        if (textLen > 0) {
-          let ratio = clickX / rect.width;
-          ratio = Math.max(0, Math.min(1, ratio));
-          localTapIndex = Math.floor(ratio * textLen);
-        } else {
-          localTapIndex = 0;
-        }
-        console.log('[Debug] localTapIndex (char-based):', localTapIndex);
-        pressTimerExp = setTimeout(handleExpLongPress, 600);
-      });
-      errorSentence.addEventListener("mouseup", () => clearTimeout(pressTimerExp));
-      errorSentence.addEventListener("mouseleave", () => clearTimeout(pressTimerExp));
+      let longPressStarted = false;
+      let longPressThreshold = 200;
 
-      errorSentence.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        const rect = e.target.getBoundingClientRect();
-        let t = e.touches[0];
-        let clickX = t.clientX - rect.left;
-        let text = errorSentence.innerText;
-        let textLen = text.length;
-        if (textLen > 0) {
-          let ratio = clickX / rect.width;
-          ratio = Math.max(0, Math.min(1, ratio));
-          localTapIndex = Math.floor(ratio * textLen);
-        } else {
-          localTapIndex = 0;
+      errorSentenceEl.addEventListener("mousedown", (e) => {
+        if (isDragging) return;
+        removeCursor();
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const text = errorSentenceEl.innerText;
+        
+        // 使用 caretRangeFromPoint 来获取更精确的字符位置
+        const x = e.clientX;
+        const y = e.clientY;
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(x, y);
+          if (range) {
+            localTapIndex = range.startOffset;
+          }
+          } else {
+          // 回退方案：使用更精确的像素计算
+          const style = window.getComputedStyle(errorSentenceEl);
+          const fontSize = parseFloat(style.fontSize);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const clickX = e.clientX - rect.left - paddingLeft;
+          const averageCharWidth = fontSize * 0.6; // 估算每个字符的平均宽度
+          localTapIndex = Math.round(clickX / averageCharWidth);
         }
-        console.log('[Debug] localTapIndex (char-based, touch):', localTapIndex);
-        pressTimerExp = setTimeout(handleExpLongPress, 1000);
+        
+        // 确保 index 在有效范围内
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        pressTimerExp = setTimeout(() => {
+          longPressStarted = true;
+          handleExpLongPress();
+          showLongPressFeedback(e.clientX, e.clientY);
+        }, longPressThreshold);
       });
-      errorSentence.addEventListener("touchend", () => clearTimeout(pressTimerExp));
-      errorSentence.addEventListener("touchcancel", () => clearTimeout(pressTimerExp));
+      errorSentenceEl.addEventListener("mousemove", () => {
+        if (pressTimerExp && !longPressStarted) {
+          clearTimeout(pressTimerExp);
+          pressTimerExp = null;
+        }
+      });
+      errorSentenceEl.addEventListener("mouseup", () => {
+        clearTimeout(pressTimerExp);
+        pressTimerExp = null;
+        longPressStarted = false;
+      });
+      errorSentenceEl.addEventListener("mouseleave", () => {
+        clearTimeout(pressTimerExp);
+        pressTimerExp = null;
+        longPressStarted = false;
+      });
+
+      // touch
+      errorSentenceEl.addEventListener("touchstart", (e) => {
+        if (isDragging) return;
+        removeCursor();
+
+        const touch = e.touches[0];
+        const rect = e.currentTarget.getBoundingClientRect();
+        const text = errorSentenceEl.innerText;
+        
+        // 使用 caretRangeFromPoint 来获取更精确的字符位置
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+          if (range) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+          // 回退方案：使用更精确的像素计算
+          const style = window.getComputedStyle(errorSentenceEl);
+          const fontSize = parseFloat(style.fontSize);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const touchX = touch.clientX - rect.left - paddingLeft;
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(touchX / averageCharWidth);
+        }
+        
+        // 确保 index 在有效范围内
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        errorSentenceEl.dataset.touchStarted = "true";
+        pressTimerExp = setTimeout(() => {
+          if (errorSentenceEl.dataset.touchStarted === "true") {
+            longPressStarted = true;
+            handleExpLongPress();
+            showLongPressFeedback(touch.clientX, touch.clientY);
+          }
+        }, 250);
+
+        e.preventDefault();
+      });
+      errorSentenceEl.addEventListener("touchmove", () => {
+        if (pressTimerExp && !longPressStarted) {
+          clearTimeout(pressTimerExp);
+          pressTimerExp = null;
+        }
+      });
+      errorSentenceEl.addEventListener("touchend", () => {
+        if (errorSentenceEl.dataset.touchStarted) {
+          delete errorSentenceEl.dataset.touchStarted;
+        }
+        clearTimeout(pressTimerExp);
+        pressTimerExp = null;
+        longPressStarted = false;
+      });
+      errorSentenceEl.addEventListener("touchcancel", () => {
+        if (errorSentenceEl.dataset.touchStarted) {
+          delete errorSentenceEl.dataset.touchStarted;
+        }
+        clearTimeout(pressTimerExp);
+        pressTimerExp = null;
+        longPressStarted = false;
+      });
     }
 
     function handleExpLongPress() {
-      const errorSentence = document.getElementById("error-sentence");
-      if (!errorSentence) return;
-      let text = errorSentence.innerText;
-
-      console.log('[Debug] handleExpLongPress => localTapIndex:', localTapIndex);
-
-      const {sentence, startPos, endPos} = findNearestSentenceExp(text, localTapIndex);
-      console.log('[Debug] findNearestSentenceExp =>', {sentence, startPos, endPos});
-
-      if (sentence) {
-        let relativeIndex = Math.min(localTapIndex - startPos, sentence.length);
-        console.log('[Debug] final relativeIndex in sentence =>', relativeIndex);
-
-        originalSentence = sentence.trim();
-        errorText.innerText = originalSentence;
-        originalErrorSpan.innerText = originalSentence;
-        
-        // 保存句子在整个文本中的起始位置，用于后续调整差异范围
-        window.sentenceStartPosition = startPos;
-        
-        localTapIndex = relativeIndex;
-        touchIndexSpan.innerText = String(localTapIndex); // 更新显示
-
-        errorSentence.innerHTML = text.replace(sentence, `<span class="highlighted-sentence">${sentence}</span>`);
-        currentMode = "tap";
-        startRecording();
+      console.log('[Transcription] handleExpLongPress started');
+      
+      const element = document.getElementById("error-sentence");
+      if (!element) {
+        console.warn('[Transcription] Error: element not found');
+        return;
       }
-    }
-    function findNearestSentenceExp(text, clickPos) {
-      const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-      let curr = 0;
-      let nearestSent = null;
-      let nearestStart = 0;
-      let nearestEnd = 0;
-      let minDist = Infinity;
-      for (let s of sentences) {
-        let startPos = curr;
-        let endPos = startPos + s.length;
-        let mid = (startPos + endPos) / 2;
-        let dist = Math.abs(clickPos - mid);
-        if (clickPos >= startPos && clickPos <= endPos) {
-          return {sentence: s, startPos, endPos};
+
+      isDragging = true;
+      element.classList.add("dragging");
+      showCursorAtPosition();
+
+      const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        // 使用 caretRangeFromPoint 获取精确的文本位置
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+          if (range && range.startContainer === element.firstChild) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+          // 回退方案
+        const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const moveX = e.clientX - rect.left - paddingLeft;
+          const fontSize = parseFloat(style.fontSize);
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(moveX / averageCharWidth);
         }
-        if (dist < minDist) {
-          minDist = dist;
-          nearestSent = s;
-          nearestStart = startPos;
-          nearestEnd = endPos;
-        }
-        curr = endPos + 1;
-      }
-      return {
-        sentence: nearestSent || sentences[0],
-        startPos: nearestStart,
-        endPos: nearestEnd
+
+        // 确保索引在有效范围内
+        const text = element.innerText;
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        console.log('[Transcription] Mouse move:', {
+          clientX: e.clientX,
+          localTapIndex: localTapIndex
+        });
+
+        const selectedSentence = getCurrentSentenceForTranscription(text, localTapIndex);
+        errorText.innerText = selectedSentence;
+        originalSentence = selectedSentence;
+        originalErrorSpan.innerText = selectedSentence;
+
+        showCursorAtPosition();
       };
+
+      const handleTouchMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        const touch = e.touches[0];
+        
+        // 使用相同的精确定位逻辑
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+          if (range && range.startContainer === element.firstChild) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+          // 回退方案
+        const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const moveX = touch.clientX - rect.left - paddingLeft;
+          const fontSize = parseFloat(style.fontSize);
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(moveX / averageCharWidth);
+        }
+
+        // 确保索引在有效范围内
+        const text = element.innerText;
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        const selectedSentence = getCurrentSentenceForTranscription(text, localTapIndex);
+        errorText.innerText = selectedSentence;
+        originalSentence = selectedSentence;
+        originalErrorSpan.innerText = selectedSentence;
+
+        showCursorAtPosition();
+      };
+
+      const endDrag = (e) => {
+        if (e && e.type === 'touchend') e.preventDefault();
+        isDragging = false;
+        element.classList.remove("dragging");
+
+        let text = element.innerText;
+        const finalSentence = getCurrentSentenceForTranscription(text, localTapIndex);
+
+        errorText.innerText = finalSentence;
+        originalSentence = finalSentence;
+        originalErrorSpan.innerText = finalSentence;
+
+        showToast("Please speak the correction phrase");
+        
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", endDrag);
+        element.removeEventListener("touchmove", handleTouchMove);
+        document.removeEventListener("touchend", endDrag);
+
+        if (recognition) {
+          try {
+            recognition.onend = null;
+            recognition.abort();
+          } catch (ex) {
+            console.error("[Transcription] error aborting:", ex);
+          }
+        }
+
+        setTimeout(() => {
+          startRecording();
+        }, 200);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", endDrag);
+      element.addEventListener("touchmove", handleTouchMove, { passive: false });
+      document.addEventListener("touchend", endDrag, { passive: false });
+    }
+
+    function getCurrentSentenceForTranscription(text, position) {
+      console.log('[Transcription] getCurrentSentence input:', {
+        text: text,
+        position: position
+      });
+      
+      const sentenceSeparators = /[.!?]/;
+      let startPos = 0;
+      for (let i = position - 1; i >= 0; i--) {
+        if (sentenceSeparators.test(text[i]) &&
+          (i + 1 >= text.length || text[i + 1] === ' ' || text[i + 1] === '\n')) {
+          startPos = i + 1;
+          while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
+            startPos++;
+          }
+          break;
+        }
+      }
+      let endPos = text.length;
+      for (let i = position; i < text.length; i++) {
+        if (sentenceSeparators.test(text[i])) {
+          endPos = i + 1;
+          break;
+        }
+      }
+      selectedSentence = text.substring(startPos, endPos).trim();
+      
+      console.log('[Transcription] getCurrentSentence output:', {
+        startPos: startPos,
+        endPos: endPos,
+        selectedSentence: selectedSentence
+      });
+      
+      return selectedSentence;
+    }
+
+    function checkCompletion() {
+      const targetSentence = document.getElementById("target-sentence");
+      const errorSentence = document.getElementById("error-sentence");
+      const skipBtn = document.getElementById("skip-sentence-button");
+      if (!targetSentence || !errorSentence) return;
+
+      if (errorSentence.innerText.trim() === targetSentence.textContent.trim()) {
+        showToast("Tap&Say succeeded!");
+        errorSentence.style.background = "#e6ffed";
+        errorSentence.style.borderColor = "#34d058";
+        setTimeout(() => {
+          errorSentence.style.background = "";
+          errorSentence.style.borderColor = "";
+        }, 2000);
+
+        if (skipBtn && skipBtn.parentNode) {
+          const parentElement = skipBtn.parentNode;
+          let newElement;
+          if (currentPairIndex === sentencePairs.length - 1) {
+            newElement = document.createElement("div");
+            newElement.id = "skip-sentence-button";
+            newElement.textContent = "That's the last one";
+            newElement.style.flex = "1";
+            newElement.style.padding = "14px";
+            newElement.style.fontSize = "16px";
+            newElement.style.border = "none";
+            newElement.style.borderRadius = "6px";
+            newElement.style.background = "#6c757d";
+            newElement.style.color = "#fff";
+            newElement.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+            newElement.style.cursor = "default";
+            newElement.style.opacity = "0.7";
+            newElement.style.textAlign = "center";
+            newElement.style.userSelect = "none";
+            newElement.style.pointerEvents = "none";
+          } else {
+            newElement = document.createElement("button");
+            newElement.id = "skip-sentence-button";
+            newElement.textContent = "Next Sentence";
+            newElement.style.flex = "1";
+            newElement.style.padding = "14px";
+            newElement.style.fontSize = "16px";
+            newElement.style.border = "none";
+            newElement.style.borderRadius = "6px";
+            newElement.style.background = "#007bff";
+            newElement.style.color = "#fff";
+            newElement.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+            newElement.style.cursor = "pointer";
+
+            newElement.addEventListener("click", function nextHandler() {
+              currentPairIndex++;
+              updateSentencePair(currentPairIndex);
+            });
+          }
+          parentElement.replaceChild(newElement, skipBtn);
+        }
+      }
     }
 
     function updateSentencePair(index) {
       const targetSentence = document.getElementById("target-sentence");
-      const errorSentence = document.getElementById("error-sentence");
+      const errorSentenceEl = document.getElementById("error-sentence");
       const indexSpan = document.getElementById("sentence-index");
       const prev = document.getElementById("prev-sentence");
       const next = document.getElementById("next-sentence");
@@ -1644,18 +2198,38 @@
       container.insertBefore(addTipBox(sentencePairs[index].tip), container.firstChild);
 
       if (targetSentence) targetSentence.textContent = sentencePairs[index].target;
-      if (errorSentence) {
-        errorSentence.textContent = sentencePairs[index].error;
+      if (errorSentenceEl) {
+        errorSentenceEl.textContent = sentencePairs[index].error;
         originalSentence = sentencePairs[index].error;
       }
+
       if (indexSpan) indexSpan.textContent = (index + 1) + "/" + sentencePairs.length;
       if (prev) prev.style.visibility = (index === 0) ? "hidden" : "visible";
       if (next) next.style.visibility = (index === sentencePairs.length - 1) ? "hidden" : "visible";
 
       const skipBtn = document.getElementById("skip-sentence-button");
-      skipBtn.textContent = "Follow the instruction";
-      skipBtn.style.background = "#6c757d";
+      if (skipBtn && skipBtn.parentNode) {
+        const parentElement = skipBtn.parentNode;
+        const disabledBtn = document.createElement("div");
+        disabledBtn.id = "skip-sentence-button";
+        disabledBtn.textContent = "Next Sentence";
+        disabledBtn.style.flex = "1";
+        disabledBtn.style.padding = "14px";
+        disabledBtn.style.fontSize = "16px";
+        disabledBtn.style.border = "none";
+        disabledBtn.style.borderRadius = "6px";
+        disabledBtn.style.background = "#6c757d";
+        disabledBtn.style.color = "#fff";
+        disabledBtn.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+        disabledBtn.style.cursor = "default";
+        disabledBtn.style.opacity = "0.7";
+        disabledBtn.style.textAlign = "center";
+        disabledBtn.style.userSelect = "none";
+        disabledBtn.style.pointerEvents = "none";
+        parentElement.replaceChild(disabledBtn, skipBtn);
+      }
     }
+
     function addTipBox(tip) {
       const tipBox = document.createElement('div');
       tipBox.className = 'tip-box';
@@ -1668,47 +2242,312 @@
       return tipBox;
     }
 
-    function checkCompletion() {
-      const targetSentence = document.getElementById("target-sentence");
-      const errorSentence = document.getElementById("error-sentence");
-      const skipBtn = document.getElementById("skip-sentence-button");
-      if (!targetSentence || !errorSentence) return;
-      if (errorSentence.textContent.trim() === targetSentence.textContent.trim()) {
-        showToast("Tap&Say succeeded!");
-        let newBtn = skipBtn.cloneNode(false);
-        skipBtn.parentNode.replaceChild(newBtn, skipBtn);
+    // Make free input <div> look like a normal text box
+    document.addEventListener('DOMContentLoaded', function() {
+      const textEditor = document.getElementById('text-editor');
+      if (textEditor) {
+        textEditor.classList.remove('disable-ime');
+        textEditor.classList.remove('editable-sentence-box');
+        
+        textEditor.style.userSelect = 'text';
+        textEditor.style.webkitUserSelect = 'text';
+        textEditor.style.mozUserSelect = 'text';
+        textEditor.style.msUserSelect = 'text';
+        textEditor.style.webkitTouchCallout = 'default';
+        textEditor.style.pointerEvents = 'auto';
+      }
+    });
 
-        if (currentPairIndex === sentencePairs.length - 1) {
-          newBtn.textContent = "Switch to Free-input mode?";
-          newBtn.style.background = "#28a745";
-          newBtn.addEventListener("click", () => {
-            modeInput.click();
+    // Basic undo stack
+    let simpleUndoStack = [''];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const simpleEditor = document.getElementById('simple-editor');
+      const simpleUndoButton = document.getElementById('simple-undo-button');
+      
+      if (!simpleEditor || !simpleUndoButton) return;
+      
+      // Replace original mode switch
+      const modeInputBtn = document.getElementById('mode-input');
+      if (modeInputBtn) {
+        modeInputBtn.onclick = function() {
+          if (!this.classList.contains("active")) {
+            this.classList.add("active");
+            document.getElementById("mode-experience").classList.remove("active");
+            document.getElementById("experience-mode").style.display = "none";
+            document.getElementById("input-mode").style.display = "block";
+            activeMode = MODE_INPUT;
+            
+            setTimeout(() => {
+              simpleEditor.focus();
+            }, 100);
+            
             showToast("Switched to Free-input mode");
-          });
+          }
+        };
+      }
+      
+      // Listen for input changes to push undo states
+      simpleEditor.addEventListener('input', function() {
+        simpleUndoStack.push(this.value);
+        if (simpleUndoStack.length > 20) {
+          simpleUndoStack.shift();
+        }
+      });
+      
+      // Undo logic
+      simpleUndoButton.addEventListener('click', function() {
+        if (simpleUndoStack.length > 1) {
+          simpleUndoStack.pop();
+          simpleEditor.value = simpleUndoStack[simpleUndoStack.length - 1];
+          simpleEditor.focus();
+          
+          showToast("Undo last change");
         } else {
-          newBtn.textContent = "Next Sentence";
-          newBtn.style.background = "#007bff";
-          newBtn.addEventListener("click", function nextHandler() {
-            currentPairIndex++;
-            updateSentencePair(currentPairIndex);
-            this.textContent = "Follow the instruction";
-            this.style.background = "#6c757d";
-            this.removeEventListener("click", nextHandler);
-          });
+          showToast("Nothing to undo!");
+        }
+      });
+      
+      // File drag-and-drop
+      simpleEditor.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.background = "#fafafa";
+      });
+      simpleEditor.addEventListener('dragleave', function() {
+        this.style.background = "#fff";
+      });
+      simpleEditor.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.background = "#fff";
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          const file = files[0];
+          const fname = file.name.toLowerCase();
+          if (fname.endsWith(".txt") || fname.endsWith(".doc")) {
+            let reader = new FileReader();
+            reader.onload = (evt) => {
+              this.value = evt.target.result;
+              simpleUndoStack.push(this.value);
+              logEvent("File loaded: " + file.name);
+            };
+            reader.readAsText(file, "UTF-8");
+          } else {
+            showToast("Only .txt or .doc files are supported");
+          }
+        }
+      });
+      
+      // Simple long-press for text selection + speech
+      let pressTimer = null;
+      simpleEditor.addEventListener('mousedown', function() {
+        if (activeMode !== MODE_INPUT) return;
+        
+        pressTimer = setTimeout(() => {
+          const selText = window.getSelection().toString() || this.value;
+          if (selText && selText.trim()) {
+            if (errorText) errorText.innerText = selText;
+            if (originalErrorSpan) originalErrorSpan.innerText = selText;
+            originalSentence = selText;
+
+            showToast("Please speak your correction now...");
+            setTimeout(() => {
+              startRecording();
+            }, 200);
+          }
+        }, 500);
+      });
+      simpleEditor.addEventListener('mouseup', () => {
+        clearTimeout(pressTimer);
+      });
+      simpleEditor.addEventListener('mouseleave', () => {
+        clearTimeout(pressTimer);
+      });
+
+      // rewrite applyFirstSuggestionAndShowBox if needed
+      window.replaceSentenceInSimpleEditor = function(originalText, newText) {
+        if (!simpleEditor) return false;
+        simpleUndoStack.push(simpleEditor.value);
+        simpleEditor.value = simpleEditor.value.replace(originalText, newText);
+        return true;
+      };
+    });
+
+    // override applyFirstSuggestionAndShowBox to unify with the new approach
+    const originalApply = applyFirstSuggestionAndShowBox;
+    applyFirstSuggestionAndShowBox = function(corrections, isExperienceMode) {
+      if (!corrections.length) return;
+      
+      if (isExperienceMode) {
+        originalApply(corrections, true);
+      } else {
+        const simpleEditor = document.getElementById('simple-editor');
+        if (!simpleEditor) return;
+        
+        let candidateObj = corrections[0];
+        let candidate = candidateObj.corrected_text.trimEnd();
+
+        if (window.replaceSentenceInSimpleEditor(originalSentence, candidate)) {
+          originalSentence = candidate;
+          simpleEditor.focus();
+
+          if (corrections.length > 1) {
+            const rect = simpleEditor.getBoundingClientRect();
+            const suggestionsBox = document.createElement('div');
+            suggestionsBox.className = 'suggestions-box-floating';
+            suggestionsBox.style.left = rect.left + 'px';
+            suggestionsBox.style.top = (rect.bottom + 10) + 'px';
+            suggestionsBox.style.width = rect.width + 'px';
+            
+            for (let i = 1; i < corrections.length; i++) {
+              const suggObj = corrections[i];
+              const suggText = suggObj.corrected_text.trimEnd();
+              
+              const suggDiv = document.createElement('div');
+              suggDiv.innerText = suggText;
+              
+              suggDiv.onclick = () => {
+                window.replaceSentenceInSimpleEditor(originalSentence, suggText);
+                originalSentence = suggText;
+                suggestionsBox.remove();
+                simpleEditor.focus();
+              };
+              suggestionsBox.appendChild(suggDiv);
+            }
+            document.body.appendChild(suggestionsBox);
+            setTimeout(() => {
+              if (suggestionsBox.parentNode) {
+                suggestionsBox.remove();
+              }
+            }, 3000);
+          }
         }
       }
-    }
+    };
 
-    /* Update IME Toggle Button Text */
-    function updateIMEButtonText(enabled) {
-      const button = document.getElementById('toggle-ime');
-      if (button) {
-        button.textContent = enabled ? 'Disable IME' : 'Enable IME';
+    // Free-input mode 专用变量
+    let freeInputSelectedSentence = ""; // 当前选中的句子
+    let freeInputCursorElement = null; // Free-input mode 的光标元素
+    let freeInputCursorTimeout = null;
+
+    // Free-input mode 的光标移除函数
+    function removeFreeInputCursor() {
+      if (freeInputCursorTimeout) {
+        clearTimeout(freeInputCursorTimeout);
+        freeInputCursorTimeout = null;
+      }
+      if (freeInputCursorElement) {
+        freeInputCursorElement.remove();
+        freeInputCursorElement = null;
       }
     }
 
-    // Initialize button text
-    updateIMEButtonText(disableIME);
+    // 修改悬浮菜单的初始化代码
+    document.addEventListener('DOMContentLoaded', function() {
+      // 移除原来的 drawer HTML
+      const oldDrawer = document.getElementById('drawer');
+      if (oldDrawer) {
+        oldDrawer.remove();
+      }
+
+      // 添加新的悬浮按钮和菜单
+      const menuButton = document.createElement('button');
+      menuButton.id = 'float-menu-button';
+      // 使用 SVG 图标替代 emoji
+      menuButton.innerHTML = `
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path fill="white" d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+        </svg>
+      `;
+      document.body.appendChild(menuButton);
+
+      const menu = document.createElement('div');
+      menu.id = 'float-menu';
+      menu.innerHTML = `
+        <button id="float-monitoring">
+          <i class="fas fa-chart-line"></i>
+          Show Monitoring
+        </button>
+        <button id="float-log">
+          <i class="fas fa-list"></i>
+          Show Event Log
+        </button>
+        <button id="float-ime">
+          <i class="fas fa-keyboard"></i>
+          IME Shortcuts: ON
+        </button>
+      `;
+      document.body.appendChild(menu);
+
+      let menuVisible = false;
+      
+      // 点击按钮显示/隐藏菜单
+      menuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuVisible = !menuVisible;
+        menu.style.display = menuVisible ? 'flex' : 'none';
+      });
+
+      // 点击其他地方关闭菜单
+      document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && !menuButton.contains(e.target)) {
+          menuVisible = false;
+          menu.style.display = 'none';
+        }
+      });
+
+      // 绑定菜单项的点击事件
+      const monitoringCard = document.getElementById('monitoring-card');
+      const eventLogCard = document.getElementById('event-log-card');
+      const floatMonitoringBtn = document.getElementById('float-monitoring');
+      const floatLogBtn = document.getElementById('float-log');
+      const floatImeBtn = document.getElementById('float-ime');
+      
+      if (floatMonitoringBtn) {
+        floatMonitoringBtn.addEventListener('click', () => {
+          console.log('Monitoring button clicked');
+          if (monitoringCard) {
+            const isHidden = monitoringCard.style.display === 'none';
+            monitoringCard.style.display = isHidden ? 'block' : 'none';
+            floatMonitoringBtn.innerHTML = `
+              <i class="fas fa-chart-line"></i>
+              ${isHidden ? 'Hide Monitoring' : 'Show Monitoring'}
+            `;
+          }
+        });
+      }
+
+      if (floatLogBtn) {
+        floatLogBtn.addEventListener('click', () => {
+          console.log('Log button clicked');
+          if (eventLogCard) {
+            const isHidden = eventLogCard.style.display === 'none';
+            eventLogCard.style.display = isHidden ? 'block' : 'none';
+            floatLogBtn.innerHTML = `
+              <i class="fas fa-list"></i>
+              ${isHidden ? 'Hide Event Log' : 'Show Event Log'}
+            `;
+          }
+        });
+      }
+
+      if (floatImeBtn) {
+        floatImeBtn.addEventListener('click', () => {
+          console.log('IME button clicked');
+          disableIME = !disableIME;
+          const editor = document.getElementById('text-editor');
+          if (disableIME) {
+            editor?.classList.add('disable-ime');
+          } else {
+            editor?.classList.remove('disable-ime');
+          }
+          floatImeBtn.innerHTML = `
+            <i class="fas fa-keyboard"></i>
+            IME Shortcuts: ${disableIME ? 'OFF' : 'ON'}
+          `;
+        });
+      }
+    });
   </script>
 </body>
 </html>
