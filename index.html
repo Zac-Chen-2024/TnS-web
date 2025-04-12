@@ -777,9 +777,9 @@
           <span class="recording-status-dot"></span>
           <button class="clear-button" id="clear-text-button">Clear</button>
         </h3>
-        <textarea id="simple-editor" style="
+        <div id="simple-editor" contenteditable="true" style="
           width: 100%;
-          min-height: 350px;
+          min-height: 401px;
           box-sizing: border-box;
           resize: vertical;      
           overflow: auto;        
@@ -792,10 +792,13 @@
           line-height: 1.6;
           color: #2d3748;
           transition: border-color 0.3s, box-shadow 0.3s;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          cursor: text;
         ">Here is some sample text, you can long press on the place you want to edit and say your correction phrase. Like tap on Wednesday till the mic icon is green, then speak 'on Tuesday'.
 Or you can clear the text using the clear button and input your own text.
 
-Hi, how are you? Meet me on Wednesday.</textarea>
+Hi, how are you? Meet me on Wednesday.</div>
         
         <button id="simple-undo-button" style="
           margin-top:12px;
@@ -1900,48 +1903,30 @@ Hi, how are you? Meet me on Wednesday.</textarea>
         // 自由输入模式的定位逻辑
         const simpleEditor = document.getElementById('simple-editor');
         if (simpleEditor && originalSentence) {
-          const text = simpleEditor.value;
+          const text = simpleEditor.textContent;
           const sentenceStart = text.indexOf(originalSentence);
           
           if (sentenceStart !== -1) {
             try {
-              // 创建一个临时的 textarea 来计算位置
-              const temp = document.createElement('textarea');
-              temp.style.cssText = window.getComputedStyle(simpleEditor).cssText;
-              temp.style.height = 'auto';
-              temp.style.position = 'absolute';
-              temp.style.visibility = 'hidden';
-              temp.style.whiteSpace = 'pre-wrap';
-              temp.value = text.substring(0, sentenceStart);
-              document.body.appendChild(temp);
+              // 创建一个范围来获取选中句子的位置
+              const range = document.createRange();
+              const textNode = simpleEditor.firstChild;
+              range.setStart(textNode, sentenceStart);
+              range.setEnd(textNode, sentenceStart + originalSentence.length);
               
-              // 获取文本框的样式信息
-              const editorStyle = window.getComputedStyle(simpleEditor);
-              const paddingLeft = parseInt(editorStyle.paddingLeft);
-              const lineHeight = parseInt(editorStyle.lineHeight) || parseInt(editorStyle.fontSize) * 1.2;
-              
-              // 计算选中句子前面内容的高度
-              const beforeHeight = temp.scrollHeight;
-              
-              // 获取当前行中句子之前的内容宽度
-              const lastNewline = temp.value.lastIndexOf('\n');
-              const currentLineText = lastNewline === -1 ? temp.value : temp.value.substring(lastNewline + 1);
-              temp.value = currentLineText;
-              const currentLineWidth = temp.scrollWidth;
-              
-              document.body.removeChild(temp);
+              // 获取选中文本的位置信息
+              const sentenceRect = range.getBoundingClientRect();
               
               // 设置建议框的样式和位置
               box.style.position = 'absolute';
-              box.style.top = (beforeHeight - simpleEditor.scrollTop + lineHeight) + "px";
-              box.style.left = (paddingLeft + currentLineWidth) + "px";
+              box.style.top = (sentenceRect.bottom + window.scrollY + 5) + 'px';  // 在句子下方5px处
+              box.style.left = (sentenceRect.left + window.scrollX) + 'px';
               box.style.width = 'auto';
-              box.style.maxWidth = (simpleEditor.offsetWidth - currentLineWidth - paddingLeft * 2) + "px";
+              box.style.maxWidth = simpleEditor.offsetWidth - 40 + 'px'; // 留出一些边距
               box.style.zIndex = '1000';
               
-              // 将建议框添加到文本框中
-              simpleEditor.insertAdjacentElement('beforebegin', box);
-              simpleEditor.style.position = 'relative';
+              // 直接将建议框添加到文档中
+              document.body.appendChild(box);
             } catch (e) {
               console.error('[SuggestionBox] Error calculating position:', e);
             }
@@ -2009,23 +1994,25 @@ Hi, how are you? Meet me on Wednesday.</textarea>
      * Free Input: 为简单文本区添加事件
      *******************************************************/
     function attachFreeInputListeners() {
-      const textarea = document.getElementById('simple-editor');
-      if (!textarea) return;
+      const editor = document.getElementById('simple-editor');
+      if (!editor) return;
       
       // 初始化时将初始内容放入撤销栈
-      simpleUndoStack = [textarea.value];
+      simpleUndoStack = [editor.innerHTML];
       updateUndoButtonState();
       
       let pressTimer = null;
+      let lastContent = editor.innerHTML; // 记录上一次的内容
       
-      textarea.addEventListener('mousedown', (e) => {
+      editor.addEventListener('mousedown', (e) => {
         if (activeMode !== MODE_INPUT) return;
         
-        textarea.focus();
+        editor.focus();
         
         pressTimer = setTimeout(() => {
           // 如果长按到达阈值，我们开始录音
-          const selText = window.getSelection().toString();
+          const selection = window.getSelection();
+          const selText = selection.toString();
           if (selText && selText.trim()) {
             errorText.innerText = selText;
             originalSentence = selText;
@@ -2033,48 +2020,44 @@ Hi, how are you? Meet me on Wednesday.</textarea>
             startRecording();
           } else {
             // 没有选择，就根据点击位置获取句子
-            const index = textarea.selectionStart;
-            const sentenceInfo = getFreeInputSentence(textarea.value, index);
-            errorText.innerText = sentenceInfo.sentence;
-            originalSentence = sentenceInfo.sentence;
-            originalErrorSpan.innerText = sentenceInfo.sentence;
-            localTapIndex = index;
-            startRecording();
+            const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+            if (range) {
+              const sentenceInfo = getFreeInputSentence(editor.textContent, range.startOffset);
+              errorText.innerText = sentenceInfo.sentence;
+              originalSentence = sentenceInfo.sentence;
+              originalErrorSpan.innerText = sentenceInfo.sentence;
+              localTapIndex = range.startOffset;
+              startRecording();
+            }
           }
         }, 500);
       });
       
-      document.addEventListener('mouseup', () => {
-        if (pressTimer) {
-          clearTimeout(pressTimer);
-          pressTimer = null;
-        }
-      });
-      document.addEventListener('mouseleave', () => {
-        if (pressTimer) {
-          clearTimeout(pressTimer);
-          pressTimer = null;
-        }
-      });
-      
       // 监听input变化推入undo栈
-      textarea.addEventListener('input', function() {
-        simpleUndoStack.push(this.value);
-        if (simpleUndoStack.length > 20) {
-          simpleUndoStack.shift();
+      editor.addEventListener('input', function() {
+        const currentContent = this.innerHTML;
+        // 只有当内容真的改变时才添加到撤销栈
+        if (currentContent !== lastContent) {
+          simpleUndoStack.push(currentContent);
+          if (simpleUndoStack.length > 20) {
+            simpleUndoStack.shift();
+          }
+          lastContent = currentContent;
+          updateUndoButtonState();
         }
-        updateUndoButtonState();
       });
       
       // 文件拖拽
-      textarea.addEventListener('dragover', function(e) {
+      editor.addEventListener('dragover', function(e) {
         e.preventDefault();
         this.style.background = "#fafafa";
       });
-      textarea.addEventListener('dragleave', function() {
+      
+      editor.addEventListener('dragleave', function() {
         this.style.background = "#fff";
       });
-      textarea.addEventListener('drop', function(e) {
+      
+      editor.addEventListener('drop', function(e) {
         e.preventDefault();
         this.style.background = "#fff";
 
@@ -2085,8 +2068,10 @@ Hi, how are you? Meet me on Wednesday.</textarea>
           if (fname.endsWith(".txt") || fname.endsWith(".doc")) {
             let reader = new FileReader();
             reader.onload = (evt) => {
-              this.value = evt.target.result;
-              simpleUndoStack.push(this.value);
+              this.textContent = evt.target.result;
+              simpleUndoStack.push(this.innerHTML);
+              lastContent = this.innerHTML;
+              updateUndoButtonState();
               logEvent("File loaded: " + file.name);
             };
             reader.readAsText(file, "UTF-8");
@@ -2148,9 +2133,21 @@ Hi, how are you? Meet me on Wednesday.</textarea>
       
       simpleUndoButton.addEventListener('click', function() {
         const simpleEditor = document.getElementById('simple-editor');
-        if (simpleUndoStack.length > 1) {
+        if (simpleEditor && simpleUndoStack.length > 1) {
+          // 移除当前状态
           simpleUndoStack.pop();
-          simpleEditor.value = simpleUndoStack[simpleUndoStack.length - 1];
+          // 恢复到上一个状态
+          const previousContent = simpleUndoStack[simpleUndoStack.length - 1];
+          simpleEditor.innerHTML = previousContent;
+          
+          // 将光标移到末尾
+          const range = document.createRange();
+          const selection = window.getSelection();
+          range.selectNodeContents(simpleEditor);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          
           simpleEditor.focus();
           updateUndoButtonState();
         }
@@ -2161,10 +2158,17 @@ Hi, how are you? Meet me on Wednesday.</textarea>
     window.replaceSentenceInSimpleEditor = function(originalText, newText) {
       const simpleEditor = document.getElementById('simple-editor');
       if (!simpleEditor) return false;
-      simpleUndoStack.push(simpleEditor.value);
-      simpleEditor.value = simpleEditor.value.replace(originalText, newText);
-      updateUndoButtonState();
-      return true;
+      
+      const currentContent = simpleEditor.innerHTML;
+      const updatedContent = currentContent.replace(originalText, newText);
+      
+      if (currentContent !== updatedContent) {
+        simpleUndoStack.push(updatedContent);
+        simpleEditor.innerHTML = updatedContent;
+        updateUndoButtonState();
+        return true;
+      }
+      return false;
     };
 
     /*******************************************************
@@ -2243,48 +2247,30 @@ Hi, how are you? Meet me on Wednesday.</textarea>
         // 自由输入模式的定位逻辑
         const simpleEditor = document.getElementById('simple-editor');
         if (simpleEditor && originalSentence) {
-          const text = simpleEditor.value;
+          const text = simpleEditor.textContent;
           const sentenceStart = text.indexOf(originalSentence);
           
           if (sentenceStart !== -1) {
             try {
-              // 创建一个临时的 textarea 来计算位置
-              const temp = document.createElement('textarea');
-              temp.style.cssText = window.getComputedStyle(simpleEditor).cssText;
-              temp.style.height = 'auto';
-              temp.style.position = 'absolute';
-              temp.style.visibility = 'hidden';
-              temp.style.whiteSpace = 'pre-wrap';
-              temp.value = text.substring(0, sentenceStart);
-              document.body.appendChild(temp);
+              // 创建一个范围来获取选中句子的位置
+              const range = document.createRange();
+              const textNode = simpleEditor.firstChild;
+              range.setStart(textNode, sentenceStart);
+              range.setEnd(textNode, sentenceStart + originalSentence.length);
               
-              // 获取文本框的样式信息
-              const editorStyle = window.getComputedStyle(simpleEditor);
-              const paddingLeft = parseInt(editorStyle.paddingLeft);
-              const lineHeight = parseInt(editorStyle.lineHeight) || parseInt(editorStyle.fontSize) * 1.2;
-              
-              // 计算选中句子前面内容的高度
-              const beforeHeight = temp.scrollHeight;
-              
-              // 获取当前行中句子之前的内容宽度
-              const lastNewline = temp.value.lastIndexOf('\n');
-              const currentLineText = lastNewline === -1 ? temp.value : temp.value.substring(lastNewline + 1);
-              temp.value = currentLineText;
-              const currentLineWidth = temp.scrollWidth;
-              
-              document.body.removeChild(temp);
+              // 获取选中文本的位置信息
+              const sentenceRect = range.getBoundingClientRect();
               
               // 设置建议框的样式和位置
               box.style.position = 'absolute';
-              box.style.top = (beforeHeight - simpleEditor.scrollTop + lineHeight) + "px";
-              box.style.left = (paddingLeft + currentLineWidth) + "px";
+              box.style.top = (sentenceRect.bottom + window.scrollY + 5) + 'px';  // 在句子下方5px处
+              box.style.left = (sentenceRect.left + window.scrollX) + 'px';
               box.style.width = 'auto';
-              box.style.maxWidth = (simpleEditor.offsetWidth - currentLineWidth - paddingLeft * 2) + "px";
+              box.style.maxWidth = simpleEditor.offsetWidth - 40 + 'px'; // 留出一些边距
               box.style.zIndex = '1000';
               
-              // 将建议框添加到文本框中
-              simpleEditor.insertAdjacentElement('beforebegin', box);
-              simpleEditor.style.position = 'relative';
+              // 直接将建议框添加到文档中
+              document.body.appendChild(box);
             } catch (e) {
               console.error('[SuggestionBox] Error calculating position:', e);
             }
@@ -2531,10 +2517,13 @@ Hi, how are you? Meet me on Wednesday.</textarea>
         clearButton.addEventListener('click', function() {
           const simpleEditor = document.getElementById('simple-editor');
           if (simpleEditor) {
-            simpleUndoStack.push('');
-            simpleEditor.value = '';
-            simpleEditor.focus();
-            updateUndoButtonState();
+            const currentContent = simpleEditor.innerHTML;
+            if (currentContent.trim() !== '') {
+              simpleUndoStack.push('');
+              simpleEditor.innerHTML = '';
+              simpleEditor.focus();
+              updateUndoButtonState();
+            }
           }
         });
       }
