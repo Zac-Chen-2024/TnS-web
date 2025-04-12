@@ -418,8 +418,70 @@
       }
       
       .card h3 {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         margin-bottom: 1rem;
+      }
+
+      /* 调整Transcription mode标题大小 */
+      #experience-mode h3,
+      #input-mode h3 {
+        font-size: 1.2rem !important;
+        margin-bottom: 1rem;
+      }
+      
+      /* 统一移动端按钮样式 */
+      .mode-button,
+      #experience-undo-button,
+      #skip-sentence-button,
+      #next-pair-button,
+      #simple-undo-button,
+      .clear-button {
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        transition: all 0.2s ease !important;
+      }
+
+      /* 特别处理 Next Sentence 按钮样式 */
+      #skip-sentence-button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 36px !important;
+        text-align: center !important;
+        line-height: 1.2 !important;
+      }
+
+      #skip-sentence-button:not([style*="background: #6c757d"]) {
+        background: #007bff !important;
+        color: #fff !important;
+        cursor: pointer !important;
+      }
+
+      #skip-sentence-button[style*="background: #6c757d"] {
+        background: #6c757d !important;
+        color: #fff !important;
+        cursor: default !important;
+        opacity: 0.7 !important;
+      }
+
+      /* 调整建议框样式 */
+      .suggestions-box-floating {
+        max-width: 90vw !important;
+        width: auto !important;
+        font-size: 0.9rem !important;
+      }
+
+      .suggestions-box-floating div {
+        padding: 8px 10px !important;
+        margin-bottom: 3px !important;
+      }
+
+      /* 调整导航按钮样式 */
+      .nav-button {
+        padding: 6px 10px !important;
+        font-size: 0.9rem !important;
       }
       
       #text-editor {
@@ -427,11 +489,6 @@
         padding: 1rem;
         font-size: 1rem;
         line-height: 1.5;
-      }
-      
-      .mode-button {
-        padding: 0.8rem 1rem;
-        font-size: 0.9rem;
       }
       
       #monitoring-card p {
@@ -447,6 +504,41 @@
       #mode-buttons {
         margin-bottom: 15px; 
         gap: 10px;
+      }
+
+      /* 调整清除按钮样式 */
+      .clear-button {
+        padding: 4px 10px !important;
+        font-size: 0.85rem !important;
+      }
+
+      /* 调整自由输入模式下的 Undo 按钮高度 */
+      #simple-undo-button {
+        min-height: 36px !important;
+      }
+
+      /* 调整错误句子和目标句子的字体大小 */
+      #target-sentence {
+        font-size: 1.1rem !important;
+        line-height: 1.6 !important;
+      }
+
+      #error-sentence {
+        font-size: 1.2rem !important;
+        line-height: 1.6 !important;
+      }
+
+      /* 调整建议框的字体大小 */
+      .suggestions-box-floating {
+        max-width: 90vw !important;
+        width: auto !important;
+        font-size: 1.2rem !important;
+      }
+
+      .suggestions-box-floating div {
+        padding: 8px 10px !important;
+        margin-bottom: 3px !important;
+        line-height: 1.6 !important;
       }
     }
 
@@ -887,17 +979,6 @@ Hi, how are you? Meet me on Wednesday.</div>
     /*******************************************************
      * Universal: Toast / Event Log / IME toggle
      *******************************************************/
-    function showToast(msg) {
-      const t = document.createElement("div");
-      t.className = "toast";
-      t.innerText = msg;
-      document.body.appendChild(t);
-      requestAnimationFrame(() => { t.style.opacity = 1; });
-      setTimeout(() => {
-        t.style.opacity = 0;
-        setTimeout(() => { t.remove(); }, 500);
-      }, 2000);
-    }
     function logEvent(message) {
       const p = document.createElement("p");
       const now = new Date().toLocaleString("en-US", {hour12: false});
@@ -1023,7 +1104,7 @@ Hi, how are you? Meet me on Wednesday.</div>
      *******************************************************/
     function startRecording() {
       if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
-        showToast("Speech recognition not supported in this browser.");
+        console.warn("Speech recognition not supported in this browser.");
         return;
       }
       if (isRecording) {
@@ -1186,7 +1267,6 @@ Hi, how are you? Meet me on Wednesday.</div>
     function finalizeTapSay() {
       const transcript = (voiceInputSpan.innerText || "").trim();
       if (!transcript) {
-        showToast("No speech input detected.");
         endTapSay();
         return;
       }
@@ -1295,9 +1375,9 @@ Hi, how are you? Meet me on Wednesday.</div>
         if (currentPairIndex < sentencePairs.length - 1) {
           currentPairIndex++;
           updateSentencePair(currentPairIndex);
-          showToast("Skipped current sentence");
+          console.log("Skipped current sentence");
         } else {
-          showToast("This is the last sentence");
+          console.log("This is the last sentence");
         }
       });
       nextPair.addEventListener("click", () => {
@@ -1305,7 +1385,7 @@ Hi, how are you? Meet me on Wednesday.</div>
           currentPairIndex++;
           updateSentencePair(currentPairIndex);
         } else {
-          showToast("All sentences completed!");
+          console.log("All sentences completed!");
         }
       });
       expUndo.addEventListener("click", () => {
@@ -1330,7 +1410,7 @@ Hi, how are you? Meet me on Wednesday.</div>
         
         errorSentenceEl.style.background = "";
         errorSentenceEl.style.borderColor = "";
-        showToast("Restored to original error sentence");
+        logEvent("Restored to original error sentence");
       });
 
       attachTranscriptionLongPress(errorSentenceEl);
@@ -1695,7 +1775,6 @@ Hi, how are you? Meet me on Wednesday.</div>
       if (!targetSentence || !errorSentence) return;
 
       if (errorSentence.innerText.trim() === targetSentence.textContent.trim()) {
-        showToast("Tap&Say succeeded!");
         errorSentence.style.background = "#e6ffed";
         errorSentence.style.borderColor = "#34d058";
         setTimeout(() => {
@@ -1951,28 +2030,28 @@ Hi, how are you? Meet me on Wednesday.</div>
           evt.stopPropagation();
           if (isExpMode) {
             // Transcription模式的点击处理保持不变
-            const errorSentenceEl = document.getElementById("error-sentence");
-            if (!errorSentenceEl) return;
+          const errorSentenceEl = document.getElementById("error-sentence");
+          if (!errorSentenceEl) return;
 
-            let entireText = errorSentenceEl.innerText;
-            let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
-            errorSentenceEl.innerText = updated;
-            selectedSentence = candidate;
+          let entireText = errorSentenceEl.innerText;
+          let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+          errorSentenceEl.innerText = updated;
+          selectedSentence = candidate;
 
-            if (diffRanges && diffRanges.length > 0) {
-              let newSentenceIndex = updated.indexOf(candidate);
-              if (newSentenceIndex >= 0) {
-                let newHtml = updated.substring(0, newSentenceIndex);
-                newHtml += underlineDiffRanges(candidate, diffRanges);
-                newHtml += updated.substring(newSentenceIndex + candidate.length);
-                errorSentenceEl.innerHTML = newHtml;
-                
-                setTimeout(() => {
-                  errorSentenceEl.innerText = errorSentenceEl.innerText;
-                }, 2000);
-              }
+          if (diffRanges && diffRanges.length > 0) {
+            let newSentenceIndex = updated.indexOf(candidate);
+            if (newSentenceIndex >= 0) {
+              let newHtml = updated.substring(0, newSentenceIndex);
+              newHtml += underlineDiffRanges(candidate, diffRanges);
+              newHtml += updated.substring(newSentenceIndex + candidate.length);
+              errorSentenceEl.innerHTML = newHtml;
+              
+              setTimeout(() => {
+                errorSentenceEl.innerText = errorSentenceEl.innerText;
+              }, 2000);
             }
-            checkCompletion();
+          }
+          checkCompletion();
           } else {
             // 自由输入模式的点击处理
             window.replaceSentenceInSimpleEditor(originalSentence, candidate);
@@ -2002,36 +2081,100 @@ Hi, how are you? Meet me on Wednesday.</div>
       updateUndoButtonState();
       
       let pressTimer = null;
-      let lastContent = editor.innerHTML; // 记录上一次的内容
+      let lastContent = editor.innerHTML;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let isTouchMoved = false;
+      let touchStartTime = 0;
       
+      // PC端鼠标事件处理
       editor.addEventListener('mousedown', (e) => {
         if (activeMode !== MODE_INPUT) return;
-        
+        handlePressStart(e.clientX, e.clientY, false);
+      });
+
+      document.addEventListener('mouseup', () => {
+        handlePressEnd();
+      });
+
+      // 移动端触摸事件处理
+      editor.addEventListener('touchstart', (e) => {
+        if (activeMode !== MODE_INPUT) return;
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchStartTime = Date.now();
+        isTouchMoved = false;
+        handlePressStart(touch.clientX, touch.clientY, true);
+      });
+
+      editor.addEventListener('touchmove', (e) => {
+        if (pressTimer) {
+          const touch = e.touches[0];
+          const moveX = Math.abs(touch.clientX - touchStartX);
+          const moveY = Math.abs(touch.clientY - touchStartY);
+          if (moveX > 10 || moveY > 10) {
+            isTouchMoved = true;
+            handlePressEnd();
+          }
+        }
+      });
+
+      editor.addEventListener('touchend', (e) => {
+        if (!isTouchMoved) {
+          const touchEndTime = Date.now();
+          const touchDuration = touchEndTime - touchStartTime;
+          
+          if (touchDuration < 500) {
+            // 短按，处理选择
+            const touch = e.changedTouches[0];
+            const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+            if (range) {
+              const selection = window.getSelection();
+              selection.removeAllRanges();
+              selection.addRange(range);
+            }
+          }
+          handlePressEnd();
+        }
+      });
+
+      // 统一的按压开始处理函数
+      function handlePressStart(clientX, clientY, isTouch) {
         editor.focus();
         
         pressTimer = setTimeout(() => {
-          // 如果长按到达阈值，我们开始录音
           const selection = window.getSelection();
           const selText = selection.toString();
+          
           if (selText && selText.trim()) {
+            // 如果有选中的文本，直接使用
             errorText.innerText = selText;
             originalSentence = selText;
             originalErrorSpan.innerText = selText;
             startRecording();
           } else {
-            // 没有选择，就根据点击位置获取句子
-            const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+            // 没有选中文本，尝试获取当前句子
+            const range = document.caretRangeFromPoint(clientX, clientY);
             if (range) {
               const sentenceInfo = getFreeInputSentence(editor.textContent, range.startOffset);
-              errorText.innerText = sentenceInfo.sentence;
-              originalSentence = sentenceInfo.sentence;
-              originalErrorSpan.innerText = sentenceInfo.sentence;
+            errorText.innerText = sentenceInfo.sentence;
+            originalSentence = sentenceInfo.sentence;
+            originalErrorSpan.innerText = sentenceInfo.sentence;
               localTapIndex = range.startOffset;
-              startRecording();
-            }
+            startRecording();
           }
-        }, 500);
-      });
+          }
+        }, isTouch ? 700 : 500); // 触摸设备使用稍长的长按时间
+      }
+      
+      // 统一的按压结束处理函数
+      function handlePressEnd() {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+        }
       
       // 监听input变化推入undo栈
       editor.addEventListener('input', function() {
@@ -2039,8 +2182,8 @@ Hi, how are you? Meet me on Wednesday.</div>
         // 只有当内容真的改变时才添加到撤销栈
         if (currentContent !== lastContent) {
           simpleUndoStack.push(currentContent);
-          if (simpleUndoStack.length > 20) {
-            simpleUndoStack.shift();
+        if (simpleUndoStack.length > 20) {
+          simpleUndoStack.shift();
           }
           lastContent = currentContent;
           updateUndoButtonState();
@@ -2076,7 +2219,7 @@ Hi, how are you? Meet me on Wednesday.</div>
             };
             reader.readAsText(file, "UTF-8");
           } else {
-            showToast("Only .txt or .doc files are supported");
+            console.warn("Only .txt or .doc files are supported");
           }
         }
       });
@@ -2166,7 +2309,7 @@ Hi, how are you? Meet me on Wednesday.</div>
         simpleUndoStack.push(updatedContent);
         simpleEditor.innerHTML = updatedContent;
         updateUndoButtonState();
-        return true;
+      return true;
       }
       return false;
     };
@@ -2355,7 +2498,6 @@ Hi, how are you? Meet me on Wednesday.</div>
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({audio: true})
         .catch(err => {
-          showToast("Please allow microphone access to use Tap&Say.");
           console.warn("Mic permission error:", err);
         });
       }
@@ -2440,16 +2582,10 @@ Hi, how are you? Meet me on Wednesday.</div>
       const menu = document.getElementById('float-menu');
       menu.innerHTML = `
         <button id="float-monitoring">
-          <i class="fas fa-chart-line"></i>
           Show Monitoring
         </button>
         <button id="float-log">
-          <i class="fas fa-list"></i>
           Show Event Log
-        </button>
-        <button id="float-ime">
-          <i class="fas fa-keyboard"></i>
-          IME Shortcuts: ON
         </button>
       `;
 
@@ -2480,20 +2616,14 @@ Hi, how are you? Meet me on Wednesday.</div>
         floatMonitoringBtn.addEventListener('click', () => {
           const isHidden = (monitoringCard.style.display === 'none');
           monitoringCard.style.display = isHidden ? 'block' : 'none';
-          floatMonitoringBtn.innerHTML = `
-            <i class="fas fa-chart-line"></i>
-            ${isHidden ? 'Hide Monitoring' : 'Show Monitoring'}
-          `;
+          floatMonitoringBtn.textContent = isHidden ? 'Hide Monitoring' : 'Show Monitoring';
         });
       }
       if (floatLogBtn) {
         floatLogBtn.addEventListener('click', () => {
           const isHidden = (eventLogCard.style.display === 'none');
           eventLogCard.style.display = isHidden ? 'block' : 'none';
-          floatLogBtn.innerHTML = `
-            <i class="fas fa-list"></i>
-            ${isHidden ? 'Hide Event Log' : 'Show Event Log'}
-          `;
+          floatLogBtn.textContent = isHidden ? 'Hide Event Log' : 'Show Event Log';
         });
       }
       if (floatImeBtn) {
