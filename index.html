@@ -1,10 +1,12 @@
-<!DOCTYPE html>    
+<!DOCTYPE html>     
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <!-- Ensure proper scaling on mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tap&Say Text Editor</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
   <style>
     /*******************************************************
@@ -41,6 +43,21 @@
       max-width: 900px; /* Limit maximum width */
       margin: 0 auto;
       box-sizing: border-box;
+    }
+
+    /* 调整卡片间距 */
+    #monitoring-card {
+      margin-bottom: 2rem !important;
+    }
+    #experience-mode, #input-mode {
+      margin-bottom: 2rem !important;
+    }
+    #event-log-card {
+      margin-top: 1rem !important;
+    }
+    /* 保持模式按钮和主体卡片的间距不变 */
+    #mode-buttons {
+      margin-bottom: 20px;
     }
 
     /*******************************************************
@@ -105,6 +122,57 @@
     .card h3 {
       font-size: 1.5rem; /* Smaller title font size */
       margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* 添加录音状态指示圆点样式 */
+    .recording-status-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background-color: #666;  /* 默认为灰色 */
+      display: inline-block;
+      transition: background-color 0.3s ease;
+      vertical-align: middle; /* 确保与文字对齐 */
+      margin-left: 0; /* 移除左边距 */
+    }
+
+    .recording-status-dot.recording {
+      background-color: #28a745;
+      animation: pulse 2s infinite;
+    }
+
+    /* 添加麦克风图标样式 */
+    .mic-icon {
+      color: #666; /* 默认灰色 */
+      transition: color 0.3s ease;
+      margin-right: 0px !important; /* 减少右边距 */
+    }
+
+    .mic-icon.recording {
+      color: #28a745; /* 录音时变绿色 */
+    }
+
+    /* 移除 stopped 类，因为默认就是灰色 */
+    .recording-status-dot.stopped {
+      background-color: #666;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
 
     /*******************************************************
@@ -228,66 +296,8 @@
     }
 
     /*******************************************************
-     * 8) Drawer: Bottom-Left Sidebar with Rounded Corners
+     * 8) Drawer: (Removed old drawer style, replaced by float menu)
      *******************************************************/
-    #drawer {
-      position: fixed;
-      bottom: 20px;
-      left: 0; 
-      width: 200px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 3000;
-      background: #007bff;
-      padding: 10px;
-      border-radius: 0 8px 8px 0;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      transition: transform 0.3s ease, opacity 0.3s ease;
-    }
-    .drawer-collapsed {
-      transform: translateX(-190px);
-      opacity: 0.9;
-    }
-    #drawer-toggle {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      font-size: 15px;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      background: #0056b3;
-      cursor: pointer;
-      padding: 10px 15px;
-      transition: background 0.3s;
-      margin-bottom: 5px;
-      font-weight: 500;
-    }
-    #drawer-toggle:hover {
-      background: #003e80;
-    }
-    #drawer button:not(#drawer-toggle) {
-      padding: 10px 12px;
-      font-size: 0.9rem;
-      border: none;
-      border-radius: 6px;
-      color: #007bff;
-      background: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      width: 100%;
-      font-weight: 500;
-      text-align: left;
-    }
-    #drawer button:not(#drawer-toggle):hover {
-      background: #f0f7ff;
-      color: #0056b3;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
 
     /*******************************************************
      * 9) Tip Card: Colored Left Border + Rounded Corners
@@ -626,6 +636,53 @@
       font-size: 1.1rem;
       color: #007bff;
     }
+
+    /* 添加清除按钮样式 */
+    .clear-button {
+      padding: 4px 12px;
+      font-size: 0.9rem;
+      border: none;
+      border-radius: 4px;
+      background: #dc3545;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-left: auto;
+    }
+    .clear-button:hover {
+      background: #c82333;
+      transform: translateY(-1px);
+    }
+    .clear-button:active {
+      transform: translateY(0);
+    }
+    
+    /* 调整标题行样式以容纳按钮 */
+    .card h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.2rem;
+    }
+
+    /* 添加禁用状态的样式 */
+    #simple-undo-button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+
+    /* 删除其他复杂样式 */
+    #simple-undo-button {
+      margin-top: 12px;
+      width: 100%;
+      padding: 20px;
+      font-size: 20px;
+      border: none;
+      border-radius: 6px;
+      background: #28a745;
+      color: #fff;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -637,23 +694,13 @@
     <div class="container">
       <!-- Mode Switch Buttons -->
       <div id="mode-buttons">
-        <button id="mode-experience" class="mode-button active">Transcription mode</button>
-        <button id="mode-input" class="mode-button">Free-input mode</button>
+        <button id="mode-experience" class="mode-button active">Transcription Mode</button>
+        <button id="mode-input" class="mode-button">Free-input Mode</button>
       </div>
     </div>
 
-    <!-- Drawer Container -->
-    <div id="drawer" class="drawer-collapsed">
-      <button id="drawer-toggle">
-        <span style="flex:1;"></span><span>&lt;</span>
-      </button>
-      <button id="toggle-monitoring">Show Monitoring</button>
-      <button id="toggle-log">Show Event Log</button>
-      <button id="toggle-ime">Disable IME Shortcuts: OFF</button>
-    </div>
-
+    <!-- Monitoring Area -->
     <div class="container">
-      <!-- Monitoring Area -->
       <div class="card" id="monitoring-card">
         <p><strong>Erroneous Sentence:</strong> <span id="error-text">None</span></p>
         <p><strong>Touch Location (character index):</strong> <span id="touch-index">None</span></p>
@@ -662,11 +709,74 @@
         <p style="display:none;"><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
         <p style="display:none;"><strong>Speech Input:</strong> <span id="voice-input">None</span></p>
       </div>
+    </div>
 
-      <!-- Free Input Mode -->
+    <!-- ============ Transcription Mode ============ -->
+    <div class="container">
+      <div class="card" id="experience-mode">
+        <h3>Transcription Mode <i class="fas fa-microphone mic-icon"></i><span class="recording-status-dot"></span></h3>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <button class="nav-button" id="prev-sentence" style="visibility:hidden;">←</button>
+            <span id="sentence-index">1/5</span>
+            <button class="nav-button" id="next-sentence">→</button>
+          </div>
+          <div>
+            <p><strong>Target Sentence:</strong></p>
+            <div id="target-sentence" style="user-select:none; margin-bottom: 15px;"></div>
+          </div>
+          <p><strong>Erroneous Sentence:</strong> <span class="edit-indicator"></span></p>
+          <div id="error-sentence" class="editable-sentence-box"></div>
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button id="experience-undo-button" style="
+              flex:1;
+              padding:20px;
+              font-size:20px;
+              border:none;
+              border-radius:6px;
+              background:#28a745;
+              color:#fff;
+              box-shadow:0 2px 6px rgba(0,0,0,0.2);
+              cursor:pointer;
+            ">Restore Error Sentence</button>
+            <button id="skip-sentence-button" style="
+              flex:1;
+              padding:20px;
+              font-size:20px;
+              border:none;
+              border-radius:6px;
+              background:#6c757d;
+              color:#fff;
+              box-shadow:0 2px 6px rgba(0,0,0,0.2);
+              cursor:pointer;
+            ">Next Sentence</button>
+          </div>
+          <button id="next-pair-button" style="
+            width:100%;
+            margin-top:10px;
+            padding:20px;
+            font-size:20px;
+            border:none;
+            border-radius:6px;
+            background:#007bff;
+            color:#fff;
+            box-shadow:0 2px 6px rgba(0,0,0,0.2);
+            cursor:pointer;
+            display:none;
+          ">Next Sentence</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Free Input Mode ============ -->
+    <div class="container">
       <div class="card" id="input-mode" style="display:none;">
-        <h3>Tap&amp;Say Text Editor (Free Input)</h3>
-        
+        <h3>
+          Free-Input Mode 
+          <i class="fas fa-microphone mic-icon"></i>
+          <span class="recording-status-dot"></span>
+          <button class="clear-button" id="clear-text-button">Clear</button>
+        </h3>
         <textarea id="simple-editor" style="
           width: 100%;
           min-height: 350px;
@@ -682,13 +792,16 @@
           line-height: 1.6;
           color: #2d3748;
           transition: border-color 0.3s, box-shadow 0.3s;
-        "></textarea>
+        ">Here is some sample text, you can long press on the place you want to edit and say your correction phrase. Like tap on Wednesday till the mic icon is green, then speak 'on Tuesday'.
+Or you can clear the text using the clear button and input your own text.
+
+Hi, how are you? Meet me on Wednesday.</textarea>
         
         <button id="simple-undo-button" style="
           margin-top:12px;
           width:100%;
-          padding:14px;
-          font-size:16px;
+          padding:20px;
+          font-size:20px;
           border:none;
           border-radius:6px;
           background:#28a745;
@@ -697,63 +810,10 @@
           cursor:pointer;
         ">Undo Last Change</button>
       </div>
+    </div>
 
-      <!-- Experience (Transcription) Mode -->
-      <div class="card" id="experience-mode">
-        <h3>Transcription Mode</h3>
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-            <button class="nav-button" id="prev-sentence" style="visibility:hidden;">←</button>
-            <span id="sentence-index">1/5</span>
-            <button class="nav-button" id="next-sentence">→</button>
-          </div>
-          <div>
-            <p><strong>Target Sentence:</strong></p>
-            <div id="target-sentence" style="user-select:none; margin-bottom: 15px;"></div>
-          </div>
-          <p><strong>Erroneous Sentence:</strong> <span class="edit-indicator">(long press to edit)</span></p>
-          <div id="error-sentence" class="editable-sentence-box"></div>
-          <div style="display:flex;gap:10px;margin-top:12px;">
-            <button id="experience-undo-button" style="
-              flex:1;
-              padding:14px;
-              font-size:16px;
-              border:none;
-              border-radius:6px;
-              background:#28a745;
-              color:#fff;
-              box-shadow:0 2px 6px rgba(0,0,0,0.2);
-              cursor:pointer;
-            ">Restore Error Sentence</button>
-            <button id="skip-sentence-button" style="
-              flex:1;
-              padding:14px;
-              font-size:16px;
-              border:none;
-              border-radius:6px;
-              background:#6c757d;
-              color:#fff;
-              box-shadow:0 2px 6px rgba(0,0,0,0.2);
-              cursor:pointer;
-            ">Follow the instruction</button>
-          </div>
-          <button id="next-pair-button" style="
-            width:100%;
-            margin-top:10px;
-            padding:14px;
-            font-size:16px;
-            border:none;
-            border-radius:6px;
-            background:#007bff;
-            color:#fff;
-            box-shadow:0 2px 6px rgba(0,0,0,0.2);
-            cursor:pointer;
-            display:none;
-          ">Next Sentence</button>
-        </div>
-      </div>
-
-      <!-- Event Log Area -->
+    <!-- Event Log Area -->
+    <div class="container">
       <div class="card" id="event-log-card">
         <h3>Event Log</h3>
         <div id="event-log">No events recorded</div>
@@ -764,98 +824,47 @@
   <!-- Footer Load -->
   <footer id="footer-container"></footer>
 
+  <!-- 新的悬浮按钮和菜单 -->
+  <button id="float-menu-button">
+    <!-- 图标在JS中会替换成svg -->
+  </button>
+  <div id="float-menu"></div>
+
   <script>
-    /*******************************************************
-     * 1) Global Constants
-     *******************************************************/
+    /***********************************************
+     * ============ A) 通用界面 & 通用代码 ============
+     ***********************************************/
     const API_URL = "https://tns.zacchen.win/correct";
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
 
     // Two Mode Constants
     const MODE_EXPERIENCE = "experience";
     const MODE_INPUT = "input";
-
-    // Current active mode
     let activeMode = MODE_EXPERIENCE; // default
 
-    /*******************************************************
-     * 2) Drawer Toggle
-     *******************************************************/
-    let drawerOpen = false;
-    const drawer = document.getElementById("drawer");
-    const drawerToggle = document.getElementById("drawer-toggle");
-    drawerToggle.addEventListener("click", () => {
-      drawerOpen = !drawerOpen;
-      if (drawerOpen) {
-        drawer.classList.remove("drawer-collapsed");
-        drawerToggle.innerHTML = '<span style="flex:1;"></span><span>&gt;</span>';
-      } else {
-        drawer.classList.add("drawer-collapsed");
-        drawerToggle.innerHTML = '<span style="flex:1;"></span><span>&lt;</span>';
-      }
-    });
-
-    /*******************************************************
-     * 3) Global Variables
-     *******************************************************/
+    // 全局变量
     let disableIME = false;
     let isListening = false;
-    let isRecording = false; 
-    let pressTimer = null;
+    let isRecording = false;
     let recognition = null;
     let silenceTimer = null;
-
     let globalTapIndex = -1;
     let localTapIndex = -1;
-    let tapStartIndex = -1; 
+    let tapStartIndex = -1;
     let originalSentence = "";
     let lastHighlightedSentence = "";
     let highlightTimeout = null;
     let suggestionsBox = null;
     let suggestionsTimer = null;
     let undoStack = [];
-
-    // For dragging/cursor
     let isDragging = false;
     let cursorElement = null;
     let cursorTimeout = null;
+    let selectedSentence = ""; // 在Transcription模式使用，也会被一些通用函数引用
 
-    // For Experience Mode data
-    let currentPairIndex = 0;
-    const sentencePairs = [
-      {
-        target: "Your best bet is to drop him and go after another player.",
-        error: "Your best bet is to drop him and go after another.",
-        tip: "Tap near the mistake to highlight, then speak correction"
-      },
-      {
-        target: "The team needs to focus on developing young talents.",
-        error: "The team needs to focus on develop young talents.",
-        tip: "Great! Try again"
-      },
-      {
-        target: "She has been living in Paris for the past five years.",
-        error: "She has lived in Paris since five years.",
-        tip: "Multiple mistakes can be corrected multiple times"
-      },
-      {
-        target: "The cat sat on the mat. The dog chased the cat. The mouse ran away quickly.",
-        error: "The cat sat on the mat. The dog chase the cat. The mouse ran away quickly.",
-        tip: "This also works for multi-sentence paragraphs"
-      },
-      {
-        target: "They were discussing the implications of the new policy.",
-        error: "They were discuss about the implications of the new policy.",
-        tip: "If the first suggestion isn't correct, pick another from the list"
-      }
-    ];
-
-    /*******************************************************
-     * 4) DOM Elements
-     *******************************************************/
+    // DOM Elements
     const monitoringCard = document.getElementById("monitoring-card");
     const eventLogCard = document.getElementById("event-log-card");
-    const editor = document.getElementById("text-editor");
     const errorText = document.getElementById("error-text");
     const originalErrorSpan = document.getElementById("original-error-sentence");
     const touchIndexSpan = document.getElementById("touch-index");
@@ -863,20 +872,51 @@
     const micStatusSpan = document.getElementById("mic-status");
     const finalOutputSpan = document.getElementById("final-output");
     const eventLog = document.getElementById("event-log");
-
-    const undoButton = document.getElementById("undo-button");
-    const monitoringBtn = document.getElementById("toggle-monitoring");
-    const eventLogBtn = document.getElementById("toggle-log");
-    const imeBtn = document.getElementById("toggle-ime");
-
-    const modeExperienceContainer = document.getElementById("experience-mode");
-    const modeInputContainer = document.getElementById("input-mode");
-
+    
+    // UI按钮引用
     const modeExperienceBtn = document.getElementById("mode-experience");
     const modeInputBtn = document.getElementById("mode-input");
 
+    // 经验模式 & 自由模式 容器
+    const modeExperienceContainer = document.getElementById("experience-mode");
+    const modeInputContainer = document.getElementById("input-mode");
+
     /*******************************************************
-     * 5) underlineDiffRanges
+     * Universal: Toast / Event Log / IME toggle
+     *******************************************************/
+    function showToast(msg) {
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.innerText = msg;
+      document.body.appendChild(t);
+      requestAnimationFrame(() => { t.style.opacity = 1; });
+      setTimeout(() => {
+        t.style.opacity = 0;
+        setTimeout(() => { t.remove(); }, 500);
+      }, 2000);
+    }
+    function logEvent(message) {
+      const p = document.createElement("p");
+      const now = new Date().toLocaleString("en-US", {hour12: false});
+      p.innerText = `[${now}] ${message}`;
+      eventLog.appendChild(p);
+    }
+    function updateIMEButtonText(enabled) {
+      const button = document.getElementById('toggle-ime');
+      if (button) {
+        button.textContent = enabled ? 'Disable IME' : 'Enable IME';
+      }
+    }
+
+    /*******************************************************
+     * Universal: remove punctuation
+     *******************************************************/
+    function removePunctuation(str) {
+      return str.replace(/[^a-zA-Z0-9'\s]/g, "");
+    }
+
+    /*******************************************************
+     * Universal: 句子下划线
      *******************************************************/
     function underlineDiffRanges(text, diffRanges) {
       let result = "";
@@ -912,353 +952,71 @@
     }
 
     /*******************************************************
-     * 6) onLoad
+     * Universal: 通用替换函数
      *******************************************************/
-    window.onload = function() {
-      loadHeaderFooter();
+    function replaceFirstOccurrence(fullText, oldPart, newPart) {
+      let safe = oldPart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let reg = new RegExp(safe, "i");
+      return fullText.replace(reg, newPart);
+    }
 
-      // 默认隐藏 monitoring 和 event log
-      monitoringCard.style.display = "none";
-      eventLogCard.style.display = "none";
-      monitoringBtn.innerText = "Show Monitoring";
-      eventLogBtn.innerText = "Show Event Log";
-
-      initializeExperienceMode();
-      
-      // mic check
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({audio: true})
-        .catch(err => {
-          showToast("Please allow microphone access to use Tap&Say.");
-          console.warn("Mic permission error:", err);
-        });
+    /*******************************************************
+     * Universal: 移除光标
+     *******************************************************/
+    function removeCursor() {
+      if (cursorTimeout) {
+        clearTimeout(cursorTimeout);
+        cursorTimeout = null;
       }
-      
-      // default transcription
-      modeExperienceContainer.style.display = "block";
-      modeInputContainer.style.display = "none";
-      modeExperienceBtn.classList.add("active");
-      modeInputBtn.classList.remove("active");
-      activeMode = MODE_EXPERIENCE;
-
-      // --- Only remove selection if in EXPERIENCE mode and not dragging ---
-      document.addEventListener('mouseup', () => {
-        if (activeMode === MODE_EXPERIENCE && !isDragging) {
-          const selection = window.getSelection();
-          if (selection.rangeCount > 0) {
-            const errorSentenceEl = document.getElementById("error-sentence");
-            if (errorSentenceEl && errorSentenceEl.classList.contains('dragging')) {
-              // in dragging mode, do nothing
-            } else {
-              selection.removeAllRanges();
-            }
-          }
-        }
-      });
-
-      document.addEventListener('selectionchange', () => {
-        if (activeMode === MODE_EXPERIENCE && !isDragging) {
-          const errorSentenceEl = document.getElementById("error-sentence");
-          if (errorSentenceEl && !errorSentenceEl.classList.contains('dragging')) {
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-              const range = selection.getRangeAt(0);
-              if (errorSentenceEl.contains(range.commonAncestorContainer)) {
-                selection.removeAllRanges();
-              }
-            }
-          }
-        }
-      });
-
-      // Switch mode
-      modeExperienceBtn.addEventListener("click", function() {
-        if (!this.classList.contains("active")) {
-          this.classList.add("active");
-          modeInputBtn.classList.remove("active");
-          modeExperienceContainer.style.display = "block";
-          modeInputContainer.style.display = "none";
-          activeMode = MODE_EXPERIENCE;
-          showToast("Switched to Transcription mode");
-        }
-      });
-      modeInputBtn.addEventListener("click", function() {
-        if (!this.classList.contains("active")) {
-          this.classList.add("active");
-          modeExperienceBtn.classList.remove("active");
-          modeExperienceContainer.style.display = "none";
-          modeInputContainer.style.display = "block";
-          activeMode = MODE_INPUT;
-          showToast("Switched to Free-input mode");
-        }
-      });
-
-      // Attach free input logic
-      attachFreeInputListeners();
-
-      logEvent("Application initialized - Monitoring and logs are visible by default");
-    };
-
-    async function loadHeaderFooter(){
-      try {
-        const headerRes = await fetch("header.html");
-        const headerHtml = await headerRes.text();
-        document.getElementById("header-container").innerHTML = headerHtml;
-
-        const footerRes = await fetch("footer.html");
-        const footerHtml = await footerRes.text();
-        document.getElementById("footer-container").innerHTML = footerHtml;
-      } catch(e) {
-        console.warn("Failed to load header/footer:", e);
+      if (cursorElement) {
+        cursorElement.remove();
+        cursorElement = null;
       }
     }
 
     /*******************************************************
-     * 7) Monitoring / Log / IME
+     * Universal: Suggestions Box 移除
      *******************************************************/
-    monitoringBtn.addEventListener("click", () => {
-      monitoringCard.style.display = (monitoringCard.style.display === "none") ? "block" : "none";
-      monitoringBtn.innerText = (monitoringCard.style.display === "none") ? "Show Monitoring" : "Hide Monitoring";
-    });
-    eventLogBtn.addEventListener("click", () => {
-      eventLogCard.style.display = (eventLogCard.style.display === "none") ? "block" : "none";
-      eventLogBtn.innerText = (eventLogCard.style.display === "none") ? "Show Event Log" : "Hide Event Log";
-    });
-
-    imeBtn.addEventListener("click", () => {
-      disableIME = !disableIME;
-      updateIMEButtonText(disableIME);
-      if (disableIME) {
-        editor?.classList.add("disable-ime");
-      } else {
-        editor?.classList.remove("disable-ime");
-      }
-    });
-
-    function showToast(msg) {
-      const t = document.createElement("div");
-      t.className = "toast";
-      t.innerText = msg;
-      document.body.appendChild(t);
-      requestAnimationFrame(() => { t.style.opacity = 1; });
-      setTimeout(() => {
-        t.style.opacity = 0;
-        setTimeout(() => { t.remove(); }, 500);
-      }, 2000);
-    }
-    function logEvent(message) {
-      const p = document.createElement("p");
-      const now = new Date().toLocaleString("en-US", {hour12: false});
-      p.innerText = `[${now}] ${message}`;
-      eventLog.appendChild(p);
-    }
-    function updateIMEButtonText(enabled) {
-      const button = document.getElementById('toggle-ime');
-      if (button) {
-        button.textContent = enabled ? 'Disable IME' : 'Enable IME';
+    function removeSuggestionsBox() {
+      if (suggestionsBox) {
+        suggestionsBox.remove();
+        suggestionsBox = null;
       }
     }
 
     /*******************************************************
-     * 8) attachFreeInputListeners
+     * Universal: 同步到后端 /correct API 并处理回传
      *******************************************************/
-    function attachFreeInputListeners() {
-      const textarea = document.getElementById('simple-editor');
-      if (!textarea) return;
-      
-      let pressTimer = null;
-      let isDraggingFreeInput = false;
-      let currentIndex = -1;
-      
-      textarea.addEventListener('mousedown', (e) => {
-        if (activeMode !== MODE_INPUT) return;
-        if (isDraggingFreeInput) return;
-        
-        removeFreeInputCursor();
-        
-        // 直接使用 textarea 的 selectionStart 属性获取点击位置
-        textarea.focus();
-        const clickX = e.clientX - textarea.getBoundingClientRect().left;
-        const clickY = e.clientY - textarea.getBoundingClientRect().top;
-        
-        // 设置选择位置
-        textarea.setSelectionRange(textarea.selectionStart, textarea.selectionStart);
-        currentIndex = textarea.selectionStart;
-        
-        console.log('[FreeInput] Initial click position:', {
-          x: clickX,
-          y: clickY,
-          index: currentIndex
-        });
-        
-        pressTimer = setTimeout(() => {
-          console.log('[FreeInput] Long press activated');
-          isDraggingFreeInput = true;
-          
-          // 禁用编辑但保持可选择状态
-          textarea.readOnly = true;
-          
-          // 获取当前句子
-          const text = textarea.value;
-          const sentenceInfo = getFreeInputSentence(text, currentIndex);
-          console.log('[FreeInput] Selected sentence:', sentenceInfo);
-          
-          errorText.innerText = sentenceInfo.sentence;
-          freeInputSelectedSentence = sentenceInfo.sentence;
-          touchIndexSpan.innerText = String(currentIndex);
-          
-          showFreeInputCursor(textarea, currentIndex);
-        }, 500);
+    function sendToAPI(mergedStr, loc, isExperienceMode) {
+      let finalLoc = parseInt(loc, 10) || 0;
+      logEvent(`Sending /correct => merged_string:${mergedStr}, touch_location:${finalLoc}, isExpMode:${isExperienceMode}`);
+      fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ merged_string: mergedStr, touch_location: finalLoc })
+      })
+      .then(resp => resp.json())
+      .then(data => {
+        let corrs = data.filtered_corrections || [];
+        logEvent("API corrections => " + JSON.stringify(corrs));
+        applyFirstSuggestionAndShowBox(corrs, isExperienceMode);
+      })
+      .catch(err => {
+        logEvent("API call error => " + err);
       });
-      
-      document.addEventListener('mousemove', (e) => {
-        if (!isDraggingFreeInput) return;
-        e.preventDefault();
-        
-        const textarea = document.getElementById('simple-editor');
-        if (!textarea) return;
-        
-        // 更新选择位置
-        const rect = textarea.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // 获取鼠标位置对应的文本索引
-        textarea.focus();
-        const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-        if (range) {
-          currentIndex = textarea.selectionStart;
-          console.log('[FreeInput] Drag position:', {
-            x: mouseX,
-            y: mouseY,
-            index: currentIndex
-          });
-          
-          const text = textarea.value;
-          const sentenceInfo = getFreeInputSentence(text, currentIndex);
-          console.log('[FreeInput] Current sentence:', sentenceInfo);
-          
-          errorText.innerText = sentenceInfo.sentence;
-          freeInputSelectedSentence = sentenceInfo.sentence;
-          touchIndexSpan.innerText = String(currentIndex);
-          
-          showFreeInputCursor(textarea, currentIndex);
-        }
-      });
-      
-      document.addEventListener('mouseup', () => {
-        if (pressTimer) {
-          clearTimeout(pressTimer);
-          pressTimer = null;
-        }
-        
-        if (isDraggingFreeInput) {
-          isDraggingFreeInput = false;
-          
-          const textarea = document.getElementById('simple-editor');
-          if (!textarea) return;
-          
-          const text = textarea.value;
-          const sentenceInfo = getFreeInputSentence(text, currentIndex);
-          console.log('[FreeInput] Final sentence:', sentenceInfo);
-          
-          errorText.innerText = sentenceInfo.sentence;
-          originalSentence = sentenceInfo.sentence;
-          originalErrorSpan.innerText = sentenceInfo.sentence;
-          
-          // 恢复文本框状态
-          textarea.readOnly = false;
-          
-          showToast("请说出你的纠正短语...");
-        setTimeout(() => {
-          startRecording();
-        }, 200);
-        }
-      });
-    }
-
-    // Free Input 专用的分句和光标处理函数
-    function getFreeInputSentence(text, position) {
-      console.log('[FreeInput] Getting sentence at position:', position);
-      
-      const sentenceSeparators = /[.!?]/;
-      let startPos = 0;
-      
-      // 向前查找句子开始
-      for (let i = position - 1; i >= 0; i--) {
-        if (sentenceSeparators.test(text[i]) &&
-          (i + 1 >= text.length || text[i + 1] === ' ' || text[i + 1] === '\n')) {
-          startPos = i + 1;
-          while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
-            startPos++;
-          }
-          break;
-        }
-      }
-      
-      // 向后查找句子结束
-      let endPos = text.length;
-      for (let i = position; i < text.length; i++) {
-        if (sentenceSeparators.test(text[i])) {
-          endPos = i + 1;
-          break;
-        }
-      }
-      
-      return { sentence: text.substring(startPos, endPos).trim(), startPos: startPos, endPos: endPos };
-    }
-
-    // Free Input 专用的光标显示函数
-    function showFreeInputCursor(textarea, index) {
-      console.log('[FreeInput] Showing cursor at index:', index);
-      removeFreeInputCursor();
-      
-      try {
-        const text = textarea.value;
-        const tempDiv = document.createElement('div');
-        tempDiv.style.cssText = window.getComputedStyle(textarea).cssText;
-        tempDiv.style.height = 'auto';
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.visibility = 'hidden';
-        tempDiv.style.whiteSpace = 'pre-wrap';
-        tempDiv.style.wordWrap = 'break-word';
-        tempDiv.textContent = text.substring(0, index);
-        document.body.appendChild(tempDiv);
-        
-        const range = document.createRange();
-        const textNode = tempDiv.firstChild;
-        if (textNode) {
-          range.setStart(textNode, index);
-          range.collapse(true);
-          
-          const rect = range.getBoundingClientRect();
-          const textareaRect = textarea.getBoundingClientRect();
-          
-          freeInputCursorElement = document.createElement("span");
-          freeInputCursorElement.className = "cursor-indicator";
-          freeInputCursorElement.style.position = "absolute";
-          freeInputCursorElement.style.left = (rect.left + window.scrollX) + "px";
-          freeInputCursorElement.style.top = (rect.top + window.scrollY) + "px";
-          freeInputCursorElement.style.height = rect.height + "px";
-          
-          document.body.appendChild(freeInputCursorElement);
-        }
-        
-        document.body.removeChild(tempDiv);
-        
-        console.log('[FreeInput] Cursor positioned at:', {
-          left: freeInputCursorElement.style.left,
-          top: freeInputCursorElement.style.top,
-          index: index
-        });
-        
-      } catch (e) {
-        console.error("[FreeInput] Error creating cursor:", e);
-      }
     }
 
     /*******************************************************
-     * 9) Start Speech Recognition
+     * Universal: 应用第一个建议并展示额外选项
+     * 注意：后面会被Transcription模式 & Free-input模式覆盖使用
+     *******************************************************/
+    function applyFirstSuggestionAndShowBox(corrections, isExperienceMode) {
+      // 这部分在后面会被Transcription模式 & 自由输入模式各自逻辑进行"合并"或"覆盖"
+      // 先占位，后面有原始的实现会再次覆盖这个方法
+    }
+
+    /*******************************************************
+     * Universal: Speech Recognition
      *******************************************************/
     function startRecording() {
       if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
@@ -1277,6 +1035,17 @@
 
       micStatusSpan.innerHTML = "🟢 Recording...";
       micStatusSpan.className = "recording-active";
+
+      // 更新状态指示圆点和麦克风图标
+      const dots = document.querySelectorAll('.recording-status-dot');
+      const micIcons = document.querySelectorAll('.mic-icon');
+      dots.forEach(dot => {
+        dot.classList.remove('stopped');
+        dot.classList.add('recording');
+      });
+      micIcons.forEach(icon => {
+        icon.classList.add('recording');
+      });
 
       try {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1316,14 +1085,22 @@
           isListening = false;
           micStatusSpan.innerHTML = "🔴 Stopped";
           micStatusSpan.className = "";
-
           removeCursor();
+
+          // 更新状态指示圆点和麦克风图标
+          const dots = document.querySelectorAll('.recording-status-dot');
+          const micIcons = document.querySelectorAll('.mic-icon');
+          dots.forEach(dot => {
+            dot.classList.remove('recording');
+          });
+          micIcons.forEach(icon => {
+            icon.classList.remove('recording');
+          });
 
           if (voiceInputSpan.innerText.trim()) {
             setTimeout(finalizeTapSay, 100);
           } else {
             endTapSay();
-            showToast("No speech detected");
           }
         };
 
@@ -1335,8 +1112,18 @@
           micStatusSpan.innerHTML = "🔴 Error";
           micStatusSpan.className = "";
           removeCursor();
+
+          // 更新状态指示圆点和麦克风图标
+          const dots = document.querySelectorAll('.recording-status-dot');
+          const micIcons = document.querySelectorAll('.mic-icon');
+          dots.forEach(dot => {
+            dot.classList.remove('recording');
+          });
+          micIcons.forEach(icon => {
+            icon.classList.remove('recording');
+          });
+
           endTapSay();
-          showToast("Speech recognition error: " + event.error);
         };
 
         recognition.start();
@@ -1346,12 +1133,52 @@
         micStatusSpan.innerHTML = "🔴 Error";
         micStatusSpan.className = "";
         removeCursor();
-        showToast("Could not start speech recognition: " + e.message);
+
+        // 更新状态指示圆点和麦克风图标
+        const dots = document.querySelectorAll('.recording-status-dot');
+        const micIcons = document.querySelectorAll('.mic-icon');
+        dots.forEach(dot => {
+          dot.classList.remove('recording');
+        });
+        micIcons.forEach(icon => {
+          icon.classList.remove('recording');
+        });
       }
     }
 
+    function endTapSay() {
+      clearTimeout(highlightTimeout);
+      clearTimeout(silenceTimer);
+      if (recognition) {
+        try {
+          recognition.onend = null;
+          recognition.abort();
+        } catch(e) {
+          console.error("[Global] endTapSay => error stopping:", e);
+        }
+        recognition = null;
+      }
+      isRecording = false;
+      isListening = false;
+      micStatusSpan.innerHTML = "🔴 Stopped";
+      micStatusSpan.className = "";
+      removeCursor();
+      voiceInputSpan.innerText = "";
+
+      // 更新状态指示圆点和麦克风图标
+      const dots = document.querySelectorAll('.recording-status-dot');
+      const micIcons = document.querySelectorAll('.mic-icon');
+      dots.forEach(dot => {
+        dot.classList.remove('recording');
+      });
+      micIcons.forEach(icon => {
+        icon.classList.remove('recording');
+      });
+    }
+
     /*******************************************************
-     * 10) Finalize TapSay
+     * Universal: finalizeTapSay
+     * 当 speech recognition 结束后，把结果发往 API
      *******************************************************/
     function finalizeTapSay() {
       const transcript = (voiceInputSpan.innerText || "").trim();
@@ -1380,385 +1207,50 @@
       }, 3000);
     }
 
-    function endTapSay() {
-      clearTimeout(highlightTimeout);
-      clearTimeout(silenceTimer);
-      if (recognition) {
-        try {
-          recognition.onend = null;
-          recognition.abort();
-        } catch(e) {
-          console.error("[Global] endTapSay => error stopping:", e);
-        }
-        recognition = null;
+    /***********************************************
+     * ============ B) Transcription Mode 代码 ============
+     ***********************************************/
+    // Transcription模式所需数据
+    let currentPairIndex = 0;
+    const sentencePairs = [
+      {
+        target: "Your best bet is to drop him and go after another player.",
+        error: "Your best bet is to drop him and go after another.",
+        tip: "Tap near the mistake till the mic icon is green, then speak correction. Here's like 'another player'."
+      },
+      {
+        target: "The team needs to focus on developing young talents.",
+        error: "The team needs to focus on develop young talents.",
+        tip: "Great! Try again"
+      },
+      {
+        target: "She has been living in Paris for the past five years.",
+        error: "She has lived in Paris since five years.",
+        tip: "Multiple mistakes can be corrected multiple times"
+      },
+      {
+        target: "The cat sat on the mat. The dog chased the cat. The mouse ran away quickly.",
+        error: "The cat sat on the mat. The dog chase the cat. The mouse ran away quickly.",
+        tip: "This also works for multi-sentence paragraphs"
+      },
+      {
+        target: "They were discussing the implications of the new policy.",
+        error: "They were discuss about the implications of the new policy.",
+        tip: "If the first suggestion isn't correct, pick another from the list"
       }
-      isRecording = false;
-      isListening = false;
-      micStatusSpan.innerHTML = "🔴 Stopped";
-      micStatusSpan.className = "";
-      removeCursor();
-      voiceInputSpan.innerText = "";
-    }
+    ];
 
     /*******************************************************
-     * 11) /correct API
-     *******************************************************/
-    function sendToAPI(mergedStr, loc, isExperienceMode) {
-      let finalLoc = parseInt(loc, 10) || 0;
-      logEvent(`Sending /correct => merged_string:${mergedStr}, touch_location:${finalLoc}, isExpMode:${isExperienceMode}`);
-      fetch(API_URL, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ merged_string: mergedStr, touch_location: finalLoc })
-      })
-      .then(resp => resp.json())
-      .then(data => {
-        let corrs = data.filtered_corrections || [];
-        logEvent("API corrections => " + JSON.stringify(corrs));
-        applyFirstSuggestionAndShowBox(corrs, isExperienceMode);
-      })
-      .catch(err => {
-        logEvent("API call error => " + err);
-      });
-    }
-
-    /*******************************************************
-     * 12) applyFirstSuggestionAndShowBox
-     *******************************************************/
-    function replaceFirstOccurrence(fullText, oldPart, newPart) {
-      let safe = oldPart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      let reg = new RegExp(safe, "i");
-      return fullText.replace(reg, newPart);
-    }
-
-    function applyFirstSuggestionAndShowBox(corrections, isExperienceMode) {
-      console.log('[API] Received corrections:', corrections);
-      
-      if (!corrections.length) {
-        console.warn('[API] No corrections received');
-        return;
-      }
-      
-      if (isExperienceMode) {
-        const errorSentenceEl = document.getElementById("error-sentence");
-        if (!errorSentenceEl) {
-          console.warn('[Transcription] Error: errorSentenceEl not found');
-          return;
-        }
-        
-      let candidateObj = corrections[0];
-      let candidate = candidateObj.corrected_text.trimEnd();
-      let diffRanges = candidateObj.diff_ranges;
-
-        console.log('[Transcription] Applying correction:', {
-          selectedSentence: selectedSentence,
-          candidate: candidate,
-          currentText: errorSentenceEl.innerText
-        });
-
-        // 用第一个建议替换选中的句子
-        let entireText = errorSentenceEl.innerText;
-        let updatedText = replaceFirstOccurrence(entireText, selectedSentence, candidate);
-        
-        console.log('[Transcription] After replacement:', {
-          updatedText: updatedText,
-          replacementSuccessful: updatedText !== entireText
-        });
-        
-        errorSentenceEl.innerText = updatedText;
-
-        // 更新选中句为当前建议
-        selectedSentence = candidate;
-
-        // 如果有差异范围，添加下划线
-        if (diffRanges && diffRanges.length > 0) {
-          let newSentenceIndex = updatedText.indexOf(candidate);
-          if (newSentenceIndex >= 0) {
-            let newHtml = updatedText.substring(0, newSentenceIndex);
-            newHtml += underlineDiffRanges(candidate, diffRanges);
-            newHtml += updatedText.substring(newSentenceIndex + candidate.length);
-            errorSentenceEl.innerHTML = newHtml;
-            
-            // 2秒后移除下划线效果
-            setTimeout(() => {
-              errorSentenceEl.innerText = errorSentenceEl.innerText;
-            }, 2000);
-          }
-        }
-
-        // 显示其他建议
-        if (corrections.length > 1) {
-          console.log('[Transcription] Creating suggestion box for additional corrections');
-          let rect = errorSentenceEl.getBoundingClientRect();
-          suggestionsBox = createSuggestionBox(rect, corrections, true);
-          if (suggestionsBox) {
-            console.log('[Transcription] Appending suggestion box to body');
-          document.body.appendChild(suggestionsBox);
-          clearTimeout(suggestionsTimer);
-          suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
-          } else {
-            console.warn('[Transcription] Failed to create suggestion box');
-        }
-        }
-
-        checkCompletion();
-      } else {
-        // Free input mode
-        const simpleEditor = document.getElementById('simple-editor');
-        if (!simpleEditor) return;
-        
-        let candidateObj = corrections[0];
-        let candidate = candidateObj.corrected_text.trimEnd();
-        let diffRanges = candidateObj.diff_ranges;
-
-        if (window.replaceSentenceInSimpleEditor(originalSentence, candidate)) {
-        originalSentence = candidate;
-          simpleEditor.focus();
-
-        if (corrections.length > 1) {
-            const rect = simpleEditor.getBoundingClientRect();
-            const suggestionsBox = document.createElement('div');
-            suggestionsBox.className = 'suggestions-box-floating';
-            suggestionsBox.style.left = rect.left + 'px';
-            suggestionsBox.style.top = (rect.bottom + 10) + 'px';
-            suggestionsBox.style.width = rect.width + 'px';
-            
-            for (let i = 1; i < corrections.length; i++) {
-              const suggObj = corrections[i];
-              const suggText = suggObj.corrected_text.trimEnd();
-              
-              const suggDiv = document.createElement('div');
-              suggDiv.innerText = suggText;
-              
-              suggDiv.onclick = () => {
-                window.replaceSentenceInSimpleEditor(originalSentence, suggText);
-                originalSentence = suggText;
-                suggestionsBox.remove();
-                simpleEditor.focus();
-              };
-              suggestionsBox.appendChild(suggDiv);
-            }
-          document.body.appendChild(suggestionsBox);
-            setTimeout(() => {
-              if (suggestionsBox.parentNode) {
-                suggestionsBox.remove();
-              }
-            }, 3000);
-          }
-        }
-      }
-    }
-
-    function createSuggestionBox(rect, corrections, isExpMode) {
-      console.log('[SuggestionBox] Creating box with:', {
-        isExpMode: isExpMode,
-        correctionsCount: corrections.length
-      });
-      
-      let box = document.createElement("div");
-      box.className = "suggestions-box-floating";
-      
-      // 获取第一个建议的文本
-      const firstSuggestion = corrections[0].corrected_text.trimEnd();
-      console.log('[SuggestionBox] First suggestion:', firstSuggestion);
-      
-      if (isExpMode) {
-        const errorSentenceEl = document.getElementById("error-sentence");
-        if (errorSentenceEl) {
-          const text = errorSentenceEl.innerText;
-          const range = document.createRange();
-          const textNode = errorSentenceEl.firstChild;
-          
-          if (textNode) {
-            const startIndex = text.indexOf(firstSuggestion);
-            if (startIndex !== -1) {
-              try {
-                // 使用建议文本的位置来定位建议栏
-                range.setStart(textNode, startIndex);
-                range.setEnd(textNode, startIndex + 1); // 只需要起始位置即可
-                const selectedRect = range.getBoundingClientRect();
-                
-                // 设置建议框位置在选中句子下方
-                const boxLeft = selectedRect.left + window.scrollX;
-                const boxTop = selectedRect.bottom + window.scrollY + 5;
-                
-                // 不限制宽度,让建议栏根据内容自动调整
-                box.style.left = boxLeft + "px";
-                box.style.top = boxTop + "px";
-                box.style.minWidth = selectedRect.width + "px"; // 最小宽度设为原文宽度
-                box.style.width = "auto"; // 允许宽度自动增长
-                box.style.maxWidth = "500px"; // 设置一个最大宽度以防止过长
-              } catch (e) {
-                console.error('[SuggestionBox] Error setting range:', e);
-              }
-            }
-          }
-        }
-      }
-
-      // 添加建议选项前的状态
-      console.log('[SuggestionBox] Box styles before adding suggestions:', {
-        left: box.style.left,
-        top: box.style.top,
-        width: box.style.width
-      });
-
-      // 添加建议选项(从第二个建议开始)
-      for (let i = 1; i < corrections.length; i++) {
-        let candidateObj = corrections[i];
-        let candidate = candidateObj.corrected_text.trimEnd();
-        console.log('[SuggestionBox] Adding suggestion:', candidate);
-
-        let div = document.createElement("div");
-        if (candidateObj.diff_ranges && candidateObj.diff_ranges.length > 0) {
-          div.innerHTML = underlineDiffRanges(candidate, candidateObj.diff_ranges);
-        } else {
-          div.innerText = candidate;
-        }
-
-        div.onclick = (evt) => {
-          evt.preventDefault();
-          evt.stopPropagation();
-          if (isExpMode) {
-            const errorSentenceEl = document.getElementById("error-sentence");
-            if (!errorSentenceEl) {
-              console.warn('[SuggestionBox] Error sentence element not found during click');
-              return;
-            }
-
-            console.log('[SuggestionBox] Replacing text:', {
-              current: selectedSentence,
-              new: candidate
-            });
-
-            let entireText = errorSentenceEl.innerText;
-            let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
-            errorSentenceEl.innerText = updated;
-            selectedSentence = candidate;
-
-            if (candidateObj.diff_ranges && candidateObj.diff_ranges.length > 0) {
-              let newSentenceIndex = updated.indexOf(candidate);
-              if (newSentenceIndex >= 0) {
-                let newHtml = updated.substring(0, newSentenceIndex);
-                newHtml += underlineDiffRanges(candidate, candidateObj.diff_ranges);
-                newHtml += updated.substring(newSentenceIndex + candidate.length);
-                errorSentenceEl.innerHTML = newHtml;
-                
-                // 2秒后移除下划线效果
-                setTimeout(() => {
-                  errorSentenceEl.innerText = errorSentenceEl.innerText;
-                }, 2000);
-              }
-            }
-
-            checkCompletion();
-          }
-          removeSuggestionsBox();
-        };
-        box.appendChild(div);
-      }
-
-      return box;
-    }
-
-    function removeSuggestionsBox() {
-      if (suggestionsBox) {
-        suggestionsBox.remove();
-        suggestionsBox = null;
-      }
-    }
-
-    /*******************************************************
-     * 13) highlight / removeHighlight for free input
-     *******************************************************/
-    function highlightSentence(sentence) {
-      let html = editor.innerHTML;
-      let safe = sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      let re = new RegExp(safe, "i");
-      if (!re.test(html)) return false;
-      editor.innerHTML = html.replace(
-        re, `<span id="target-sentence" class="highlighted-sentence">$&</span>`
-      );
-      lastHighlightedSentence = sentence;
-      return true;
-    }
-
-    /*******************************************************
-     * 14) Cursor logic for Experience Mode
-     *******************************************************/
-    function showCursorAtPosition() {
-      removeCursor();
-      const element = document.getElementById("error-sentence");
-      if (!element) return;
-
-      const text = element.textContent;
-      const textNode = element.firstChild;
-      if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
-
-      try {
-        // 获取元素的计算样式
-        const style = window.getComputedStyle(element);
-        const paddingLeft = parseFloat(style.paddingLeft);
-        const borderLeft = parseFloat(style.borderLeftWidth);
-        
-        // 创建一个范围来获取准确的文本位置
-        const range = document.createRange();
-        range.setStart(textNode, localTapIndex);
-        range.collapse(true);
-
-        const elementRect = element.getBoundingClientRect();
-        const rangeRect = range.getBoundingClientRect();
-        
-        // 创建光标元素
-        cursorElement = document.createElement("span");
-        cursorElement.className = "cursor-indicator";
-        cursorElement.style.position = "absolute";
-
-        // 计算精确的光标位置，考虑内边距和边框
-        cursorElement.style.left = (rangeRect.left + window.scrollX) + "px";
-        cursorElement.style.top = (rangeRect.top + window.scrollY) + "px";
-        cursorElement.style.height = rangeRect.height + "px";
-
-        document.body.appendChild(cursorElement);
-        cursorElement.dataset.index = localTapIndex.toString();
-        cursorElement.dataset.elementId = "error-sentence";
-
-        if (!isRecording && !isDragging) {
-          cursorTimeout = setTimeout(() => { removeCursor(); }, 6000);
-        }
-        touchIndexSpan.innerText = String(localTapIndex);
-        
-      } catch (e) {
-        console.error("[Transcription] Error creating cursor:", e);
-      }
-    }
-
-    function removeCursor() {
-      if (cursorTimeout) {
-        clearTimeout(cursorTimeout);
-        cursorTimeout = null;
-      }
-      if (cursorElement) {
-        cursorElement.remove();
-        cursorElement = null;
-      }
-    }
-
-    /*******************************************************
-     * 15) Utility
-     *******************************************************/
-    function removePunctuation(str) {
-      return str.replace(/[^a-zA-Z0-9'\s]/g, "");
-    }
-
-    /*******************************************************
-     * 16) Experience Mode
+     * Transcription: 初始化 Experience Mode
      *******************************************************/
     function initializeExperienceMode() {
       updateSentencePair(0);
       attachExpListeners();
     }
 
+    /*******************************************************
+     * Transcription: 为错误句子绑定长按、拖动、点击等事件
+     *******************************************************/
     function attachExpListeners() {
       const prev = document.getElementById("prev-sentence");
       const next = document.getElementById("next-sentence");
@@ -1766,10 +1258,9 @@
       const nextPair = document.getElementById("next-pair-button");
       const expUndo = document.getElementById("experience-undo-button");
       const errorSentenceEl = document.getElementById("error-sentence");
-
       if (!prev || !next || !skip || !nextPair || !expUndo || !errorSentenceEl) return;
 
-      // block context menu / text select
+      // 取消默认的右键菜单和双击选择
       errorSentenceEl.addEventListener('contextmenu', e => {
         e.preventDefault();
         return false;
@@ -1815,59 +1306,83 @@
         }
       });
       expUndo.addEventListener("click", () => {
-        console.log('[Transcription] Restore button clicked');
-        
         const errorSentenceEl = document.getElementById("error-sentence");
-        if (!errorSentenceEl) {
-          console.warn('[Transcription] Error: errorSentenceEl not found');
-          return;
-        }
+        if (!errorSentenceEl) return;
         
-        console.log('[Transcription] Before restore:', {
-          currentText: errorSentenceEl.innerText,
-          selectedSentence: selectedSentence
-        });
-
-        // 直接用原始错误句子替换整个内容
         const originalErrorSentence = sentencePairs[currentPairIndex].error;
         errorSentenceEl.innerText = originalErrorSentence;
         
         // 重置选中句
         selectedSentence = "";
         
-        // 重置Skip按钮状态
+        // 重置Skip按钮
         const skipBtn = document.getElementById("skip-sentence-button");
         if (skipBtn) {
-          skipBtn.textContent = "Follow the instruction";
+          skipBtn.textContent = "Next Sentence";
           skipBtn.style.background = "#6c757d";
           skipBtn.style.opacity = "0.7";
           skipBtn.style.pointerEvents = "none";
           skipBtn.style.cursor = "default";
         }
         
-        // 重置错误句子框的样式
         errorSentenceEl.style.background = "";
         errorSentenceEl.style.borderColor = "";
-        
         showToast("Restored to original error sentence");
       });
 
       attachTranscriptionLongPress(errorSentenceEl);
     }
 
+    /*******************************************************
+     * Transcription: 长按并拖拽选取文字
+     *******************************************************/
     function attachTranscriptionLongPress(errorSentenceEl) {
       let pressTimerExp = null;
       let longPressStarted = false;
-      let longPressThreshold = 200;
+      let longPressThreshold = 100;
+      let isDraggingAndRecording = false;
+      let stopRecordingTimer = null;  // 添加一个定时器来延迟停止录音
+
+      // 修改recognition的onresult处理
+      if (recognition) {
+        recognition.onresult = (event) => {
+          clearTimeout(silenceTimer);
+          const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+          voiceInputSpan.innerText = transcript;
+          finalOutputSpan.innerText = transcript;
+
+          // 如果是拖拽模式，使用当前光标位置更新选中的句子
+          if (isDraggingAndRecording) {
+            const text = errorSentenceEl.innerText;
+            const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
+            errorText.innerText = currentSentence;
+            originalSentence = currentSentence;
+            originalErrorSpan.innerText = currentSentence;
+            selectedSentence = currentSentence;
+          }
+
+          if (!event.results[0].isFinal && recognition) {
+            setTimeout(() => {
+              try { recognition.stop(); } catch (e) { console.error(e); }
+            }, 800);
+          }
+        };
+      }
 
       errorSentenceEl.addEventListener("mousedown", (e) => {
+        // 清除可能存在的停止录音定时器
+        if (stopRecordingTimer) {
+          clearTimeout(stopRecordingTimer);
+          stopRecordingTimer = null;
+        }
+
         if (isDragging) return;
         removeCursor();
 
         const rect = e.currentTarget.getBoundingClientRect();
         const text = errorSentenceEl.innerText;
         
-        // 使用 caretRangeFromPoint 来获取更精确的字符位置
+        // 使用 caretRangeFromPoint 来获取精确的位置
         const x = e.clientX;
         const y = e.clientY;
         if (document.caretRangeFromPoint) {
@@ -1875,44 +1390,77 @@
           if (range) {
             localTapIndex = range.startOffset;
           }
-          } else {
-          // 回退方案：使用更精确的像素计算
+        } else {
+          // 回退方案
           const style = window.getComputedStyle(errorSentenceEl);
           const fontSize = parseFloat(style.fontSize);
           const paddingLeft = parseFloat(style.paddingLeft);
           const clickX = e.clientX - rect.left - paddingLeft;
-          const averageCharWidth = fontSize * 0.6; // 估算每个字符的平均宽度
+          const averageCharWidth = fontSize * 0.6;
           localTapIndex = Math.round(clickX / averageCharWidth);
         }
-        
-        // 确保 index 在有效范围内
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        // 开始录音（无论是点击还是长按）
+        startRecording();
+
+        // 对于单击，直接使用当前位置选择句子
+        const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
+        errorText.innerText = currentSentence;
+        originalSentence = currentSentence;
+        originalErrorSpan.innerText = currentSentence;
+        selectedSentence = currentSentence;
 
         pressTimerExp = setTimeout(() => {
           longPressStarted = true;
+          isDraggingAndRecording = true;
           handleExpLongPress();
           showLongPressFeedback(e.clientX, e.clientY);
         }, longPressThreshold);
       });
+
       errorSentenceEl.addEventListener("mousemove", () => {
         if (pressTimerExp && !longPressStarted) {
           clearTimeout(pressTimerExp);
           pressTimerExp = null;
         }
       });
+
       errorSentenceEl.addEventListener("mouseup", () => {
         clearTimeout(pressTimerExp);
         pressTimerExp = null;
         longPressStarted = false;
-      });
-      errorSentenceEl.addEventListener("mouseleave", () => {
-        clearTimeout(pressTimerExp);
-        pressTimerExp = null;
-        longPressStarted = false;
+        if (isDraggingAndRecording) {
+          isDraggingAndRecording = false;
+          isDragging = false;
+          errorSentenceEl.classList.remove("dragging");
+          
+          // 清除之前的定时器（如果存在）
+          if (stopRecordingTimer) {
+            clearTimeout(stopRecordingTimer);
+          }
+          
+          // 设置3秒后停止录音
+          stopRecordingTimer = setTimeout(() => {
+            if (recognition) {
+              try {
+                recognition.stop();
+              } catch (ex) {
+                console.error("[Transcription] error stopping:", ex);
+              }
+            }
+          }, 3000);
+        }
       });
 
-      // touch
+      // touch events
       errorSentenceEl.addEventListener("touchstart", (e) => {
+        // 清除可能存在的停止录音定时器
+        if (stopRecordingTimer) {
+          clearTimeout(stopRecordingTimer);
+          stopRecordingTimer = null;
+        }
+
         if (isDragging) return;
         removeCursor();
 
@@ -1920,14 +1468,12 @@
         const rect = e.currentTarget.getBoundingClientRect();
         const text = errorSentenceEl.innerText;
         
-        // 使用 caretRangeFromPoint 来获取更精确的字符位置
         if (document.caretRangeFromPoint) {
           const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
           if (range) {
             localTapIndex = range.startOffset;
           }
         } else {
-          // 回退方案：使用更精确的像素计算
           const style = window.getComputedStyle(errorSentenceEl);
           const fontSize = parseFloat(style.fontSize);
           const paddingLeft = parseFloat(style.paddingLeft);
@@ -1935,27 +1481,31 @@
           const averageCharWidth = fontSize * 0.6;
           localTapIndex = Math.round(touchX / averageCharWidth);
         }
-        
-        // 确保 index 在有效范围内
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        // 开始录音（无论是点击还是长按）
+        startRecording();
+
+        // 对于单击，直接使用当前位置选择句子
+        const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
+        errorText.innerText = currentSentence;
+        originalSentence = currentSentence;
+        originalErrorSpan.innerText = currentSentence;
+        selectedSentence = currentSentence;
 
         errorSentenceEl.dataset.touchStarted = "true";
         pressTimerExp = setTimeout(() => {
           if (errorSentenceEl.dataset.touchStarted === "true") {
             longPressStarted = true;
+            isDraggingAndRecording = true;
             handleExpLongPress();
             showLongPressFeedback(touch.clientX, touch.clientY);
           }
-        }, 250);
+        }, longPressThreshold);
 
         e.preventDefault();
       });
-      errorSentenceEl.addEventListener("touchmove", () => {
-        if (pressTimerExp && !longPressStarted) {
-          clearTimeout(pressTimerExp);
-          pressTimerExp = null;
-        }
-      });
+
       errorSentenceEl.addEventListener("touchend", () => {
         if (errorSentenceEl.dataset.touchStarted) {
           delete errorSentenceEl.dataset.touchStarted;
@@ -1963,28 +1513,36 @@
         clearTimeout(pressTimerExp);
         pressTimerExp = null;
         longPressStarted = false;
-      });
-      errorSentenceEl.addEventListener("touchcancel", () => {
-        if (errorSentenceEl.dataset.touchStarted) {
-          delete errorSentenceEl.dataset.touchStarted;
+        if (isDraggingAndRecording) {
+          isDraggingAndRecording = false;
+          isDragging = false;
+          errorSentenceEl.classList.remove("dragging");
+          
+          // 清除之前的定时器（如果存在）
+          if (stopRecordingTimer) {
+            clearTimeout(stopRecordingTimer);
+          }
+          
+          // 设置3秒后停止录音
+          stopRecordingTimer = setTimeout(() => {
+            if (recognition) {
+              try {
+                recognition.stop();
+              } catch (ex) {
+                console.error("[Transcription] error stopping:", ex);
+              }
+            }
+          }, 3000);
         }
-        clearTimeout(pressTimerExp);
-        pressTimerExp = null;
-        longPressStarted = false;
       });
     }
 
+    /*******************************************************
+     * Transcription: 真正执行长按拖拽选词
+     *******************************************************/
     function handleExpLongPress() {
-      console.log('[Transcription] handleExpLongPress started');
-      
       const element = document.getElementById("error-sentence");
-      if (!element) {
-        console.warn('[Transcription] Error: element not found');
-        return;
-      }
-
-      // 重要：重置 selectedSentence
-      selectedSentence = "";
+      if (!element) return;
 
       isDragging = true;
       element.classList.add("dragging");
@@ -1994,16 +1552,13 @@
         if (!isDragging) return;
         e.preventDefault();
 
-        // 使用 caretRangeFromPoint 获取精确的文本位置
         if (document.caretRangeFromPoint) {
           const range = document.caretRangeFromPoint(e.clientX, e.clientY);
           if (range && range.startContainer === element.firstChild) {
             localTapIndex = range.startOffset;
-            console.log('[Transcription] New index from range:', localTapIndex);
           }
         } else {
-          // 回退方案
-        const rect = element.getBoundingClientRect();
+          const rect = element.getBoundingClientRect();
           const style = window.getComputedStyle(element);
           const paddingLeft = parseFloat(style.paddingLeft);
           const moveX = e.clientX - rect.left - paddingLeft;
@@ -2011,21 +1566,8 @@
           const averageCharWidth = fontSize * 0.6;
           localTapIndex = Math.round(moveX / averageCharWidth);
         }
-
-        // 确保索引在有效范围内
         const text = element.innerText;
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
-
-        // 获取当前选中的句子
-        const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
-        console.log('[Transcription] Current sentence:', currentSentence);
-        
-        // 更新显示和状态
-        errorText.innerText = currentSentence;
-        originalSentence = currentSentence;
-        originalErrorSpan.innerText = currentSentence;
-        selectedSentence = currentSentence; // 更新 selectedSentence
-
         showCursorAtPosition();
       };
 
@@ -2034,16 +1576,13 @@
         e.preventDefault();
 
         const touch = e.touches[0];
-        
-        // 使用相同的精确定位逻辑
         if (document.caretRangeFromPoint) {
           const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
           if (range && range.startContainer === element.firstChild) {
             localTapIndex = range.startOffset;
           }
         } else {
-          // 回退方案
-        const rect = element.getBoundingClientRect();
+          const rect = element.getBoundingClientRect();
           const style = window.getComputedStyle(element);
           const paddingLeft = parseFloat(style.paddingLeft);
           const moveX = touch.clientX - rect.left - paddingLeft;
@@ -2051,16 +1590,8 @@
           const averageCharWidth = fontSize * 0.6;
           localTapIndex = Math.round(moveX / averageCharWidth);
         }
-
-        // 确保索引在有效范围内
         const text = element.innerText;
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
-
-        const selectedSentence = getCurrentSentenceForTranscription(text, localTapIndex);
-        errorText.innerText = selectedSentence;
-        originalSentence = selectedSentence;
-        originalErrorSpan.innerText = selectedSentence;
-
         showCursorAtPosition();
       };
 
@@ -2068,33 +1599,11 @@
         if (e && e.type === 'touchend') e.preventDefault();
         isDragging = false;
         element.classList.remove("dragging");
-
-        let text = element.innerText;
-        const finalSentence = getCurrentSentenceForTranscription(text, localTapIndex);
-
-        errorText.innerText = finalSentence;
-        originalSentence = finalSentence;
-        originalErrorSpan.innerText = finalSentence;
-
-        showToast("Please speak the correction phrase");
         
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", endDrag);
         element.removeEventListener("touchmove", handleTouchMove);
         document.removeEventListener("touchend", endDrag);
-
-        if (recognition) {
-          try {
-            recognition.onend = null;
-            recognition.abort();
-          } catch (ex) {
-            console.error("[Transcription] error aborting:", ex);
-          }
-        }
-
-        setTimeout(() => {
-          startRecording();
-        }, 200);
       };
 
       document.addEventListener("mousemove", handleMouseMove);
@@ -2104,11 +1613,6 @@
     }
 
     function getCurrentSentenceForTranscription(text, position) {
-      console.log('[Transcription] getCurrentSentence input:', {
-        text: text,
-        position: position
-      });
-      
       const sentenceSeparators = /[.!?]/;
       let startPos = 0;
       for (let i = position - 1; i >= 0; i--) {
@@ -2129,16 +1633,58 @@
         }
       }
       selectedSentence = text.substring(startPos, endPos).trim();
-      
-      console.log('[Transcription] getCurrentSentence output:', {
-        startPos: startPos,
-        endPos: endPos,
-        selectedSentence: selectedSentence
-      });
-      
       return selectedSentence;
     }
 
+    /*******************************************************
+     * Transcription: 在长按时出现的光标
+     *******************************************************/
+    function showCursorAtPosition() {
+      removeCursor();
+      const element = document.getElementById("error-sentence");
+      if (!element) return;
+
+      const text = element.textContent;
+      const textNode = element.firstChild;
+      if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+
+      try {
+        const style = window.getComputedStyle(element);
+        const range = document.createRange();
+        range.setStart(textNode, localTapIndex);
+        range.collapse(true);
+
+        const rangeRect = range.getBoundingClientRect();
+        
+        cursorElement = document.createElement("span");
+        cursorElement.className = "cursor-indicator";
+        cursorElement.style.position = "absolute";
+
+        cursorElement.style.left = (rangeRect.left + window.scrollX) + "px";
+        cursorElement.style.top = (rangeRect.top + window.scrollY) + "px";
+        cursorElement.style.height = rangeRect.height + "px";
+
+        document.body.appendChild(cursorElement);
+        cursorElement.dataset.index = localTapIndex.toString();
+        cursorElement.dataset.elementId = "error-sentence";
+
+        if (!isRecording && !isDragging) {
+          cursorTimeout = setTimeout(() => { removeCursor(); }, 6000);
+        }
+        touchIndexSpan.innerText = String(localTapIndex);
+      } catch (e) {
+        console.error("[Transcription] Error creating cursor:", e);
+      }
+    }
+
+    function showLongPressFeedback(x, y) {
+      // 可以在这里添加长按反馈动画
+      console.log("Long-press at:", x, y);
+    }
+
+    /*******************************************************
+     * Transcription: 检查当前是否完成修正
+     *******************************************************/
     function checkCompletion() {
       const targetSentence = document.getElementById("target-sentence");
       const errorSentence = document.getElementById("error-sentence");
@@ -2198,6 +1744,9 @@
       }
     }
 
+    /*******************************************************
+     * Transcription: 更新句子对
+     *******************************************************/
     function updateSentencePair(index) {
       const targetSentence = document.getElementById("target-sentence");
       const errorSentenceEl = document.getElementById("error-sentence");
@@ -2249,91 +1798,286 @@
       tipBox.className = 'tip-box';
       tipBox.innerHTML = `
         <div class="tip-content">
-          <i class="fas fa-lightbulb"></i>
           ${tip}
         </div>
       `;
       return tipBox;
     }
 
-    // Make free input <div> look like a normal text box
-    document.addEventListener('DOMContentLoaded', function() {
-      const textEditor = document.getElementById('text-editor');
-      if (textEditor) {
-        textEditor.classList.remove('disable-ime');
-        textEditor.classList.remove('editable-sentence-box');
+    /*******************************************************
+     * 覆盖: applyFirstSuggestionAndShowBox (Transcription)
+     *******************************************************/
+    const originalApply = applyFirstSuggestionAndShowBox;
+    applyFirstSuggestionAndShowBox = function(corrections, isExperienceMode) {
+      if (!corrections.length) return;
+      
+      if (isExperienceMode) {
+        // ==========【原始的 Transcription 逻辑】==========
+        if (!document.getElementById("error-sentence")) return;
         
-        textEditor.style.userSelect = 'text';
-        textEditor.style.webkitUserSelect = 'text';
-        textEditor.style.mozUserSelect = 'text';
-        textEditor.style.msUserSelect = 'text';
-        textEditor.style.webkitTouchCallout = 'default';
-        textEditor.style.pointerEvents = 'auto';
-      }
-    });
+        let candidateObj = corrections[0];
+        let candidate = candidateObj.corrected_text.trimEnd();
+        let diffRanges = candidateObj.diff_ranges;
+        
+        const errorSentenceEl = document.getElementById("error-sentence");
+        let entireText = errorSentenceEl.innerText;
+        
+        // 将原先选中的句子替换为 candidate
+        let updatedText = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+        errorSentenceEl.innerText = updatedText;
+        selectedSentence = candidate;
 
-    // Basic undo stack
-    let simpleUndoStack = [''];
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const simpleEditor = document.getElementById('simple-editor');
-      const simpleUndoButton = document.getElementById('simple-undo-button');
-      
-      if (!simpleEditor || !simpleUndoButton) return;
-      
-      // Replace original mode switch
-      const modeInputBtn = document.getElementById('mode-input');
-      if (modeInputBtn) {
-        modeInputBtn.onclick = function() {
-          if (!this.classList.contains("active")) {
-            this.classList.add("active");
-            document.getElementById("mode-experience").classList.remove("active");
-            document.getElementById("experience-mode").style.display = "none";
-            document.getElementById("input-mode").style.display = "block";
-            activeMode = MODE_INPUT;
+        // 如果有 diffRanges 就加下划线
+        if (diffRanges && diffRanges.length > 0) {
+          let newSentenceIndex = updatedText.indexOf(candidate);
+          if (newSentenceIndex >= 0) {
+            let newHtml = updatedText.substring(0, newSentenceIndex);
+            newHtml += underlineDiffRanges(candidate, diffRanges);
+            newHtml += updatedText.substring(newSentenceIndex + candidate.length);
+            errorSentenceEl.innerHTML = newHtml;
             
             setTimeout(() => {
-              simpleEditor.focus();
-            }, 100);
-            
-            showToast("Switched to Free-input mode");
+              errorSentenceEl.innerText = errorSentenceEl.innerText;
+            }, 2000);
           }
-        };
+        }
+
+        // 如果有多个修正建议，则展示建议列表
+        if (corrections.length > 1) {
+          let rect = errorSentenceEl.getBoundingClientRect();
+          suggestionsBox = createSuggestionBox(rect, corrections, true);
+          if (suggestionsBox) {
+            document.body.appendChild(suggestionsBox);
+            clearTimeout(suggestionsTimer);
+            suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
+          }
+        }
+        checkCompletion();
+      } else {
+        // 如果不是Experience模式，就调用后面 free-input 的逻辑
+        originalApply(corrections, isExperienceMode);
       }
+    };
+
+    /*******************************************************
+     * Transcription: 创建一个建议box
+     *******************************************************/
+    function createSuggestionBox(rect, corrections, isExpMode) {
+      let box = document.createElement("div");
+      box.className = "suggestions-box-floating";
       
-      // Listen for input changes to push undo states
-      simpleEditor.addEventListener('input', function() {
+      if (isExpMode) {
+        // Transcription模式的定位逻辑保持不变
+        const errorSentenceEl = document.getElementById("error-sentence");
+        if (errorSentenceEl) {
+          const text = errorSentenceEl.innerText;
+          const firstSuggestion = corrections[0].corrected_text.trimEnd();
+          const range = document.createRange();
+          const textNode = errorSentenceEl.firstChild;
+          
+          if (textNode) {
+            const startIndex = text.indexOf(firstSuggestion);
+            if (startIndex !== -1) {
+              try {
+                range.setStart(textNode, startIndex);
+                range.setEnd(textNode, startIndex + 1);
+                const selectedRect = range.getBoundingClientRect();
+                const boxLeft = selectedRect.left + window.scrollX;
+                const boxTop = selectedRect.bottom + window.scrollY + 5;
+
+                box.style.left = boxLeft + "px";
+                box.style.top = boxTop + "px";
+                box.style.minWidth = selectedRect.width + "px";
+                box.style.width = "auto";
+                box.style.maxWidth = "500px";
+              } catch (e) {
+                console.error('[SuggestionBox] Error setting range:', e);
+              }
+            }
+          }
+        }
+      } else {
+        // 自由输入模式的定位逻辑
+        const simpleEditor = document.getElementById('simple-editor');
+        if (simpleEditor && originalSentence) {
+          const text = simpleEditor.value;
+          const sentenceStart = text.indexOf(originalSentence);
+          
+          if (sentenceStart !== -1) {
+            try {
+              // 创建一个临时的 textarea 来计算位置
+              const temp = document.createElement('textarea');
+              temp.style.cssText = window.getComputedStyle(simpleEditor).cssText;
+              temp.style.height = 'auto';
+              temp.style.position = 'absolute';
+              temp.style.visibility = 'hidden';
+              temp.style.whiteSpace = 'pre-wrap';
+              temp.value = text.substring(0, sentenceStart);
+              document.body.appendChild(temp);
+              
+              // 获取文本框的样式信息
+              const editorStyle = window.getComputedStyle(simpleEditor);
+              const paddingLeft = parseInt(editorStyle.paddingLeft);
+              const lineHeight = parseInt(editorStyle.lineHeight) || parseInt(editorStyle.fontSize) * 1.2;
+              
+              // 计算选中句子前面内容的高度
+              const beforeHeight = temp.scrollHeight;
+              
+              // 获取当前行中句子之前的内容宽度
+              const lastNewline = temp.value.lastIndexOf('\n');
+              const currentLineText = lastNewline === -1 ? temp.value : temp.value.substring(lastNewline + 1);
+              temp.value = currentLineText;
+              const currentLineWidth = temp.scrollWidth;
+              
+              document.body.removeChild(temp);
+              
+              // 设置建议框的样式和位置
+              box.style.position = 'absolute';
+              box.style.top = (beforeHeight - simpleEditor.scrollTop + lineHeight) + "px";
+              box.style.left = (paddingLeft + currentLineWidth) + "px";
+              box.style.width = 'auto';
+              box.style.maxWidth = (simpleEditor.offsetWidth - currentLineWidth - paddingLeft * 2) + "px";
+              box.style.zIndex = '1000';
+              
+              // 将建议框添加到文本框中
+              simpleEditor.insertAdjacentElement('beforebegin', box);
+              simpleEditor.style.position = 'relative';
+            } catch (e) {
+              console.error('[SuggestionBox] Error calculating position:', e);
+            }
+          }
+        }
+      }
+
+      for (let i = 1; i < corrections.length; i++) {
+        let candidateObj = corrections[i];
+        let candidate = candidateObj.corrected_text.trimEnd();
+        let diffRanges = candidateObj.diff_ranges;
+
+        let div = document.createElement("div");
+        if (diffRanges && diffRanges.length > 0) {
+          div.innerHTML = underlineDiffRanges(candidate, diffRanges);
+        } else {
+          div.innerText = candidate;
+        }
+
+        div.onclick = (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          if (isExpMode) {
+            // Transcription模式的点击处理保持不变
+            const errorSentenceEl = document.getElementById("error-sentence");
+            if (!errorSentenceEl) return;
+
+            let entireText = errorSentenceEl.innerText;
+            let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+            errorSentenceEl.innerText = updated;
+            selectedSentence = candidate;
+
+            if (diffRanges && diffRanges.length > 0) {
+              let newSentenceIndex = updated.indexOf(candidate);
+              if (newSentenceIndex >= 0) {
+                let newHtml = updated.substring(0, newSentenceIndex);
+                newHtml += underlineDiffRanges(candidate, diffRanges);
+                newHtml += updated.substring(newSentenceIndex + candidate.length);
+                errorSentenceEl.innerHTML = newHtml;
+                
+                setTimeout(() => {
+                  errorSentenceEl.innerText = errorSentenceEl.innerText;
+                }, 2000);
+              }
+            }
+            checkCompletion();
+          } else {
+            // 自由输入模式的点击处理
+            window.replaceSentenceInSimpleEditor(originalSentence, candidate);
+            originalSentence = candidate;
+          }
+          removeSuggestionsBox();
+        };
+        box.appendChild(div);
+      }
+      return box;
+    }
+
+
+    /***********************************************
+     * ============ C) 自由输入模式 代码 ============
+     ***********************************************/
+
+    /*******************************************************
+     * Free Input: 为简单文本区添加事件
+     *******************************************************/
+    function attachFreeInputListeners() {
+      const textarea = document.getElementById('simple-editor');
+      if (!textarea) return;
+      
+      // 初始化时将初始内容放入撤销栈
+      simpleUndoStack = [textarea.value];
+      updateUndoButtonState();
+      
+      let pressTimer = null;
+      
+      textarea.addEventListener('mousedown', (e) => {
+        if (activeMode !== MODE_INPUT) return;
+        
+        textarea.focus();
+        
+        pressTimer = setTimeout(() => {
+          // 如果长按到达阈值，我们开始录音
+          const selText = window.getSelection().toString();
+          if (selText && selText.trim()) {
+            errorText.innerText = selText;
+            originalSentence = selText;
+            originalErrorSpan.innerText = selText;
+            startRecording();
+          } else {
+            // 没有选择，就根据点击位置获取句子
+            const index = textarea.selectionStart;
+            const sentenceInfo = getFreeInputSentence(textarea.value, index);
+            errorText.innerText = sentenceInfo.sentence;
+            originalSentence = sentenceInfo.sentence;
+            originalErrorSpan.innerText = sentenceInfo.sentence;
+            localTapIndex = index;
+            startRecording();
+          }
+        }, 500);
+      });
+      
+      document.addEventListener('mouseup', () => {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      });
+      document.addEventListener('mouseleave', () => {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      });
+      
+      // 监听input变化推入undo栈
+      textarea.addEventListener('input', function() {
         simpleUndoStack.push(this.value);
         if (simpleUndoStack.length > 20) {
           simpleUndoStack.shift();
         }
+        updateUndoButtonState();
       });
       
-      // Undo logic
-      simpleUndoButton.addEventListener('click', function() {
-        if (simpleUndoStack.length > 1) {
-          simpleUndoStack.pop();
-          simpleEditor.value = simpleUndoStack[simpleUndoStack.length - 1];
-          simpleEditor.focus();
-          
-          showToast("Undo last change");
-        } else {
-          showToast("Nothing to undo!");
-        }
-      });
-      
-      // File drag-and-drop
-      simpleEditor.addEventListener('dragover', function(e) {
+      // 文件拖拽
+      textarea.addEventListener('dragover', function(e) {
         e.preventDefault();
         this.style.background = "#fafafa";
       });
-      simpleEditor.addEventListener('dragleave', function() {
+      textarea.addEventListener('dragleave', function() {
         this.style.background = "#fff";
       });
-      simpleEditor.addEventListener('drop', function(e) {
+      textarea.addEventListener('drop', function(e) {
         e.preventDefault();
         this.style.background = "#fff";
-        
+
         const files = e.dataTransfer.files;
         if (files.length > 0) {
           const file = files[0];
@@ -2351,132 +2095,363 @@
           }
         }
       });
-      
-      // Simple long-press for text selection + speech
-      let pressTimer = null;
-      simpleEditor.addEventListener('mousedown', function() {
-        if (activeMode !== MODE_INPUT) return;
-        
-        pressTimer = setTimeout(() => {
-          const selText = window.getSelection().toString() || this.value;
-          if (selText && selText.trim()) {
-            if (errorText) errorText.innerText = selText;
-            if (originalErrorSpan) originalErrorSpan.innerText = selText;
-            originalSentence = selText;
+    }
 
-            showToast("Please speak your correction now...");
-            setTimeout(() => {
-              startRecording();
-            }, 200);
+    // 专门获取句子
+    function getFreeInputSentence(text, position) {
+      const sentenceSeparators = /[.!?]/;
+      let startPos = 0;
+      for (let i = position - 1; i >= 0; i--) {
+        if (sentenceSeparators.test(text[i]) &&
+          (i + 1 >= text.length || text[i + 1] === ' ' || text[i + 1] === '\n')) {
+          startPos = i + 1;
+          while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
+            startPos++;
           }
-        }, 500);
-      });
-      simpleEditor.addEventListener('mouseup', () => {
-        clearTimeout(pressTimer);
-      });
-      simpleEditor.addEventListener('mouseleave', () => {
-        clearTimeout(pressTimer);
-      });
+          break;
+        }
+      }
+      
+      let endPos = text.length;
+      for (let i = position; i < text.length; i++) {
+        if (sentenceSeparators.test(text[i])) {
+          endPos = i + 1;
+          break;
+        }
+      }
+      return { sentence: text.substring(startPos, endPos).trim(), startPos: startPos, endPos: endPos };
+    }
 
-      // rewrite applyFirstSuggestionAndShowBox if needed
-      window.replaceSentenceInSimpleEditor = function(originalText, newText) {
-        if (!simpleEditor) return false;
-        simpleUndoStack.push(simpleEditor.value);
-        simpleEditor.value = simpleEditor.value.replace(originalText, newText);
-        return true;
-      };
-    });
+    // Free-input专用的undo栈
+    let simpleUndoStack = [''];
+    const simpleUndoButton = document.getElementById('simple-undo-button');
 
-    // override applyFirstSuggestionAndShowBox to unify with the new approach
-    const originalApply = applyFirstSuggestionAndShowBox;
+    // 更新按钮状态的函数
+    function updateUndoButtonState() {
+      const simpleUndoButton = document.getElementById('simple-undo-button');
+      if (simpleUndoButton) {
+        if (simpleUndoStack.length <= 1) {
+          simpleUndoButton.disabled = true;
+          simpleUndoButton.style.background = '#6c757d';
+          simpleUndoButton.style.cursor = 'not-allowed';
+        } else {
+          simpleUndoButton.disabled = false;
+          simpleUndoButton.style.background = '#28a745';
+          simpleUndoButton.style.cursor = 'pointer';
+        }
+      }
+    }
+
+    if (simpleUndoButton) {
+      // 初始状态
+      updateUndoButtonState();
+      
+      simpleUndoButton.addEventListener('click', function() {
+        const simpleEditor = document.getElementById('simple-editor');
+        if (simpleUndoStack.length > 1) {
+          simpleUndoStack.pop();
+          simpleEditor.value = simpleUndoStack[simpleUndoStack.length - 1];
+          simpleEditor.focus();
+          updateUndoButtonState();
+        }
+      });
+    }
+
+    // 用来替换句子(自由模式)
+    window.replaceSentenceInSimpleEditor = function(originalText, newText) {
+      const simpleEditor = document.getElementById('simple-editor');
+      if (!simpleEditor) return false;
+      simpleUndoStack.push(simpleEditor.value);
+      simpleEditor.value = simpleEditor.value.replace(originalText, newText);
+      updateUndoButtonState();
+      return true;
+    };
+
+    /*******************************************************
+     * 覆盖: applyFirstSuggestionAndShowBox (Free Input)
+     *******************************************************/
+    const originalApplyGlobal = applyFirstSuggestionAndShowBox;
     applyFirstSuggestionAndShowBox = function(corrections, isExperienceMode) {
       if (!corrections.length) return;
       
       if (isExperienceMode) {
-        originalApply(corrections, true);
+        // 如果是Transcription模式，调用之前覆盖的版本
+        originalApplyGlobal(corrections, isExperienceMode);
       } else {
+        // ==========【Free Input模式逻辑】==========
         const simpleEditor = document.getElementById('simple-editor');
         if (!simpleEditor) return;
         
         let candidateObj = corrections[0];
         let candidate = candidateObj.corrected_text.trimEnd();
-
+        let diffRanges = candidateObj.diff_ranges;
+        
         if (window.replaceSentenceInSimpleEditor(originalSentence, candidate)) {
           originalSentence = candidate;
           simpleEditor.focus();
 
           if (corrections.length > 1) {
-            const rect = simpleEditor.getBoundingClientRect();
-            const suggestionsBox = document.createElement('div');
-            suggestionsBox.className = 'suggestions-box-floating';
-            suggestionsBox.style.left = rect.left + 'px';
-            suggestionsBox.style.top = (rect.bottom + 10) + 'px';
-            suggestionsBox.style.width = rect.width + 'px';
-            
-            for (let i = 1; i < corrections.length; i++) {
-              const suggObj = corrections[i];
-              const suggText = suggObj.corrected_text.trimEnd();
-              
-              const suggDiv = document.createElement('div');
-              suggDiv.innerText = suggText;
-              
-              suggDiv.onclick = () => {
-                window.replaceSentenceInSimpleEditor(originalSentence, suggText);
-                originalSentence = suggText;
-                suggestionsBox.remove();
-                simpleEditor.focus();
-              };
-              suggestionsBox.appendChild(suggDiv);
+            suggestionsBox = createSuggestionBox(null, corrections, false);
+            if (suggestionsBox) {
+              document.body.appendChild(suggestionsBox);
+              clearTimeout(suggestionsTimer);
+              suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
             }
-            document.body.appendChild(suggestionsBox);
-            setTimeout(() => {
-              if (suggestionsBox.parentNode) {
-                suggestionsBox.remove();
-              }
-            }, 3000);
           }
         }
       }
     };
 
-    // Free-input mode 专用变量
-    let freeInputSelectedSentence = ""; // 当前选中的句子
-    let freeInputCursorElement = null; // Free-input mode 的光标元素
-    let freeInputCursorTimeout = null;
+    /*******************************************************
+     * Transcription: 创建一个建议box
+     *******************************************************/
+    function createSuggestionBox(rect, corrections, isExpMode) {
+      let box = document.createElement("div");
+      box.className = "suggestions-box-floating";
+      
+      if (isExpMode) {
+        // Transcription模式的定位逻辑保持不变
+        const errorSentenceEl = document.getElementById("error-sentence");
+        if (errorSentenceEl) {
+          const text = errorSentenceEl.innerText;
+          const firstSuggestion = corrections[0].corrected_text.trimEnd();
+          const range = document.createRange();
+          const textNode = errorSentenceEl.firstChild;
+          
+          if (textNode) {
+            const startIndex = text.indexOf(firstSuggestion);
+            if (startIndex !== -1) {
+              try {
+                range.setStart(textNode, startIndex);
+                range.setEnd(textNode, startIndex + 1);
+                const selectedRect = range.getBoundingClientRect();
+                const boxLeft = selectedRect.left + window.scrollX;
+                const boxTop = selectedRect.bottom + window.scrollY + 5;
 
-    // Free-input mode 的光标移除函数
-    function removeFreeInputCursor() {
-      if (freeInputCursorTimeout) {
-        clearTimeout(freeInputCursorTimeout);
-        freeInputCursorTimeout = null;
+                box.style.left = boxLeft + "px";
+                box.style.top = boxTop + "px";
+                box.style.minWidth = selectedRect.width + "px";
+                box.style.width = "auto";
+                box.style.maxWidth = "500px";
+              } catch (e) {
+                console.error('[SuggestionBox] Error setting range:', e);
+              }
+            }
+          }
+        }
+      } else {
+        // 自由输入模式的定位逻辑
+        const simpleEditor = document.getElementById('simple-editor');
+        if (simpleEditor && originalSentence) {
+          const text = simpleEditor.value;
+          const sentenceStart = text.indexOf(originalSentence);
+          
+          if (sentenceStart !== -1) {
+            try {
+              // 创建一个临时的 textarea 来计算位置
+              const temp = document.createElement('textarea');
+              temp.style.cssText = window.getComputedStyle(simpleEditor).cssText;
+              temp.style.height = 'auto';
+              temp.style.position = 'absolute';
+              temp.style.visibility = 'hidden';
+              temp.style.whiteSpace = 'pre-wrap';
+              temp.value = text.substring(0, sentenceStart);
+              document.body.appendChild(temp);
+              
+              // 获取文本框的样式信息
+              const editorStyle = window.getComputedStyle(simpleEditor);
+              const paddingLeft = parseInt(editorStyle.paddingLeft);
+              const lineHeight = parseInt(editorStyle.lineHeight) || parseInt(editorStyle.fontSize) * 1.2;
+              
+              // 计算选中句子前面内容的高度
+              const beforeHeight = temp.scrollHeight;
+              
+              // 获取当前行中句子之前的内容宽度
+              const lastNewline = temp.value.lastIndexOf('\n');
+              const currentLineText = lastNewline === -1 ? temp.value : temp.value.substring(lastNewline + 1);
+              temp.value = currentLineText;
+              const currentLineWidth = temp.scrollWidth;
+              
+              document.body.removeChild(temp);
+              
+              // 设置建议框的样式和位置
+              box.style.position = 'absolute';
+              box.style.top = (beforeHeight - simpleEditor.scrollTop + lineHeight) + "px";
+              box.style.left = (paddingLeft + currentLineWidth) + "px";
+              box.style.width = 'auto';
+              box.style.maxWidth = (simpleEditor.offsetWidth - currentLineWidth - paddingLeft * 2) + "px";
+              box.style.zIndex = '1000';
+              
+              // 将建议框添加到文本框中
+              simpleEditor.insertAdjacentElement('beforebegin', box);
+              simpleEditor.style.position = 'relative';
+            } catch (e) {
+              console.error('[SuggestionBox] Error calculating position:', e);
+            }
+          }
+        }
       }
-      if (freeInputCursorElement) {
-        freeInputCursorElement.remove();
-        freeInputCursorElement = null;
+
+      for (let i = 1; i < corrections.length; i++) {
+        let candidateObj = corrections[i];
+        let candidate = candidateObj.corrected_text.trimEnd();
+        let diffRanges = candidateObj.diff_ranges;
+
+        let div = document.createElement("div");
+        if (diffRanges && diffRanges.length > 0) {
+          div.innerHTML = underlineDiffRanges(candidate, diffRanges);
+        } else {
+          div.innerText = candidate;
+        }
+
+        div.onclick = (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          if (isExpMode) {
+            // Transcription模式的点击处理保持不变
+            const errorSentenceEl = document.getElementById("error-sentence");
+            if (!errorSentenceEl) return;
+
+            let entireText = errorSentenceEl.innerText;
+            let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+            errorSentenceEl.innerText = updated;
+            selectedSentence = candidate;
+
+            if (diffRanges && diffRanges.length > 0) {
+              let newSentenceIndex = updated.indexOf(candidate);
+              if (newSentenceIndex >= 0) {
+                let newHtml = updated.substring(0, newSentenceIndex);
+                newHtml += underlineDiffRanges(candidate, diffRanges);
+                newHtml += updated.substring(newSentenceIndex + candidate.length);
+                errorSentenceEl.innerHTML = newHtml;
+                
+                setTimeout(() => {
+                  errorSentenceEl.innerText = errorSentenceEl.innerText;
+                }, 2000);
+              }
+            }
+            checkCompletion();
+          } else {
+            // 自由输入模式的点击处理
+            window.replaceSentenceInSimpleEditor(originalSentence, candidate);
+            originalSentence = candidate;
+          }
+          removeSuggestionsBox();
+        };
+        box.appendChild(div);
       }
+      return box;
     }
 
-    // 修改悬浮菜单的初始化代码
-    document.addEventListener('DOMContentLoaded', function() {
-      // 移除原来的 drawer HTML
-      const oldDrawer = document.getElementById('drawer');
-      if (oldDrawer) {
-        oldDrawer.remove();
+
+    /*******************************************************
+     * ============ D) window.onload & 主入口 ============
+     *******************************************************/
+    window.onload = async function() {
+      // 尝试加载header/footer
+      try {
+        const headerRes = await fetch("header.html");
+        const headerHtml = await headerRes.text();
+        document.getElementById("header-container").innerHTML = headerHtml;
+
+        const footerRes = await fetch("footer.html");
+        const footerHtml = await footerRes.text();
+        document.getElementById("footer-container").innerHTML = footerHtml;
+      } catch(e) {
+        console.warn("Failed to load header/footer:", e);
       }
 
-      // 添加新的悬浮按钮和菜单
-      const menuButton = document.createElement('button');
-      menuButton.id = 'float-menu-button';
-      // 使用 SVG 图标替代 emoji
-      menuButton.innerHTML = `
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <path fill="white" d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
-        </svg>
-      `;
-      document.body.appendChild(menuButton);
+      // 默认隐藏 monitoring 和 event log
+      monitoringCard.style.display = "none";
+      eventLogCard.style.display = "none";
 
-      const menu = document.createElement('div');
-      menu.id = 'float-menu';
+      // 检查麦克风权限
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({audio: true})
+        .catch(err => {
+          showToast("Please allow microphone access to use Tap&Say.");
+          console.warn("Mic permission error:", err);
+        });
+      }
+
+      // 初始化模式
+      modeExperienceContainer.style.display = "block";
+      modeInputContainer.style.display = "none";
+      modeExperienceBtn.classList.add("active");
+      modeInputBtn.classList.remove("active");
+      activeMode = MODE_EXPERIENCE;
+
+      // 初始化Transcription模式
+      initializeExperienceMode();
+
+      // 为Free Input mode添加提示框
+      const inputModeContainer = document.getElementById("input-mode");
+      if (inputModeContainer) {
+        inputModeContainer.insertBefore(
+          addTipBox("Long press the place you want to edit, till the mic icon is green, then speak correction"),
+          inputModeContainer.firstChild
+        );
+      }
+
+      // 绑定Free Input监听
+      attachFreeInputListeners();
+
+      // 取消选中文本(Transcription模式时)
+      document.addEventListener('mouseup', () => {
+        if (activeMode === MODE_EXPERIENCE && !isDragging) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const errorSentenceEl = document.getElementById("error-sentence");
+            if (errorSentenceEl && !errorSentenceEl.classList.contains('dragging')) {
+              selection.removeAllRanges();
+            }
+          }
+        }
+      });
+      document.addEventListener('selectionchange', () => {
+        if (activeMode === MODE_EXPERIENCE && !isDragging) {
+          const errorSentenceEl = document.getElementById("error-sentence");
+          if (errorSentenceEl && !errorSentenceEl.classList.contains('dragging')) {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              if (errorSentenceEl.contains(range.commonAncestorContainer)) {
+                selection.removeAllRanges();
+              }
+            }
+          }
+        }
+      });
+
+      // 监听模式切换
+      modeExperienceBtn.addEventListener("click", function() {
+        if (!this.classList.contains("active")) {
+          this.classList.add("active");
+          modeInputBtn.classList.remove("active");
+          modeExperienceContainer.style.display = "block";
+          modeInputContainer.style.display = "none";
+          activeMode = MODE_EXPERIENCE;
+        }
+      });
+      modeInputBtn.addEventListener("click", function() {
+        if (!this.classList.contains("active")) {
+          this.classList.add("active");
+          modeExperienceBtn.classList.remove("active");
+          modeExperienceContainer.style.display = "none";
+          modeInputContainer.style.display = "block";
+          activeMode = MODE_INPUT;
+        }
+      });
+
+      // 打Log
+      logEvent("Application initialized - Monitoring and logs are hidden by default");
+
+
+      /*******************************************************
+       * 浮动菜单相关逻辑
+       *******************************************************/
+      const menuButton = document.getElementById('float-menu-button');
+      const menu = document.getElementById('float-menu');
       menu.innerHTML = `
         <button id="float-monitoring">
           <i class="fas fa-chart-line"></i>
@@ -2491,18 +2466,19 @@
           IME Shortcuts: ON
         </button>
       `;
-      document.body.appendChild(menu);
 
       let menuVisible = false;
-      
-      // 点击按钮显示/隐藏菜单
+      menuButton.innerHTML = `
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path fill="white" d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+        </svg>
+      `;
+
       menuButton.addEventListener('click', (e) => {
         e.stopPropagation();
         menuVisible = !menuVisible;
         menu.style.display = menuVisible ? 'flex' : 'none';
       });
-
-      // 点击其他地方关闭菜单
       document.addEventListener('click', (e) => {
         if (!menu.contains(e.target) && !menuButton.contains(e.target)) {
           menuVisible = false;
@@ -2510,50 +2486,37 @@
         }
       });
 
-      // 绑定菜单项的点击事件
-      const monitoringCard = document.getElementById('monitoring-card');
-      const eventLogCard = document.getElementById('event-log-card');
       const floatMonitoringBtn = document.getElementById('float-monitoring');
       const floatLogBtn = document.getElementById('float-log');
       const floatImeBtn = document.getElementById('float-ime');
-      
+
       if (floatMonitoringBtn) {
         floatMonitoringBtn.addEventListener('click', () => {
-          console.log('Monitoring button clicked');
-          if (monitoringCard) {
-            const isHidden = monitoringCard.style.display === 'none';
-            monitoringCard.style.display = isHidden ? 'block' : 'none';
-            floatMonitoringBtn.innerHTML = `
-              <i class="fas fa-chart-line"></i>
-              ${isHidden ? 'Hide Monitoring' : 'Show Monitoring'}
-            `;
-          }
+          const isHidden = (monitoringCard.style.display === 'none');
+          monitoringCard.style.display = isHidden ? 'block' : 'none';
+          floatMonitoringBtn.innerHTML = `
+            <i class="fas fa-chart-line"></i>
+            ${isHidden ? 'Hide Monitoring' : 'Show Monitoring'}
+          `;
         });
       }
-
       if (floatLogBtn) {
         floatLogBtn.addEventListener('click', () => {
-          console.log('Log button clicked');
-          if (eventLogCard) {
-            const isHidden = eventLogCard.style.display === 'none';
-            eventLogCard.style.display = isHidden ? 'block' : 'none';
-            floatLogBtn.innerHTML = `
-              <i class="fas fa-list"></i>
-              ${isHidden ? 'Hide Event Log' : 'Show Event Log'}
-            `;
-          }
+          const isHidden = (eventLogCard.style.display === 'none');
+          eventLogCard.style.display = isHidden ? 'block' : 'none';
+          floatLogBtn.innerHTML = `
+            <i class="fas fa-list"></i>
+            ${isHidden ? 'Hide Event Log' : 'Show Event Log'}
+          `;
         });
       }
-
       if (floatImeBtn) {
         floatImeBtn.addEventListener('click', () => {
-          console.log('IME button clicked');
           disableIME = !disableIME;
           const editor = document.getElementById('text-editor');
-          if (disableIME) {
-            editor?.classList.add('disable-ime');
-          } else {
-            editor?.classList.remove('disable-ime');
+          if (editor) {
+            if (disableIME) editor.classList.add('disable-ime');
+            else editor.classList.remove('disable-ime');
           }
           floatImeBtn.innerHTML = `
             <i class="fas fa-keyboard"></i>
@@ -2561,7 +2524,21 @@
           `;
         });
       }
-    });
+
+      // 添加清除按钮功能
+      const clearButton = document.getElementById('clear-text-button');
+      if (clearButton) {
+        clearButton.addEventListener('click', function() {
+          const simpleEditor = document.getElementById('simple-editor');
+          if (simpleEditor) {
+            simpleUndoStack.push('');
+            simpleEditor.value = '';
+            simpleEditor.focus();
+            updateUndoButtonState();
+          }
+        });
+      }
+    };
   </script>
 </body>
 </html>
