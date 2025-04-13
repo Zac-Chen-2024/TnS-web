@@ -1,4 +1,4 @@
-<!DOCTYPE html>     
+<!DOCTYPE html>      
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -30,7 +30,7 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 1.2rem 0; /* Reduce vertical padding */
+      padding: 1.2rem 0 0.2rem 0;/* Reduce vertical padding */
     }
     #header-container, #footer-container {
       width: 100%;
@@ -45,17 +45,18 @@
       box-sizing: border-box;
     }
 
-    /* 调整卡片间距 */
+    /* Adjust card spacing */
     #monitoring-card {
       margin-bottom: 2rem !important;
     }
     #experience-mode, #input-mode {
-      margin-bottom: 2rem !important;
+      margin-bottom: 0rem !important;
     }
     #event-log-card {
       margin-top: 1rem !important;
+      margin-bottom: 0 !important;
     }
-    /* 保持模式按钮和主体卡片的间距不变 */
+    /* Keep the spacing between mode buttons and the main card unchanged */
     #mode-buttons {
       margin-bottom: 20px;
     }
@@ -127,35 +128,35 @@
       gap: 10px;
     }
 
-    /* 添加录音状态指示圆点样式 */
+    /* Add a recording status indicator dot style */
     .recording-status-dot {
       width: 14px;
       height: 14px;
       border-radius: 50%;
-      background-color: #666;  /* 默认为灰色 */
+      background-color: #666;  /* Default color is gray */
       display: inline-block;
       transition: background-color 0.3s ease;
-      vertical-align: middle; /* 确保与文字对齐 */
-      margin-left: 0; /* 移除左边距 */
+      vertical-align: middle;
+      margin-left: 0;
     }
 
     .recording-status-dot.recording {
-      background-color: #28a745;
+      background-color: #28a745; /* Turn green when recording */
       animation: pulse 2s infinite;
     }
 
-    /* 添加麦克风图标样式 */
+    /* Add microphone icon style */
     .mic-icon {
-      color: #666; /* 默认灰色 */
+      color: #666; /* Default is gray */
       transition: color 0.3s ease;
-      margin-right: 0px !important; /* 减少右边距 */
+      margin-right: 0px !important;
     }
 
     .mic-icon.recording {
-      color: #28a745; /* 录音时变绿色 */
+      color: #28a745; /* Turn green when recording */
     }
 
-    /* 移除 stopped 类，因为默认就是灰色 */
+    /* Removed 'stopped' class, because the default is gray */
     .recording-status-dot.stopped {
       background-color: #666;
     }
@@ -422,14 +423,14 @@
         margin-bottom: 1rem;
       }
 
-      /* 调整Transcription mode标题大小 */
+      /* Adjust the Transcription mode title size */
       #experience-mode h3,
       #input-mode h3 {
         font-size: 1.2rem !important;
         margin-bottom: 1rem;
       }
       
-      /* 统一移动端按钮样式 */
+      /* Unify button style for mobile */
       .mode-button,
       #experience-undo-button,
       #skip-sentence-button,
@@ -443,7 +444,7 @@
         transition: all 0.2s ease !important;
       }
 
-      /* 特别处理 Next Sentence 按钮样式 */
+      /* Special handling for Next Sentence button */
       #skip-sentence-button {
         display: flex !important;
         align-items: center !important;
@@ -466,7 +467,7 @@
         opacity: 0.7 !important;
       }
 
-      /* 调整建议框样式 */
+      /* Adjust suggestion box style */
       .suggestions-box-floating {
         max-width: 90vw !important;
         width: auto !important;
@@ -479,7 +480,7 @@
         line-height: 1.5 !important;
       }
 
-      /* 调整导航按钮样式 */
+      /* Adjust navigation buttons */
       .nav-button {
         padding: 6px 10px !important;
         font-size: 0.9rem !important;
@@ -507,18 +508,18 @@
         gap: 10px;
       }
 
-      /* 调整清除按钮样式 */
+      /* Adjust clear button style */
       .clear-button {
         padding: 4px 10px !important;
         font-size: 0.85rem !important;
       }
 
-      /* 调整自由输入模式下的 Undo 按钮高度 */
+      /* Adjust Undo button height in free input mode */
       #simple-undo-button {
         min-height: 36px !important;
       }
 
-      /* 调整错误句子和目标句子的字体大小 */
+      /* Adjust the font size of the error and target sentences */
       #target-sentence {
         font-size: 1.1rem !important;
         line-height: 1.6 !important;
@@ -529,7 +530,7 @@
         line-height: 1.6 !important;
       }
 
-      /* 调整建议框的字体大小 */
+      /* Adjust suggestion box font size */
       .suggestions-box-floating {
         max-width: 90vw !important;
         width: auto !important;
@@ -659,14 +660,14 @@
         user-select: none;
       }
       
-      /* 特殊处理自由输入模式 */
+      /* Special handling for free input mode */
       #simple-editor {
         touch-action: manipulation;
         -webkit-user-select: text;
         user-select: text;
       }
       
-      /* 短按时恢复选择功能 */
+      /* Allow text selection on short press */
       #simple-editor:focus {
         -webkit-user-select: text;
         user-select: text;
@@ -680,7 +681,7 @@
       100% { transform: scale(1.5); opacity: 0; }
     }
 
-    /* 删除原来的 drawer 样式,添加新的悬浮按钮和菜单样式 */
+    /* Add new floating button and menu style */
     #float-menu-button {
       position: fixed;
       bottom: 20px;
@@ -746,7 +747,7 @@
       color: #007bff;
     }
 
-    /* 添加清除按钮样式 */
+    /* Add clear button style */
     .clear-button {
       padding: 4px 12px;
       font-size: 0.9rem;
@@ -766,7 +767,7 @@
       transform: translateY(0);
     }
     
-    /* 调整标题行样式以容纳按钮 */
+    /* Adjust the title row style to accommodate the button */
     .card h3 {
       display: flex;
       align-items: center;
@@ -774,13 +775,13 @@
       margin-bottom: 1.2rem;
     }
 
-    /* 添加禁用状态的样式 */
+    /* Add disabled state style */
     #simple-undo-button:disabled {
       background: #6c757d;
       cursor: not-allowed;
     }
 
-    /* 删除其他复杂样式 */
+    /* Remove other complex styles */
     #simple-undo-button {
       margin-top: 12px;
       width: 100%;
@@ -795,7 +796,7 @@
   </style>
 </head>
 <body>
-  <!-- Header Load -->
+  <!-- Header load -->
   <header id="header-container"></header>
 
   <!-- Main Content -->
@@ -933,18 +934,18 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     </div>
   </div>
 
-  <!-- Footer Load -->
+  <!-- Footer load -->
   <footer id="footer-container"></footer>
 
-  <!-- 新的悬浮按钮和菜单 -->
+  <!-- New floating button and menu -->
   <button id="float-menu-button">
-    <!-- 图标在JS中会替换成svg -->
+    <!-- The icon will be replaced with SVG in JS -->
   </button>
   <div id="float-menu"></div>
 
   <script>
     /***********************************************
-     * ============ A) 通用界面 & 通用代码 ============
+     * ============ A) Universal UI & Code ============
      ***********************************************/
     const API_URL = "https://tns.zacchen.win/correct";
     const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
@@ -954,7 +955,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     const MODE_INPUT = "input";
     let activeMode = MODE_EXPERIENCE; // default
 
-    // 全局变量
+    // Global variables
     let disableIME = false;
     let isListening = false;
     let isRecording = false;
@@ -972,11 +973,11 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     let isDragging = false;
     let cursorElement = null;
     let cursorTimeout = null;
-    let selectedSentence = ""; // 在Transcription模式使用，也会被一些通用函数引用
-    let isDraggingAndRecording = false; // 新增变量，用于标记拖动+录音状态
+    let selectedSentence = ""; // used in Transcription mode, also referenced by some universal functions
+    let isDraggingAndRecording = false; // new variable for marking drag+record
     let useWebkitSpeech = true;
-    let maxRecordingTime = 20000; // 最大录音时间，默认10秒
-    let currentSentenceInfo = null; // 存储当前句子的详细信息
+    let maxRecordingTime = 20000; // default 10s
+    let currentSentenceInfo = null; // store current sentence details
 
     // DOM Elements
     const monitoringCard = document.getElementById("monitoring-card");
@@ -989,11 +990,11 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     const finalOutputSpan = document.getElementById("final-output");
     const eventLog = document.getElementById("event-log");
     
-    // UI按钮引用
+    // UI button references
     const modeExperienceBtn = document.getElementById("mode-experience");
     const modeInputBtn = document.getElementById("mode-input");
 
-    // 经验模式 & 自由模式 容器
+    // Containers for experience mode & free input mode
     const modeExperienceContainer = document.getElementById("experience-mode");
     const modeInputContainer = document.getElementById("input-mode");
 
@@ -1021,7 +1022,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Universal: 句子下划线
+     * Universal: Underline diff ranges
      *******************************************************/
     function underlineDiffRanges(text, diffRanges) {
       let result = "";
@@ -1057,7 +1058,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Universal: 通用替换函数
+     * Universal: simple replacement function
      *******************************************************/
     function replaceFirstOccurrence(fullText, oldPart, newPart) {
       let safe = oldPart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1066,7 +1067,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Universal: 移除光标
+     * Universal: remove the cursor
      *******************************************************/
     function removeCursor() {
       if (cursorTimeout) {
@@ -1080,7 +1081,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Universal: Suggestions Box 移除
+     * Universal: remove Suggestions Box
      *******************************************************/
     function removeSuggestionsBox() {
       if (suggestionsBox) {
@@ -1090,7 +1091,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Universal: 同步到后端 /correct API 并处理回传
+     * Universal: Send data to the /correct API and handle response
      *******************************************************/
     function sendToAPI(mergedStr, loc, isExperienceMode) {
       let finalLoc = parseInt(loc, 10) || 0;
@@ -1112,12 +1113,11 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Universal: 应用第一个建议并展示额外选项
-     * 注意：后面会被Transcription模式 & Free-input模式覆盖使用
+     * Universal: Apply the first suggestion and show more options
+     * Note: This will be merged/overridden later by Transcription & Free-input modes
      *******************************************************/
     function applyFirstSuggestionAndShowBox(corrections, isExperienceMode) {
-      // 这部分在后面会被Transcription模式 & 自由输入模式各自逻辑进行"合并"或"覆盖"
-      // 先占位，后面有原始的实现会再次覆盖这个方法
+      // This part will be used by the Transcription mode & Free-input mode logic or overridden later
     }
 
     /*******************************************************
@@ -1129,13 +1129,13 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         return;
       }
 
-      // 清除可能存在的停止录音定时器
+      // Clear any existing stop timer
       if (window.stopRecordingTimer) {
         clearTimeout(window.stopRecordingTimer);
         window.stopRecordingTimer = null;
       }
 
-      // 清空之前的结果
+      // Clear previous results
       if (voiceInputSpan) voiceInputSpan.innerText = "";
       
       if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
@@ -1149,7 +1149,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       micStatusSpan.innerHTML = "🟢 Recording...";
       micStatusSpan.className = "recording-active";
 
-      // 更新状态指示圆点和麦克风图标
+      // Update the status indicator dot and mic icon
       const dots = document.querySelectorAll('.recording-status-dot');
       const micIcons = document.querySelectorAll('.mic-icon');
       dots.forEach(dot => {
@@ -1200,7 +1200,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           micStatusSpan.className = "";
           removeCursor();
 
-          // 更新状态指示圆点和麦克风图标
+          // Update the status indicator dot and mic icon
           const dots = document.querySelectorAll('.recording-status-dot');
           const micIcons = document.querySelectorAll('.mic-icon');
           dots.forEach(dot => {
@@ -1226,7 +1226,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           micStatusSpan.className = "";
           removeCursor();
 
-          // 更新状态指示圆点和麦克风图标
+          // Update the status indicator dot and mic icon
           const dots = document.querySelectorAll('.recording-status-dot');
           const micIcons = document.querySelectorAll('.mic-icon');
           dots.forEach(dot => {
@@ -1247,7 +1247,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         micStatusSpan.className = "";
         removeCursor();
 
-        // 更新状态指示圆点和麦克风图标
+        // Update the status indicator dot and mic icon
         const dots = document.querySelectorAll('.recording-status-dot');
         const micIcons = document.querySelectorAll('.mic-icon');
         dots.forEach(dot => {
@@ -1278,7 +1278,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       removeCursor();
       voiceInputSpan.innerText = "";
 
-      // 更新状态指示圆点和麦克风图标
+      // Update the status indicator dot and mic icon
       const dots = document.querySelectorAll('.recording-status-dot');
       const micIcons = document.querySelectorAll('.mic-icon');
       dots.forEach(dot => {
@@ -1291,7 +1291,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
 
     /*******************************************************
      * Universal: finalizeTapSay
-     * 当 speech recognition 结束后，把结果发往 API
+     * Called after speech recognition ends, sending results to API
      *******************************************************/
     function finalizeTapSay() {
       const transcript = (voiceInputSpan.innerText || "").trim();
@@ -1320,9 +1320,9 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /***********************************************
-     * ============ B) Transcription Mode 代码 ============
+     * ============ B) Transcription Mode ============
      ***********************************************/
-    // Transcription模式所需数据
+    // Data for Transcription mode
     let currentPairIndex = 0;
     const sentencePairs = [
       {
@@ -1353,7 +1353,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     ];
 
     /*******************************************************
-     * Transcription: 初始化 Experience Mode
+     * Transcription: Initialize Experience Mode
      *******************************************************/
     function initializeExperienceMode() {
       updateSentencePair(0);
@@ -1361,7 +1361,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Transcription: 为错误句子绑定长按、拖动、点击等事件
+     * Transcription: Bind events (long press, drag, click) to the erroneous sentence
      *******************************************************/
     function attachExpListeners() {
       const prev = document.getElementById("prev-sentence");
@@ -1372,7 +1372,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       const errorSentenceEl = document.getElementById("error-sentence");
       if (!prev || !next || !skip || !nextPair || !expUndo || !errorSentenceEl) return;
 
-      // 取消默认的右键菜单和双击选择
+      // Prevent default context menu and double click selection
       errorSentenceEl.addEventListener('contextmenu', e => {
         e.preventDefault();
         return false;
@@ -1424,10 +1424,10 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         const originalErrorSentence = sentencePairs[currentPairIndex].error;
         errorSentenceEl.innerText = originalErrorSentence;
         
-        // 重置选中句
+        // Reset selected sentence
         selectedSentence = "";
         
-        // 重置Skip按钮
+        // Reset Skip button
         const skipBtn = document.getElementById("skip-sentence-button");
         if (skipBtn) {
           skipBtn.textContent = "Next Sentence";
@@ -1446,16 +1446,16 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Transcription: 长按并拖拽选取文字
+     * Transcription: Long press and drag to select text
      *******************************************************/
     function attachTranscriptionLongPress(errorSentenceEl) {
       let pressTimerExp = null;
       let longPressStarted = false;
       let longPressThreshold = 100;
       let isDraggingAndRecording = false;
-      let stopRecordingTimer = null;  // 添加一个定时器来延迟停止录音
+      let stopRecordingTimer = null;  
 
-      // 修改recognition的onresult处理
+      // Modify recognition.onresult for this mode
       if (recognition) {
         recognition.onresult = (event) => {
           clearTimeout(silenceTimer);
@@ -1463,7 +1463,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           voiceInputSpan.innerText = transcript;
           finalOutputSpan.innerText = transcript;
 
-          // 如果是拖拽模式，使用当前光标位置更新选中的句子
+          // If in drag mode, update the currently selected text based on cursor
           if (isDraggingAndRecording) {
             const text = errorSentenceEl.innerText;
             const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
@@ -1482,7 +1482,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       }
 
       errorSentenceEl.addEventListener("mousedown", (e) => {
-        // 清除可能存在的停止录音定时器
+        // Clear any stop timer
         if (stopRecordingTimer) {
           clearTimeout(stopRecordingTimer);
           stopRecordingTimer = null;
@@ -1494,7 +1494,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         const rect = e.currentTarget.getBoundingClientRect();
         const text = errorSentenceEl.innerText;
         
-        // 使用 caretRangeFromPoint 来获取精确的位置
+        // Use caretRangeFromPoint for precise location
         const x = e.clientX;
         const y = e.clientY;
         if (document.caretRangeFromPoint) {
@@ -1503,7 +1503,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
             localTapIndex = range.startOffset;
           }
         } else {
-          // 回退方案
+          // Fallback
           const style = window.getComputedStyle(errorSentenceEl);
           const fontSize = parseFloat(style.fontSize);
           const paddingLeft = parseFloat(style.paddingLeft);
@@ -1513,19 +1513,19 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
 
-        // 开始录音（无论是点击还是长按）
+        // Start recording
         startRecording();
 
-        // 获取当前位置对应的句子信息
+        // Get the sentence at this position
         const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
         errorText.innerText = sentenceInfo.sentence;
         originalSentence = sentenceInfo.sentence;
         originalErrorSpan.innerText = sentenceInfo.sentence;
         selectedSentence = sentenceInfo.sentence;
         
-        // 保存句子信息，包括相对位置
+        // Save sentence info including relative position
         currentSentenceInfo = sentenceInfo;
-        // 记录相对位置，用于finalizeTapSay
+        // Record relative position for finalizeTapSay
         tapStartIndex = sentenceInfo.relativePosition;
         console.log("Mouse down - Relative position set to:", sentenceInfo.relativePosition);
 
@@ -1553,12 +1553,12 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           isDragging = false;
           errorSentenceEl.classList.remove("dragging");
           
-          // 清除之前的定时器（如果存在）
+          // Clear any existing timer
           if (stopRecordingTimer) {
             clearTimeout(stopRecordingTimer);
           }
           
-          // 设置3秒后停止录音
+          // Stop recording after 3s
           stopRecordingTimer = setTimeout(() => {
             if (recognition) {
               try {
@@ -1571,9 +1571,9 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
       });
 
-      // touch events
+      // Touch events
       errorSentenceEl.addEventListener("touchstart", (e) => {
-        // 清除可能存在的停止录音定时器
+        // Clear any stop timer
         if (stopRecordingTimer) {
           clearTimeout(stopRecordingTimer);
           stopRecordingTimer = null;
@@ -1582,7 +1582,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         if (isDragging) return;
         removeCursor();
         
-        // 清除可能已有的选择
+        // Clear any existing selection
         const selection = window.getSelection();
         selection.removeAllRanges();
 
@@ -1596,7 +1596,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
             localTapIndex = range.startOffset;
           }
         } else {
-          // 回退方案
+          // Fallback
           const style = window.getComputedStyle(errorSentenceEl);
           const fontSize = parseFloat(style.fontSize);
           const paddingLeft = parseFloat(style.paddingLeft);
@@ -1606,25 +1606,24 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
 
-        // 开始录音（无论是点击还是长按）
+        // Start recording
         startRecording();
 
-        // 对于单击，直接使用当前位置选择句子
+        // For a single tap, directly pick the sentence at this position
         const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
         errorText.innerText = currentSentence.sentence;
         originalSentence = currentSentence.sentence;
         originalErrorSpan.innerText = currentSentence.sentence;
         selectedSentence = currentSentence.sentence;
         
-        // 保存当前句子信息
+        // Save current sentence info
         currentSentenceInfo = currentSentence;
-        // 记录相对位置，用于finalizeTapSay
         tapStartIndex = currentSentence.relativePosition;
         console.log("Touch start - Relative position set to:", currentSentence.relativePosition);
 
-        // 设置标志，防止iOS默认的文本选择
+        // Mark touch started to prevent iOS default text selection
         errorSentenceEl.dataset.touchStarted = "true";
-        // 禁用iOS的长按选择行为
+        // Prevent iOS long-press selection
         e.preventDefault();
 
         pressTimerExp = setTimeout(() => {
@@ -1649,12 +1648,12 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           isDragging = false;
           errorSentenceEl.classList.remove("dragging");
           
-          // 清除之前的定时器（如果存在）
+          // Clear any existing timer
           if (stopRecordingTimer) {
             clearTimeout(stopRecordingTimer);
           }
           
-          // 设置3秒后停止录音
+          // Stop recording after 3s
           stopRecordingTimer = setTimeout(() => {
             if (recognition) {
               try {
@@ -1669,7 +1668,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Transcription: 真正执行长按拖拽选词
+     * Transcription: Actually handle the long press drag select
      *******************************************************/
     function handleExpLongPress() {
       console.log('[Transcription] handleExpLongPress started');
@@ -1684,7 +1683,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       element.classList.add("dragging");
       showCursorAtPosition();
       
-      // 开始录音，但设置为不自动处理结果
+      // Start recording but set to not auto-process results
       startRecording(true);
 
       const handleMouseMove = (e) => {
@@ -1708,7 +1707,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         const text = element.innerText;
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
 
-        // 动态更新选中的句子
+        // Dynamically update the selected sentence
         const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
         console.log("Mouse move - Position info:", {
           localTapIndex: localTapIndex,
@@ -1722,9 +1721,8 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         originalErrorSpan.innerText = sentenceInfo.sentence;
         selectedSentence = sentenceInfo.sentence;
         
-        // 更新当前句子信息
+        // Update current sentence info
         currentSentenceInfo = sentenceInfo;
-        // 更新相对位置，用于finalizeTapSay
         tapStartIndex = sentenceInfo.relativePosition;
         
         showCursorAtPosition();
@@ -1752,7 +1750,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         const text = element.innerText;
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
 
-        // 动态更新选中的句子
+        // Dynamically update the selected sentence
         const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
         console.log("Touch move - Position info:", {
           localTapIndex: localTapIndex,
@@ -1766,9 +1764,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         originalErrorSpan.innerText = sentenceInfo.sentence;
         selectedSentence = sentenceInfo.sentence;
         
-        // 更新当前句子信息
         currentSentenceInfo = sentenceInfo;
-        // 更新相对位置，用于finalizeTapSay
         tapStartIndex = sentenceInfo.relativePosition;
 
         showCursorAtPosition();
@@ -1784,17 +1780,16 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         element.removeEventListener("touchmove", handleTouchMove);
         document.removeEventListener("touchend", endDrag);
 
-        // 如果处于录音状态，现在发送语音内容
+        // If recording is in progress, now send the speech content
         if (isDraggingAndRecording) {
           isDraggingAndRecording = false;
-        if (recognition) {
+          if (recognition) {
             console.log("Speech recognition ended and processing results");
             recognition.stop();
             
-            // 添加简短延迟确保识别结果被处理
-        setTimeout(() => {
+            // Add a short delay to ensure recognition results are processed
+            setTimeout(() => {
               if (voiceInputSpan.innerText && voiceInputSpan.innerText.trim()) {
-                // 使用最终的句子信息和相对位置
                 if (currentSentenceInfo) {
                   const relativePosition = currentSentenceInfo.relativePosition;
                   console.log("End drag - Final position:", {
@@ -1802,7 +1797,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
                     relativePosition: relativePosition
                   });
                   
-                  // 使用最终录音结果处理纠正，传递相对位置
+                  // Use final recognition result to handle correction, passing relative position
                   handleRecognitionResult(voiceInputSpan.innerText, relativePosition);
                 }
               }
@@ -1817,13 +1812,12 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       document.addEventListener("touchend", endDrag, { passive: false });
     }
 
-    // 修改getCurrentSentenceForTranscription函数，返回更多信息
     function getCurrentSentenceForTranscription(text, position) {
       const sentenceSeparators = /[.!?]/;
       let startPos = 0;
       let foundSeparator = false;
       
-      // 向前搜索句子分隔符
+      // Search backward for sentence boundary
       for (let i = position - 1; i >= 0; i--) {
         if (sentenceSeparators.test(text[i]) &&
           (i + 1 >= text.length || text[i + 1] === ' ' || text[i + 1] === '\n')) {
@@ -1836,10 +1830,8 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
       }
       
-      // 如果找不到分隔符，则从文本开始
       if (!foundSeparator) {
         startPos = 0;
-        // 跳过开头的空白
         while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
           startPos++;
         }
@@ -1848,7 +1840,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       let endPos = text.length;
       let foundEndSeparator = false;
       
-      // 向后搜索句子分隔符
+      // Search forward for sentence boundary
       for (let i = position; i < text.length; i++) {
         if (sentenceSeparators.test(text[i])) {
           endPos = i + 1;
@@ -1857,7 +1849,6 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
       }
       
-      // 如果找不到结束分隔符，则到文本结束
       if (!foundEndSeparator) {
         endPos = text.length;
       }
@@ -1865,7 +1856,6 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       const sentence = text.substring(startPos, endPos).trim();
       selectedSentence = sentence;
       
-      // 确保相对位置计算正确
       const relativePos = position - startPos;
       
       console.log("Sentence detection:", {
@@ -1877,7 +1867,6 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         sentence: sentence
       });
       
-      // 返回包含句子信息的对象
       return {
         sentence: sentence,
         startIndex: startPos,
@@ -1887,7 +1876,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Transcription: 在长按时出现的光标
+     * Transcription: show cursor during long press
      *******************************************************/
     function showCursorAtPosition() {
       removeCursor();
@@ -1928,12 +1917,12 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     function showLongPressFeedback(x, y) {
-      // 可以在这里添加长按反馈动画
+      // A placeholder for any long-press feedback
       console.log("Long-press at:", x, y);
     }
 
     /*******************************************************
-     * Transcription: 检查当前是否完成修正
+     * Transcription: check if the user has completed corrections
      *******************************************************/
     function checkCompletion() {
       const targetSentence = document.getElementById("target-sentence");
@@ -1994,7 +1983,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * Transcription: 更新句子对
+     * Transcription: update the sentence pair
      *******************************************************/
     function updateSentencePair(index) {
       const targetSentence = document.getElementById("target-sentence");
@@ -2054,14 +2043,14 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     /*******************************************************
-     * 覆盖: applyFirstSuggestionAndShowBox (Transcription)
+     * Override: applyFirstSuggestionAndShowBox (Transcription)
      *******************************************************/
     const originalApply = applyFirstSuggestionAndShowBox;
     applyFirstSuggestionAndShowBox = function(corrections, isExperienceMode) {
       if (!corrections.length) return;
       
       if (isExperienceMode) {
-        // ==========【原始的 Transcription 逻辑】==========
+        // ========== Original Transcription Logic ==========
         if (!document.getElementById("error-sentence")) return;
         
         let candidateObj = corrections[0];
@@ -2071,12 +2060,12 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         const errorSentenceEl = document.getElementById("error-sentence");
         let entireText = errorSentenceEl.innerText;
         
-        // 将原先选中的句子替换为 candidate
+        // Replace the previously selected sentence with candidate
         let updatedText = replaceFirstOccurrence(entireText, selectedSentence, candidate);
         errorSentenceEl.innerText = updatedText;
         selectedSentence = candidate;
 
-        // 如果有 diffRanges 就加下划线
+        // Underline diffs
         if (diffRanges && diffRanges.length > 0) {
           let newSentenceIndex = updatedText.indexOf(candidate);
           if (newSentenceIndex >= 0) {
@@ -2091,7 +2080,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           }
         }
 
-        // 如果有多个修正建议，则展示建议列表
+        // If there are multiple suggestions, show them
         if (corrections.length > 1) {
           let rect = errorSentenceEl.getBoundingClientRect();
           suggestionsBox = createSuggestionBox(rect, corrections, true);
@@ -2103,20 +2092,20 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
         checkCompletion();
       } else {
-        // 如果不是Experience模式，就调用后面 free-input 的逻辑
+        // If not Experience Mode, call the free-input logic
         originalApply(corrections, isExperienceMode);
       }
     };
 
     /*******************************************************
-     * Transcription: 创建一个建议box
+     * Transcription: create a suggestion box
      *******************************************************/
     function createSuggestionBox(rect, corrections, isExpMode) {
       let box = document.createElement("div");
       box.className = "suggestions-box-floating";
       
       if (isExpMode) {
-        // Transcription模式的定位逻辑保持不变
+        // Transcription mode positioning
         const errorSentenceEl = document.getElementById("error-sentence");
         if (errorSentenceEl) {
           const text = errorSentenceEl.innerText;
@@ -2146,7 +2135,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           }
         }
       } else {
-        // 自由输入模式的定位逻辑
+        // Free input mode positioning
         const simpleEditor = document.getElementById('simple-editor');
         if (simpleEditor && originalSentence) {
           const text = simpleEditor.textContent;
@@ -2154,24 +2143,20 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           
           if (sentenceStart !== -1) {
             try {
-              // 创建一个范围来获取选中句子的位置
               const range = document.createRange();
               const textNode = simpleEditor.firstChild;
               range.setStart(textNode, sentenceStart);
               range.setEnd(textNode, sentenceStart + originalSentence.length);
               
-              // 获取选中文本的位置信息
               const sentenceRect = range.getBoundingClientRect();
               
-              // 设置建议框的样式和位置
               box.style.position = 'absolute';
-              box.style.top = (sentenceRect.bottom + window.scrollY + 5) + 'px';  // 在句子下方5px处
+              box.style.top = (sentenceRect.bottom + window.scrollY + 5) + 'px';
               box.style.left = (sentenceRect.left + window.scrollX) + 'px';
               box.style.width = 'auto';
-              box.style.maxWidth = simpleEditor.offsetWidth - 40 + 'px'; // 留出一些边距
+              box.style.maxWidth = simpleEditor.offsetWidth - 40 + 'px';
               box.style.zIndex = '1000';
               
-              // 直接将建议框添加到文档中
               document.body.appendChild(box);
             } catch (e) {
               console.error('[SuggestionBox] Error calculating position:', e);
@@ -2196,31 +2181,31 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           evt.preventDefault();
           evt.stopPropagation();
           if (isExpMode) {
-            // Transcription模式的点击处理保持不变
-          const errorSentenceEl = document.getElementById("error-sentence");
-          if (!errorSentenceEl) return;
+            // Transcription mode
+            const errorSentenceEl = document.getElementById("error-sentence");
+            if (!errorSentenceEl) return;
 
-          let entireText = errorSentenceEl.innerText;
-          let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
-          errorSentenceEl.innerText = updated;
-          selectedSentence = candidate;
+            let entireText = errorSentenceEl.innerText;
+            let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+            errorSentenceEl.innerText = updated;
+            selectedSentence = candidate;
 
-          if (diffRanges && diffRanges.length > 0) {
-            let newSentenceIndex = updated.indexOf(candidate);
-            if (newSentenceIndex >= 0) {
-              let newHtml = updated.substring(0, newSentenceIndex);
-              newHtml += underlineDiffRanges(candidate, diffRanges);
-              newHtml += updated.substring(newSentenceIndex + candidate.length);
-              errorSentenceEl.innerHTML = newHtml;
-              
-              setTimeout(() => {
-                errorSentenceEl.innerText = errorSentenceEl.innerText;
-              }, 2000);
+            if (diffRanges && diffRanges.length > 0) {
+              let newSentenceIndex = updated.indexOf(candidate);
+              if (newSentenceIndex >= 0) {
+                let newHtml = updated.substring(0, newSentenceIndex);
+                newHtml += underlineDiffRanges(candidate, diffRanges);
+                newHtml += updated.substring(newSentenceIndex + candidate.length);
+                errorSentenceEl.innerHTML = newHtml;
+                
+                setTimeout(() => {
+                  errorSentenceEl.innerText = errorSentenceEl.innerText;
+                }, 2000);
+              }
             }
-          }
-          checkCompletion();
+            checkCompletion();
           } else {
-            // 自由输入模式的点击处理
+            // Free input mode
             window.replaceSentenceInSimpleEditor(originalSentence, candidate);
             originalSentence = candidate;
           }
@@ -2233,17 +2218,17 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
 
 
     /*******************************************************
-     * ============ C) 自由输入模式 代码 ============
-     ***********************************************/
+     * ============ C) Free Input Mode ============
+     *******************************************************/
 
     /*******************************************************
-     * Free Input: 为简单文本区添加事件
+     * Free Input: add events to the simple text area
      *******************************************************/
     function attachFreeInputListeners() {
       const editor = document.getElementById('simple-editor');
       if (!editor) return;
       
-      // 初始化时将初始内容放入撤销栈
+      // Push initial content to undo stack
       simpleUndoStack = [editor.innerHTML];
       updateUndoButtonState();
       
@@ -2254,7 +2239,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       let isTouchMoved = false;
       let touchStartTime = 0;
       
-      // PC端鼠标事件处理
+      // PC mouse handling
       editor.addEventListener('mousedown', (e) => {
         if (activeMode !== MODE_INPUT) return;
         handlePressStart(e.clientX, e.clientY, false);
@@ -2264,7 +2249,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         handlePressEnd();
       });
 
-      // 移动端触摸事件处理
+      // Mobile touch handling
       editor.addEventListener('touchstart', (e) => {
         if (activeMode !== MODE_INPUT) return;
         const touch = e.touches[0];
@@ -2273,9 +2258,8 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         touchStartTime = Date.now();
         isTouchMoved = false;
         
-        // 长按时先阻止默认行为，避免iOS的文本选择功能
+        // Prevent default on long press for iOS text selection
         if (e.touches.length === 1) {
-          // 不是滚动操作时才阻止默认行为
           const isScrollArea = (touch.clientY > (editor.offsetTop + editor.offsetHeight - 40));
           if (!isScrollArea) {
             e.preventDefault();
@@ -2303,7 +2287,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           const touchDuration = touchEndTime - touchStartTime;
           
           if (touchDuration < 500) {
-            // 短按，处理选择
+            // Short press, handle selection
             const touch = e.changedTouches[0];
             const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
             if (range) {
@@ -2316,25 +2300,20 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
       });
 
-      // 统一的按压开始处理函数
       function handlePressStart(clientX, clientY, isTouch) {
         editor.focus();
         
-        // 清除可能存在的停止录音定时器
         if (window.stopRecordingTimer) {
           clearTimeout(window.stopRecordingTimer);
           window.stopRecordingTimer = null;
         }
         
         pressTimer = setTimeout(() => {
-          // 清除可能已有的选择
           const selection = window.getSelection();
           selection.removeAllRanges();
           
-          // 标记为拖动+录音状态
           isDraggingAndRecording = true;
           
-          // 获取当前句子
           const range = document.caretRangeFromPoint(clientX, clientY);
           if (range) {
             const sentenceInfo = getFreeInputSentence(editor.textContent, range.startOffset);
@@ -2343,35 +2322,29 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
             originalErrorSpan.innerText = sentenceInfo.sentence;
             localTapIndex = range.startOffset;
             
-            // 开始录音，但不自动处理结果
             startRecording(true);
           }
-        }, isTouch ? 700 : 500); // 触摸设备使用稍长的长按时间
+        }, isTouch ? 700 : 500);
       }
       
-      // 统一的按压结束处理函数
       function handlePressEnd() {
         if (pressTimer) {
           clearTimeout(pressTimer);
           pressTimer = null;
         }
         
-        // 如果处于拖动+录音状态，只需标记为结束，但不立即停止录音
         if (isDraggingAndRecording) {
           isDraggingAndRecording = false;
           
-          // 清除之前可能存在的停止录音定时器
           if (window.stopRecordingTimer) {
             clearTimeout(window.stopRecordingTimer);
           }
           
-          // 设置3秒后停止录音
           window.stopRecordingTimer = setTimeout(() => {
             if (recognition) {
-              console.log("Free input: 3秒后自动停止录音");
+              console.log("Free input: stopping recording after 3s");
               try {
                 recognition.stop();
-                // onend事件处理程序会调用finalizeTapSay
               } catch (ex) {
                 console.error("Error stopping recognition:", ex);
               }
@@ -2380,21 +2353,20 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
       }
       
-      // 监听input变化推入undo栈
+      // Listen for input changes, push to undo stack
       editor.addEventListener('input', function() {
         const currentContent = this.innerHTML;
-        // 只有当内容真的改变时才添加到撤销栈
         if (currentContent !== lastContent) {
           simpleUndoStack.push(currentContent);
-        if (simpleUndoStack.length > 20) {
-          simpleUndoStack.shift();
+          if (simpleUndoStack.length > 20) {
+            simpleUndoStack.shift();
           }
           lastContent = currentContent;
           updateUndoButtonState();
         }
       });
       
-      // 文件拖拽
+      // File drag and drop
       editor.addEventListener('dragover', function(e) {
         e.preventDefault();
         this.style.background = "#fafafa";
@@ -2428,7 +2400,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
       });
 
-      // 添加自由输入模式的移动监听器
+      // Add mobile drag event handling
       editor.addEventListener('mousemove', (e) => {
         if (isDraggingAndRecording) {
           const range = document.caretRangeFromPoint(e.clientX, e.clientY);
@@ -2463,7 +2435,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       });
     }
 
-    // 专门获取句子
+    // Get a sentence (free input)
     function getFreeInputSentence(text, position) {
       const sentenceSeparators = /[.!?]/;
       let startPos = 0;
@@ -2488,11 +2460,11 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       return { sentence: text.substring(startPos, endPos).trim(), startPos: startPos, endPos: endPos };
     }
 
-    // Free-input专用的undo栈
+    // Undo stack for Free Input mode
     let simpleUndoStack = [''];
     const simpleUndoButton = document.getElementById('simple-undo-button');
 
-    // 更新按钮状态的函数
+    // Update the state of the undo button
     function updateUndoButtonState() {
       const simpleUndoButton = document.getElementById('simple-undo-button');
       if (simpleUndoButton) {
@@ -2509,19 +2481,15 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     }
 
     if (simpleUndoButton) {
-      // 初始状态
       updateUndoButtonState();
       
       simpleUndoButton.addEventListener('click', function() {
         const simpleEditor = document.getElementById('simple-editor');
         if (simpleEditor && simpleUndoStack.length > 1) {
-          // 移除当前状态
           simpleUndoStack.pop();
-          // 恢复到上一个状态
           const previousContent = simpleUndoStack[simpleUndoStack.length - 1];
           simpleEditor.innerHTML = previousContent;
           
-          // 将光标移到末尾
           const range = document.createRange();
           const selection = window.getSelection();
           range.selectNodeContents(simpleEditor);
@@ -2535,7 +2503,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       });
     }
 
-    // 用来替换句子(自由模式)
+    // Replace sentence in free input mode
     window.replaceSentenceInSimpleEditor = function(originalText, newText) {
       const simpleEditor = document.getElementById('simple-editor');
       if (!simpleEditor) return false;
@@ -2547,23 +2515,22 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         simpleUndoStack.push(updatedContent);
         simpleEditor.innerHTML = updatedContent;
         updateUndoButtonState();
-      return true;
+        return true;
       }
       return false;
     };
 
     /*******************************************************
-     * 覆盖: applyFirstSuggestionAndShowBox (Free Input)
+     * Override: applyFirstSuggestionAndShowBox (Free Input)
      *******************************************************/
     const originalApplyGlobal = applyFirstSuggestionAndShowBox;
     applyFirstSuggestionAndShowBox = function(corrections, isExperienceMode) {
       if (!corrections.length) return;
       
       if (isExperienceMode) {
-        // 如果是Transcription模式，调用之前覆盖的版本
         originalApplyGlobal(corrections, isExperienceMode);
       } else {
-        // ==========【Free Input模式逻辑】==========
+        // ========== Free Input Mode Logic ==========
         const simpleEditor = document.getElementById('simple-editor');
         if (!simpleEditor) return;
         
@@ -2588,14 +2555,13 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
     };
 
     /*******************************************************
-     * Transcription: 创建一个建议box
+     * Transcription: create a suggestion box (repeated for free input)
      *******************************************************/
     function createSuggestionBox(rect, corrections, isExpMode) {
       let box = document.createElement("div");
       box.className = "suggestions-box-floating";
       
       if (isExpMode) {
-        // Transcription模式的定位逻辑保持不变
         const errorSentenceEl = document.getElementById("error-sentence");
         if (errorSentenceEl) {
           const text = errorSentenceEl.innerText;
@@ -2625,7 +2591,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           }
         }
       } else {
-        // 自由输入模式的定位逻辑
+        // Free input mode positioning
         const simpleEditor = document.getElementById('simple-editor');
         if (simpleEditor && originalSentence) {
           const text = simpleEditor.textContent;
@@ -2633,24 +2599,20 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           
           if (sentenceStart !== -1) {
             try {
-              // 创建一个范围来获取选中句子的位置
               const range = document.createRange();
               const textNode = simpleEditor.firstChild;
               range.setStart(textNode, sentenceStart);
               range.setEnd(textNode, sentenceStart + originalSentence.length);
               
-              // 获取选中文本的位置信息
               const sentenceRect = range.getBoundingClientRect();
               
-              // 设置建议框的样式和位置
               box.style.position = 'absolute';
-              box.style.top = (sentenceRect.bottom + window.scrollY + 5) + 'px';  // 在句子下方5px处
+              box.style.top = (sentenceRect.bottom + window.scrollY + 5) + 'px';
               box.style.left = (sentenceRect.left + window.scrollX) + 'px';
               box.style.width = 'auto';
-              box.style.maxWidth = simpleEditor.offsetWidth - 40 + 'px'; // 留出一些边距
+              box.style.maxWidth = simpleEditor.offsetWidth - 40 + 'px';
               box.style.zIndex = '1000';
               
-              // 直接将建议框添加到文档中
               document.body.appendChild(box);
             } catch (e) {
               console.error('[SuggestionBox] Error calculating position:', e);
@@ -2675,7 +2637,6 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           evt.preventDefault();
           evt.stopPropagation();
           if (isExpMode) {
-            // Transcription模式的点击处理保持不变
             const errorSentenceEl = document.getElementById("error-sentence");
             if (!errorSentenceEl) return;
 
@@ -2699,7 +2660,6 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
             }
             checkCompletion();
           } else {
-            // 自由输入模式的点击处理
             window.replaceSentenceInSimpleEditor(originalSentence, candidate);
             originalSentence = candidate;
           }
@@ -2712,10 +2672,10 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
 
 
     /*******************************************************
-     * ============ D) window.onload & 主入口 ============
+     * ============ D) window.onload & Main Entry ============
      *******************************************************/
     window.onload = async function() {
-      // 尝试加载header/footer
+      // Try to load header/footer
       try {
         const headerRes = await fetch("header.html");
         const headerHtml = await headerRes.text();
@@ -2728,11 +2688,11 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         console.warn("Failed to load header/footer:", e);
       }
 
-      // 默认隐藏 monitoring 和 event log
+      // Hide monitoring and event log by default
       monitoringCard.style.display = "none";
       eventLogCard.style.display = "none";
 
-      // 检查麦克风权限
+      // Check mic permission
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({audio: true})
         .catch(err => {
@@ -2740,17 +2700,17 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         });
       }
 
-      // 初始化模式
+      // Default mode
       modeExperienceContainer.style.display = "block";
       modeInputContainer.style.display = "none";
       modeExperienceBtn.classList.add("active");
       modeInputBtn.classList.remove("active");
       activeMode = MODE_EXPERIENCE;
 
-      // 初始化Transcription模式
+      // Initialize Transcription mode
       initializeExperienceMode();
 
-      // 为Free Input mode添加提示框
+      // Add tip box for Free Input mode
       const inputModeContainer = document.getElementById("input-mode");
       if (inputModeContainer) {
         inputModeContainer.insertBefore(
@@ -2759,10 +2719,10 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         );
       }
 
-      // 绑定Free Input监听
+      // Bind free input listeners
       attachFreeInputListeners();
 
-      // 取消选中文本(Transcription模式时)
+      // Cancel text selection in Transcription mode
       document.addEventListener('mouseup', () => {
         if (activeMode === MODE_EXPERIENCE && !isDragging) {
           const selection = window.getSelection();
@@ -2789,7 +2749,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
       });
 
-      // 监听模式切换
+      // Mode switch listeners
       modeExperienceBtn.addEventListener("click", function() {
         if (!this.classList.contains("active")) {
           this.classList.add("active");
@@ -2809,12 +2769,12 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         }
       });
 
-      // 打Log
+      // Log
       logEvent("Application initialized - Monitoring and logs are hidden by default");
 
 
       /*******************************************************
-       * 浮动菜单相关逻辑
+       * Floating menu logic
        *******************************************************/
       const menuButton = document.getElementById('float-menu-button');
       const menu = document.getElementById('float-menu');
@@ -2879,7 +2839,7 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
         });
       }
 
-      // 添加清除按钮功能
+      // Clear button in free input mode
       const clearButton = document.getElementById('clear-text-button');
       if (clearButton) {
         clearButton.addEventListener('click', function() {
@@ -2897,15 +2857,12 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       }
     };
 
-    // 添加录音状态反馈函数
     function showRecordingFeedback(isRecording) {
-      // 更新麦克风状态文本
       if (micStatusSpan) {
         micStatusSpan.innerHTML = isRecording ? "🟢 Recording..." : "🔴 Stopped";
         micStatusSpan.className = isRecording ? "recording-active" : "";
       }
       
-      // 更新状态指示圆点和麦克风图标
       const dots = document.querySelectorAll('.recording-status-dot');
       const micIcons = document.querySelectorAll('.mic-icon');
       
@@ -2926,33 +2883,28 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
           icon.classList.remove('recording');
         });
         
-        // 移除光标
         removeCursor();
       }
     }
 
-    // 停止录音的函数
     function stopRecording() {
       if (recognition) {
         try { 
-          recognition.onend = null; // 防止onend触发finalizeTapSay
+          recognition.onend = null;
           recognition.stop(); 
         } catch(e) { 
           console.error(e); 
         }
       }
       
-      // 清理状态
       isRecording = false;
       isListening = false;
       
-      // 更新UI
       if (micStatusSpan) {
         micStatusSpan.innerHTML = "🔴 Stopped";
         micStatusSpan.className = "";
       }
       
-      // 更新麦克风图标状态
       const dots = document.querySelectorAll('.recording-status-dot');
       const micIcons = document.querySelectorAll('.mic-icon');
       dots.forEach(dot => {
@@ -2963,36 +2915,27 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       });
     }
 
-    // Handle speech recognition results, add relative position parameter
     function handleRecognitionResult(transcript, relativePosition = 0) {
       if (!transcript || !transcript.trim()) return;
       
-      // Convert speech recognition results to lowercase
       const lowerCaseTranscript = transcript.toLowerCase();
       
       console.log("Processing voice command, relative position:", relativePosition);
       console.log("Original transcript:", transcript);
       console.log("Lowercase transcript:", lowerCaseTranscript);
       
-      // Process voice commands
       try {
-        // Check if there is an AI message processing function
         if (typeof proceedWithAI === 'function') {
-          // Pass relative position information to AI processing function
           console.log("Using proceedWithAI, relative position:", relativePosition);
           proceedWithAI(originalSentence, lowerCaseTranscript, relativePosition);
         } else {
-          // Apply simple replacement directly
           if (activeMode === MODE_EXPERIENCE) {
-            // In Transcription mode, use the currently selected sentence and voice input
             console.log("Using applyCorrection, relative position:", relativePosition);
             applyCorrection(selectedSentence, lowerCaseTranscript, relativePosition);
           } else if (activeMode === MODE_INPUT) {
-            // Free input mode should use finalizeTapSay which will call API
             voiceInputSpan.innerText = transcript;
             errorText.innerText = originalSentence;
             finalOutputSpan.innerText = transcript;
-            // Let the API handle the correction via finalizeTapSay (called by recognition.onend)
           }
         }
       } catch (error) {
@@ -3000,20 +2943,15 @@ Hi, how are you? Meet me on Wednesday. us household.</div>
       }
     }
 
-    // Add applyCorrection function, adapt to new relative position parameter
     function applyCorrection(sentence, transcript, relativePosition = 0) {
       console.log("Applying correction, original:", sentence, "correction:", transcript, "relative position:", relativePosition);
       
-      // Build merged string
       const mergedStr = sentence + " || " + transcript;
       
-      // Use the incoming relative position directly, no need to add startIndex
-      // Because the API needs relative position rather than absolute position
       let finalPosition = relativePosition;
       
       console.log("Sending to API with position:", finalPosition);
       
-      // Call API
       sendToAPI(mergedStr, finalPosition, activeMode === MODE_EXPERIENCE);
     }
   </script>
