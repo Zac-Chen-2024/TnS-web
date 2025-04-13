@@ -367,6 +367,8 @@
         font-size: 1rem;
         margin: 0.7rem 0;
       }
+
+      
     }
 
     /* Enhanced styles for Experience Mode Cards (PC Only) */
@@ -405,7 +407,7 @@
     /* Mobile styles remain unchanged */
     @media (max-width: 480px) {
       .main-content {
-        padding: 1rem 0; 
+        padding: 1rem 0 0.1rem 0; /* Reduced bottom padding to minimize space above footer */
       }
       
       .container {
@@ -418,11 +420,20 @@
         font-size: 0.9rem; 
       }
       
+      /* Adjust card margins for mobile */
+      #experience-mode, #input-mode {
+        margin-bottom: 0 !important; /* Remove bottom margin to minimize space above footer */
+      }
+      
+      #event-log-card {
+        margin-bottom: 0 !important; /* Remove bottom margin to minimize space above footer */
+      }
+      
       .card h3 {
         font-size: 1.1rem;
         margin-bottom: 1rem;
       }
-
+      
       /* Adjust the Transcription mode title size */
       #experience-mode h3,
       #input-mode h3 {
