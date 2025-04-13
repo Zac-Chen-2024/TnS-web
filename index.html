@@ -907,7 +907,7 @@
         ">Try to tap on Wednesday till the mic icon is green, then speak 'on Tuesday'.
 Or you can clear the text using the clear button and input your own text.
 
-Hi, how are you? Meet me on Wednesday.</div>
+Hi, how are you? Meet me on Wednesday. us household.</div>
         
         <button id="simple-undo-button" style="
           margin-top:12px;
@@ -975,7 +975,7 @@ Hi, how are you? Meet me on Wednesday.</div>
     let selectedSentence = ""; // 在Transcription模式使用，也会被一些通用函数引用
     let isDraggingAndRecording = false; // 新增变量，用于标记拖动+录音状态
     let useWebkitSpeech = true;
-    let maxRecordingTime = 10000; // 最大录音时间，默认10秒
+    let maxRecordingTime = 20000; // 最大录音时间，默认10秒
     let currentSentenceInfo = null; // 存储当前句子的详细信息
 
     // DOM Elements
@@ -1331,9 +1331,9 @@ Hi, how are you? Meet me on Wednesday.</div>
         tip: "Tap near the mistake till the mic icon is green, then speak correction. Here's like 'another player'."
       },
       {
-        target: "The team needs to focus on developing young talents.",
-        error: "The team needs to focus on develop young talents.",
-        tip: "Great! Try again"
+        target: "Energy consumption trends in US households are shifting rapidly.",
+        error: "Energy consumption trends in us household are shifting rapidly.",
+        tip: "Great! It also works on capitalization issues along the way. Here try 'US households'."
       },
       {
         target: "She has been living in Paris for the past five years.",
