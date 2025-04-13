@@ -653,7 +653,7 @@
     /* Prevent iOS from text selection on long-press in experience mode */
     @media (hover: none) {
       .editable-sentence-box {
-        touch-action: manipulation;
+        touch-action: manipulation; 
         -webkit-touch-callout: none;
         -webkit-user-select: none;
         user-select: none;
@@ -973,6 +973,10 @@ Hi, how are you? Meet me on Wednesday.</div>
     let cursorElement = null;
     let cursorTimeout = null;
     let selectedSentence = ""; // 在Transcription模式使用，也会被一些通用函数引用
+    let isDraggingAndRecording = false; // 新增变量，用于标记拖动+录音状态
+    let useWebkitSpeech = true;
+    let maxRecordingTime = 10000; // 最大录音时间，默认10秒
+    let currentSentenceInfo = null; // 存储当前句子的详细信息
 
     // DOM Elements
     const monitoringCard = document.getElementById("monitoring-card");
@@ -1119,18 +1123,26 @@ Hi, how are you? Meet me on Wednesday.</div>
     /*******************************************************
      * Universal: Speech Recognition
      *******************************************************/
-    function startRecording() {
+    function startRecording(dontProcessResults = false) {
+      if (isRecording) {
+        console.log("Already recording");
+        return;
+      }
+
+      // 清除可能存在的停止录音定时器
+      if (window.stopRecordingTimer) {
+        clearTimeout(window.stopRecordingTimer);
+        window.stopRecordingTimer = null;
+      }
+
+      // 清空之前的结果
+      if (voiceInputSpan) voiceInputSpan.innerText = "";
+      
       if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
         console.warn("Speech recognition not supported in this browser.");
         return;
       }
-      if (isRecording) {
-        if (recognition) {
-          try { recognition.abort(); } catch(e) { console.error(e); }
-        }
-        endTapSay();
-        return;
-      }
+      
       isRecording = true;
       isListening = true;
 
@@ -1504,12 +1516,18 @@ Hi, how are you? Meet me on Wednesday.</div>
         // 开始录音（无论是点击还是长按）
         startRecording();
 
-        // 对于单击，直接使用当前位置选择句子
-        const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
-        errorText.innerText = currentSentence;
-        originalSentence = currentSentence;
-        originalErrorSpan.innerText = currentSentence;
-        selectedSentence = currentSentence;
+        // 获取当前位置对应的句子信息
+        const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+        errorText.innerText = sentenceInfo.sentence;
+        originalSentence = sentenceInfo.sentence;
+        originalErrorSpan.innerText = sentenceInfo.sentence;
+        selectedSentence = sentenceInfo.sentence;
+        
+        // 保存句子信息，包括相对位置
+        currentSentenceInfo = sentenceInfo;
+        // 记录相对位置，用于finalizeTapSay
+        tapStartIndex = sentenceInfo.relativePosition;
+        console.log("Mouse down - Relative position set to:", sentenceInfo.relativePosition);
 
         pressTimerExp = setTimeout(() => {
           longPressStarted = true;
@@ -1593,10 +1611,16 @@ Hi, how are you? Meet me on Wednesday.</div>
 
         // 对于单击，直接使用当前位置选择句子
         const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
-        errorText.innerText = currentSentence;
-        originalSentence = currentSentence;
-        originalErrorSpan.innerText = currentSentence;
-        selectedSentence = currentSentence;
+        errorText.innerText = currentSentence.sentence;
+        originalSentence = currentSentence.sentence;
+        originalErrorSpan.innerText = currentSentence.sentence;
+        selectedSentence = currentSentence.sentence;
+        
+        // 保存当前句子信息
+        currentSentenceInfo = currentSentence;
+        // 记录相对位置，用于finalizeTapSay
+        tapStartIndex = currentSentence.relativePosition;
+        console.log("Touch start - Relative position set to:", currentSentence.relativePosition);
 
         // 设置标志，防止iOS默认的文本选择
         errorSentenceEl.dataset.touchStarted = "true";
@@ -1648,12 +1672,20 @@ Hi, how are you? Meet me on Wednesday.</div>
      * Transcription: 真正执行长按拖拽选词
      *******************************************************/
     function handleExpLongPress() {
+      console.log('[Transcription] handleExpLongPress started');
+      
       const element = document.getElementById("error-sentence");
-      if (!element) return;
+      if (!element) {
+        console.warn('[Transcription] Error: element not found');
+        return;
+      }
 
       isDragging = true;
       element.classList.add("dragging");
       showCursorAtPosition();
+      
+      // 开始录音，但设置为不自动处理结果
+      startRecording(true);
 
       const handleMouseMove = (e) => {
         if (!isDragging) return;
@@ -1675,6 +1707,26 @@ Hi, how are you? Meet me on Wednesday.</div>
         }
         const text = element.innerText;
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        // 动态更新选中的句子
+        const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+        console.log("Mouse move - Position info:", {
+          localTapIndex: localTapIndex,
+          startIndex: sentenceInfo.startIndex,
+          relativePosition: sentenceInfo.relativePosition,
+          sentence: sentenceInfo.sentence
+        });
+        
+        errorText.innerText = sentenceInfo.sentence;
+        originalSentence = sentenceInfo.sentence;
+        originalErrorSpan.innerText = sentenceInfo.sentence;
+        selectedSentence = sentenceInfo.sentence;
+        
+        // 更新当前句子信息
+        currentSentenceInfo = sentenceInfo;
+        // 更新相对位置，用于finalizeTapSay
+        tapStartIndex = sentenceInfo.relativePosition;
+        
         showCursorAtPosition();
       };
 
@@ -1699,6 +1751,26 @@ Hi, how are you? Meet me on Wednesday.</div>
         }
         const text = element.innerText;
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        // 动态更新选中的句子
+        const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+        console.log("Touch move - Position info:", {
+          localTapIndex: localTapIndex,
+          startIndex: sentenceInfo.startIndex,
+          relativePosition: sentenceInfo.relativePosition,
+          sentence: sentenceInfo.sentence
+        });
+        
+        errorText.innerText = sentenceInfo.sentence;
+        originalSentence = sentenceInfo.sentence;
+        originalErrorSpan.innerText = sentenceInfo.sentence;
+        selectedSentence = sentenceInfo.sentence;
+        
+        // 更新当前句子信息
+        currentSentenceInfo = sentenceInfo;
+        // 更新相对位置，用于finalizeTapSay
+        tapStartIndex = sentenceInfo.relativePosition;
+
         showCursorAtPosition();
       };
 
@@ -1711,6 +1783,32 @@ Hi, how are you? Meet me on Wednesday.</div>
         document.removeEventListener("mouseup", endDrag);
         element.removeEventListener("touchmove", handleTouchMove);
         document.removeEventListener("touchend", endDrag);
+
+        // 如果处于录音状态，现在发送语音内容
+        if (isDraggingAndRecording) {
+          isDraggingAndRecording = false;
+        if (recognition) {
+            console.log("Speech recognition ended and processing results");
+            recognition.stop();
+            
+            // 添加简短延迟确保识别结果被处理
+        setTimeout(() => {
+              if (voiceInputSpan.innerText && voiceInputSpan.innerText.trim()) {
+                // 使用最终的句子信息和相对位置
+                if (currentSentenceInfo) {
+                  const relativePosition = currentSentenceInfo.relativePosition;
+                  console.log("End drag - Final position:", {
+                    currentSentenceInfo: currentSentenceInfo,
+                    relativePosition: relativePosition
+                  });
+                  
+                  // 使用最终录音结果处理纠正，传递相对位置
+                  handleRecognitionResult(voiceInputSpan.innerText, relativePosition);
+                }
+              }
+            }, 300);
+          }
+        }
       };
 
       document.addEventListener("mousemove", handleMouseMove);
@@ -1719,9 +1817,13 @@ Hi, how are you? Meet me on Wednesday.</div>
       document.addEventListener("touchend", endDrag, { passive: false });
     }
 
+    // 修改getCurrentSentenceForTranscription函数，返回更多信息
     function getCurrentSentenceForTranscription(text, position) {
       const sentenceSeparators = /[.!?]/;
       let startPos = 0;
+      let foundSeparator = false;
+      
+      // 向前搜索句子分隔符
       for (let i = position - 1; i >= 0; i--) {
         if (sentenceSeparators.test(text[i]) &&
           (i + 1 >= text.length || text[i + 1] === ' ' || text[i + 1] === '\n')) {
@@ -1729,18 +1831,59 @@ Hi, how are you? Meet me on Wednesday.</div>
           while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
             startPos++;
           }
+          foundSeparator = true;
           break;
         }
       }
+      
+      // 如果找不到分隔符，则从文本开始
+      if (!foundSeparator) {
+        startPos = 0;
+        // 跳过开头的空白
+        while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
+          startPos++;
+        }
+      }
+      
       let endPos = text.length;
+      let foundEndSeparator = false;
+      
+      // 向后搜索句子分隔符
       for (let i = position; i < text.length; i++) {
         if (sentenceSeparators.test(text[i])) {
           endPos = i + 1;
+          foundEndSeparator = true;
           break;
         }
       }
-      selectedSentence = text.substring(startPos, endPos).trim();
-      return selectedSentence;
+      
+      // 如果找不到结束分隔符，则到文本结束
+      if (!foundEndSeparator) {
+        endPos = text.length;
+      }
+      
+      const sentence = text.substring(startPos, endPos).trim();
+      selectedSentence = sentence;
+      
+      // 确保相对位置计算正确
+      const relativePos = position - startPos;
+      
+      console.log("Sentence detection:", {
+        fullText: text,
+        position: position,
+        startPos: startPos,
+        endPos: endPos,
+        relativePosition: relativePos,
+        sentence: sentence
+      });
+      
+      // 返回包含句子信息的对象
+      return {
+        sentence: sentence,
+        startIndex: startPos,
+        endIndex: endPos,
+        relativePosition: relativePos
+      };
     }
 
     /*******************************************************
@@ -2089,7 +2232,7 @@ Hi, how are you? Meet me on Wednesday.</div>
     }
 
 
-    /***********************************************
+    /*******************************************************
      * ============ C) 自由输入模式 代码 ============
      ***********************************************/
 
@@ -2177,11 +2320,19 @@ Hi, how are you? Meet me on Wednesday.</div>
       function handlePressStart(clientX, clientY, isTouch) {
         editor.focus();
         
+        // 清除可能存在的停止录音定时器
+        if (window.stopRecordingTimer) {
+          clearTimeout(window.stopRecordingTimer);
+          window.stopRecordingTimer = null;
+        }
+        
         pressTimer = setTimeout(() => {
-          // 不再检查已选中文本，始终使用点击位置获取句子
           // 清除可能已有的选择
           const selection = window.getSelection();
           selection.removeAllRanges();
+          
+          // 标记为拖动+录音状态
+          isDraggingAndRecording = true;
           
           // 获取当前句子
           const range = document.caretRangeFromPoint(clientX, clientY);
@@ -2191,7 +2342,9 @@ Hi, how are you? Meet me on Wednesday.</div>
             originalSentence = sentenceInfo.sentence;
             originalErrorSpan.innerText = sentenceInfo.sentence;
             localTapIndex = range.startOffset;
-            startRecording();
+            
+            // 开始录音，但不自动处理结果
+            startRecording(true);
           }
         }, isTouch ? 700 : 500); // 触摸设备使用稍长的长按时间
       }
@@ -2202,7 +2355,30 @@ Hi, how are you? Meet me on Wednesday.</div>
           clearTimeout(pressTimer);
           pressTimer = null;
         }
+        
+        // 如果处于拖动+录音状态，只需标记为结束，但不立即停止录音
+        if (isDraggingAndRecording) {
+          isDraggingAndRecording = false;
+          
+          // 清除之前可能存在的停止录音定时器
+          if (window.stopRecordingTimer) {
+            clearTimeout(window.stopRecordingTimer);
+          }
+          
+          // 设置3秒后停止录音
+          window.stopRecordingTimer = setTimeout(() => {
+            if (recognition) {
+              console.log("Free input: 3秒后自动停止录音");
+              try {
+                recognition.stop();
+                // onend事件处理程序会调用finalizeTapSay
+              } catch (ex) {
+                console.error("Error stopping recognition:", ex);
+              }
+            }
+          }, 3000);
         }
+      }
       
       // 监听input变化推入undo栈
       editor.addEventListener('input', function() {
@@ -2248,6 +2424,40 @@ Hi, how are you? Meet me on Wednesday.</div>
             reader.readAsText(file, "UTF-8");
           } else {
             console.warn("Only .txt or .doc files are supported");
+          }
+        }
+      });
+
+      // 添加自由输入模式的移动监听器
+      editor.addEventListener('mousemove', (e) => {
+        if (isDraggingAndRecording) {
+          const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+          if (range) {
+            const sentenceInfo = getFreeInputSentence(editor.textContent, range.startOffset);
+            errorText.innerText = sentenceInfo.sentence;
+            originalSentence = sentenceInfo.sentence;
+            originalErrorSpan.innerText = sentenceInfo.sentence;
+          }
+        }
+      });
+
+      editor.addEventListener('touchmove', (e) => {
+        if (isDraggingAndRecording) {
+          const touch = e.touches[0];
+          const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+          if (range) {
+            const sentenceInfo = getFreeInputSentence(editor.textContent, range.startOffset);
+            errorText.innerText = sentenceInfo.sentence;
+            originalSentence = sentenceInfo.sentence;
+            originalErrorSpan.innerText = sentenceInfo.sentence;
+          }
+        } else if (pressTimer) {
+          const touch = e.touches[0];
+          const moveX = Math.abs(touch.clientX - touchStartX);
+          const moveY = Math.abs(touch.clientY - touchStartY);
+          if (moveX > 10 || moveY > 10) {
+            isTouchMoved = true;
+            handlePressEnd();
           }
         }
       });
@@ -2686,6 +2896,126 @@ Hi, how are you? Meet me on Wednesday.</div>
         });
       }
     };
+
+    // 添加录音状态反馈函数
+    function showRecordingFeedback(isRecording) {
+      // 更新麦克风状态文本
+      if (micStatusSpan) {
+        micStatusSpan.innerHTML = isRecording ? "🟢 Recording..." : "🔴 Stopped";
+        micStatusSpan.className = isRecording ? "recording-active" : "";
+      }
+      
+      // 更新状态指示圆点和麦克风图标
+      const dots = document.querySelectorAll('.recording-status-dot');
+      const micIcons = document.querySelectorAll('.mic-icon');
+      
+      if (isRecording) {
+        dots.forEach(dot => {
+          dot.classList.remove('stopped');
+          dot.classList.add('recording');
+        });
+        micIcons.forEach(icon => {
+          icon.classList.add('recording');
+        });
+      } else {
+        dots.forEach(dot => {
+          dot.classList.remove('recording');
+          dot.classList.add('stopped');
+        });
+        micIcons.forEach(icon => {
+          icon.classList.remove('recording');
+        });
+        
+        // 移除光标
+        removeCursor();
+      }
+    }
+
+    // 停止录音的函数
+    function stopRecording() {
+      if (recognition) {
+        try { 
+          recognition.onend = null; // 防止onend触发finalizeTapSay
+          recognition.stop(); 
+        } catch(e) { 
+          console.error(e); 
+        }
+      }
+      
+      // 清理状态
+      isRecording = false;
+      isListening = false;
+      
+      // 更新UI
+      if (micStatusSpan) {
+        micStatusSpan.innerHTML = "🔴 Stopped";
+        micStatusSpan.className = "";
+      }
+      
+      // 更新麦克风图标状态
+      const dots = document.querySelectorAll('.recording-status-dot');
+      const micIcons = document.querySelectorAll('.mic-icon');
+      dots.forEach(dot => {
+        dot.classList.remove('recording');
+      });
+      micIcons.forEach(icon => {
+        icon.classList.remove('recording');
+      });
+    }
+
+    // Handle speech recognition results, add relative position parameter
+    function handleRecognitionResult(transcript, relativePosition = 0) {
+      if (!transcript || !transcript.trim()) return;
+      
+      // Convert speech recognition results to lowercase
+      const lowerCaseTranscript = transcript.toLowerCase();
+      
+      console.log("Processing voice command, relative position:", relativePosition);
+      console.log("Original transcript:", transcript);
+      console.log("Lowercase transcript:", lowerCaseTranscript);
+      
+      // Process voice commands
+      try {
+        // Check if there is an AI message processing function
+        if (typeof proceedWithAI === 'function') {
+          // Pass relative position information to AI processing function
+          console.log("Using proceedWithAI, relative position:", relativePosition);
+          proceedWithAI(originalSentence, lowerCaseTranscript, relativePosition);
+        } else {
+          // Apply simple replacement directly
+          if (activeMode === MODE_EXPERIENCE) {
+            // In Transcription mode, use the currently selected sentence and voice input
+            console.log("Using applyCorrection, relative position:", relativePosition);
+            applyCorrection(selectedSentence, lowerCaseTranscript, relativePosition);
+          } else if (activeMode === MODE_INPUT) {
+            // Free input mode should use finalizeTapSay which will call API
+            voiceInputSpan.innerText = transcript;
+            errorText.innerText = originalSentence;
+            finalOutputSpan.innerText = transcript;
+            // Let the API handle the correction via finalizeTapSay (called by recognition.onend)
+          }
+        }
+      } catch (error) {
+        console.error("Error processing voice command:", error);
+      }
+    }
+
+    // Add applyCorrection function, adapt to new relative position parameter
+    function applyCorrection(sentence, transcript, relativePosition = 0) {
+      console.log("Applying correction, original:", sentence, "correction:", transcript, "relative position:", relativePosition);
+      
+      // Build merged string
+      const mergedStr = sentence + " || " + transcript;
+      
+      // Use the incoming relative position directly, no need to add startIndex
+      // Because the API needs relative position rather than absolute position
+      let finalPosition = relativePosition;
+      
+      console.log("Sending to API with position:", finalPosition);
+      
+      // Call API
+      sendToAPI(mergedStr, finalPosition, activeMode === MODE_EXPERIENCE);
+    }
   </script>
 </body>
 </html>
