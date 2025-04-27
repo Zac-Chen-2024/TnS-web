@@ -1006,6 +1006,7 @@ Hi, how are you? Meet me on Wednesday. </div>
     let silenceTimer = null; 
     let lastSpeechTime = null; 
     let silenceThreshold = 1000; // 新增：沉默1秒后停止录音
+    let restartPending = false;  // 新增：标记重启流程，避免第二次onend清理新session
 
     // DOM Elements
     const monitoringCard = document.getElementById("monitoring-card");
@@ -1210,6 +1211,7 @@ Hi, how are you? Meet me on Wednesday. </div>
       try {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
+        restartPending = false;  // 新一轮开始，标记复位
         recognition.lang = 'en-US';
         recognition.interimResults = true;
         recognition.continuous = true;
@@ -1238,6 +1240,12 @@ Hi, how are you? Meet me on Wednesday. </div>
         };
 
         recognition.onend = () => {
+          // 如果刚才说"要重启"，第一次onend忽略
+          if (restartPending) {
+            console.log('stray onend ignored');
+            restartPending = false;
+            return;
+          }
 
           console.log("Recognition onend triggered, isRecording:", isRecording, "current time:", new Date().toISOString());
           
@@ -1250,27 +1258,10 @@ Hi, how are you? Meet me on Wednesday. </div>
           if (isRecording && voiceInputSpan.innerText.trim() === "") {
             console.log("WebSpeechAPI restart");
             try {
-
-              const shouldRestart = isRecording; 
               isRecording = false;
-              
-              setTimeout(() => {
-                if (shouldRestart && !isRecording) {
-                  isRecording = true;
-                  isListening = true;
-                  try {
-
-                    recognition.start();
-
-                    console.log("prolong succeed"); 
-                  } catch (e) {
-                    console.error("prolong failed:", e);
-                    isRecording = false;
-                    isListening = false;
-                    endTapSay();
-                  }
-                }
-              }, 100);
+              restartPending = true;            // 告诉onend下次别管
+              setTimeout(() => startRecording(), 100);   // 用新实例重启
+              return;                           // 不要再往下清理
             } catch (e) {
               console.error("restart fail:", e);
 
@@ -1348,29 +1339,14 @@ Hi, how are you? Meet me on Wednesday. </div>
           if (event.error === 'no-speech' && isRecording && voiceInputSpan.innerText.trim() === "") {
             console.log(" no-speech");
             try {
-
               isRecording = false; 
               recognition.stop();
               
-        
-              setTimeout(() => {
-                if (!isRecording) { 
-                  isRecording = true;
-                  try {
-                    recognition.start();
-                    console.log("reprolong after no-speech)");
-                  } catch(e) {
-                    console.error("faile:", e);
-                    isRecording = false;
-                    endTapSay();
-                  }
-                }
-              }, 100);
-              
+              restartPending = true;  // 标记重启，避免onend清理
+              setTimeout(() => startRecording(), 100);   // 用新实例重启
               return; 
             } catch (e) {
               console.error("no-speech restart fail:", e);
-
             }
           }
            
