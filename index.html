@@ -642,6 +642,16 @@
       box-shadow: 0 0 3px rgba(230, 180, 34, 0.5);
     }
     
+    /* 移动设备上的光标样式 */
+    @media (hover: none) {
+      .cursor-indicator {
+        width: 3px !important;
+        background-color: #FF4500 !important; /* 使用更鲜艳的颜色 */
+        box-shadow: 0 0 5px rgba(255, 69, 0, 0.8) !important; /* 增强光晕效果 */
+        z-index: 9999 !important; /* 确保在最上层 */
+      }
+    }
+    
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
@@ -815,8 +825,8 @@
     <div class="container">
       <!-- Mode Switch Buttons -->
       <div id="mode-buttons">
-        <button id="mode-experience" class="mode-button active">Transcription Mode</button>
-        <button id="mode-input" class="mode-button">Free-input Mode</button>
+        <button id="mode-experience" class="mode-button active">Demo</button>
+        <button id="mode-input" class="mode-button">Free-input</button>
       </div>
     </div>
 
@@ -835,7 +845,7 @@
     <!-- ============ Transcription Mode ============ -->
     <div class="container">
       <div class="card" id="experience-mode">
-        <h3>Transcription Mode <i class="fas fa-microphone mic-icon"></i><span class="recording-status-dot"></span></h3>
+        <h3>Demo <i class="fas fa-microphone mic-icon"></i><span class="recording-status-dot"></span></h3>
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
             <button class="nav-button" id="prev-sentence" style="visibility:hidden;">←</button>
@@ -859,7 +869,7 @@
               color:#fff;
               box-shadow:0 2px 6px rgba(0,0,0,0.2);
               cursor:pointer;
-            ">Restore Error Sentence</button>
+            ">Restore Erroneous Sentence</button>
             <button id="skip-sentence-button" style="
               flex:1;
               padding:20px;
@@ -893,7 +903,7 @@
     <div class="container">
       <div class="card" id="input-mode" style="display:none;">
         <h3>
-          Free-Input Mode 
+          Free-Input
           <i class="fas fa-microphone mic-icon"></i>
           <span class="recording-status-dot"></span>
           <button class="clear-button" id="clear-text-button">Clear</button>
@@ -916,8 +926,7 @@
           white-space: pre-wrap;
           word-wrap: break-word;
           cursor: text;
-        ">Try to tap on Wednesday till the mic icon is green, then speak 'on Tuesday'.
-Or you can clear the text using the clear button and input your own text.
+        ">Try to long press on Wednesday till the mic icon is green, then speak 'on Tuesday'.
 
 Hi, how are you? Meet me on Wednesday. </div>
         
@@ -958,8 +967,11 @@ Hi, how are you? Meet me on Wednesday. </div>
     /***********************************************
      * ============ A) Universal UI & Code ============
      ***********************************************/
-    const API_URL = "https://tns.zacchen.win/correct";
-    const PUNCTUATION_API_URL = "https://tns.zacchen.win/restore_punctuation";
+     const API_URL = "https://tns.drziangchen.uk/correct";
+     const PUNCTUATION_API_URL = "https://tns.drziangchen.uk/restore_punctuation";
+
+
+
 
     // Two Mode Constants
     const MODE_EXPERIENCE = "experience";
@@ -987,9 +999,12 @@ Hi, how are you? Meet me on Wednesday. </div>
     let isDraggingAndRecording = false; // new variable for marking drag+record
     let useWebkitSpeech = true;
     let maxRecordingTime = 10000; 
-    let hardStopTimer = null; // 新增硬停止计时器
-    let recordingStartTime = null; // 记录录音开始时间
+    let hardStopTimer = null; 
+    let recordingStartTime = null;
     let currentSentenceInfo = null; // store current sentence details
+    let silenceTimer = null; 
+    let lastSpeechTime = null; 
+    let silenceThreshold = 1000; // 新增：沉默2秒后停止录音
 
     // DOM Elements
     const monitoringCard = document.getElementById("monitoring-card");
@@ -1106,8 +1121,8 @@ Hi, how are you? Meet me on Wednesday. </div>
      * Universal: Send data to the /correct API and handle response
      *******************************************************/
     function sendToAPI(mergedStr, loc, isExperienceMode) {
-      console.log("======== sendToAPI被调用！========");
-      console.log("发送到API的内容:", {
+      console.log("======== sendToAPI========");
+      console.log("content:", {
         merged_string: mergedStr,
         touch_location: loc,
         isExperienceMode: isExperienceMode
@@ -1123,13 +1138,13 @@ Hi, how are you? Meet me on Wednesday. </div>
       })
       .then(resp => resp.json())
       .then(data => {
-        console.log("API返回的结果:", data);
+        console.log("API return:", data);
         let corrs = data.filtered_corrections || [];
         logEvent("API corrections => " + JSON.stringify(corrs));
         applyFirstSuggestionAndShowBox(corrs, isExperienceMode);
       })
       .catch(err => {
-        console.error("API请求错误:", err);
+        console.error("API error:", err);
         logEvent("API call error => " + err);
       });
     }
@@ -1151,19 +1166,24 @@ Hi, how are you? Meet me on Wednesday. </div>
         return;
       }
 
-      // 记录录音开始时间
+ 
       recordingStartTime = new Date();
-      console.log("录音开始时间:", recordingStartTime.toISOString());
+      console.log("record start:", recordingStartTime.toISOString());
+      
 
-      // Clear any existing stop timer
+      lastSpeechTime = null;
+
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
+
+
       if (window.stopRecordingTimer) {
         clearTimeout(window.stopRecordingTimer);
         window.stopRecordingTimer = null;
       }
 
-      // Clear previous results
-      if (voiceInputSpan) voiceInputSpan.innerText = "";
-      
       if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
         console.warn("Speech recognition not supported in this browser.");
         return;
@@ -1191,7 +1211,7 @@ Hi, how are you? Meet me on Wednesday. </div>
         recognition = new SpeechRecognition();
         recognition.lang = 'en-US';
         recognition.interimResults = true;
-        recognition.continuous = true; // 改为 true，原来是 false
+        recognition.continuous = true;
         recognition.maxAlternatives = 1;
 
         recognition.onstart = () => {
@@ -1205,62 +1225,64 @@ Hi, how are you? Meet me on Wednesday. </div>
           voiceInputSpan.innerText = transcript;
           finalOutputSpan.innerText = transcript;
           
-          // 如果检测到语音并获得最终结果，停止录音
-          if (event.results[0].isFinal && recognition && isRecording) {
-            console.log("检测到语音并获得最终结果，停止录音");
-            
-            // 停止录音，然后直接调用finalizeTapSay处理结果
-            setTimeout(() => {
-              if (isRecording) {
-                // 先保存transcript，避免stopRecording清除
-                const savedTranscript = voiceInputSpan.innerText.trim();
-                
-                // 停止录音
-                stopRecording();
-                
-                // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
-                if (savedTranscript) {
-                  console.log("直接调用finalizeTapSay处理录音结果");
-                  voiceInputSpan.innerText = savedTranscript;
-                  setTimeout(finalizeTapSay, 100);
-                }
-              }
-            }, 100);
+
+          lastSpeechTime = new Date();
+          
+
+          if (silenceTimer) {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
           }
+          
+
+          silenceTimer = setTimeout(() => {
+            if (isRecording && recognition) {
+              console.log("用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
+
+              const savedTranscript = voiceInputSpan.innerText.trim();
+              
+
+              stopRecording();
+              
+
+              if (savedTranscript) {
+                console.log("调用finalizeTapSay处理录音结果");
+                voiceInputSpan.innerText = savedTranscript;
+                setTimeout(finalizeTapSay, 100);
+              }
+            }
+          }, silenceThreshold);
+          
         };
 
         recognition.onend = () => {
-          // 添加日志
+
           console.log("Recognition onend triggered, isRecording:", isRecording, "current time:", new Date().toISOString());
           
-          // 计算录音持续时间
+
           if (recordingStartTime) {
             const duration = new Date() - recordingStartTime;
-            console.log("录音持续时间:", duration, "毫秒");
           }
           
-          // 如果是手动停止（通过stopRecording或maxRecordingTime），则正常结束
-          // 如果是WebSpeechAPI自动停止，则尝试重新启动以保持连续录音
-          // 但如果已经获取到语音结果，则不重新启动
+
           if (isRecording && voiceInputSpan.innerText.trim() === "") {
-            // 只有在没有获取到语音的情况下才重启录音
-            console.log("WebSpeechAPI自动停止了录音，正在尝试重新启动以保持连续录音");
+            console.log("WebSpeechAPI restart");
             try {
-              // 使用安全的延时重启方式
-              const shouldRestart = isRecording; // 保存当前状态
-              isRecording = false; // 临时设置为false避免onend多次触发时重复启动
+
+              const shouldRestart = isRecording; 
+              isRecording = false;
               
               setTimeout(() => {
                 if (shouldRestart && !isRecording) {
                   isRecording = true;
                   isListening = true;
                   try {
-                    // 重新开始录音
+
                     recognition.start();
-                    // 添加日志
-                    console.log("成功延时重启录音"); 
+
+                    console.log("prolong succeed"); 
                   } catch (e) {
-                    console.error("延时重启录音失败:", e);
+                    console.error("prolong failed:", e);
                     isRecording = false;
                     isListening = false;
                     endTapSay();
@@ -1268,8 +1290,8 @@ Hi, how are you? Meet me on Wednesday. </div>
                 }
               }, 100);
             } catch (e) {
-              console.error("重新启动录音失败:", e);
-              // 如果无法重启，则正常结束录音
+              console.error("restart fail:", e);
+
               isRecording = false;
               isListening = false;
               micStatusSpan.innerHTML = "🔴 Stopped";
@@ -1287,24 +1309,24 @@ Hi, how are you? Meet me on Wednesday. </div>
               });
 
               if (voiceInputSpan.innerText.trim()) {
-                console.log("录音结束，检测到语音内容，将调用finalizeTapSay");
+                console.log("finalizeTapSay");
                 
                 // 检查是否已经在onresult中处理过结果
                 if (!recognition || !recognition.isAfterDragging) {
                   setTimeout(finalizeTapSay, 100);
                 } else {
-                  console.log("长按拖动后的录音已经处理过结果，跳过重复调用finalizeTapSay");
+
                 }
               } else {
-                console.log("录音结束，没有检测到语音内容，将调用endTapSay");
+                console.log("no voice input endTapSay");
                 endTapSay();
               }
             }
           } else {
-            // 添加日志
-            console.log("正常停止录音（手动或达到最大时间或已获取语音）"); 
+
+            console.log("normal recording"); 
             
-            // 正常的停止逻辑（手动停止或达到最大时间）
+
             isRecording = false;
             isListening = false;
             micStatusSpan.innerHTML = "🔴 Stopped";
@@ -1322,16 +1344,16 @@ Hi, how are you? Meet me on Wednesday. </div>
             });
 
             if (voiceInputSpan.innerText.trim()) {
-              console.log("录音结束，检测到语音内容，将调用finalizeTapSay");
+              console.log("finalizeTapSay");
               
               // 检查是否已经在onresult中处理过结果
               if (!recognition || !recognition.isAfterDragging) {
                 setTimeout(finalizeTapSay, 100);
               } else {
-                console.log("长按拖动后的录音已经处理过结果，跳过重复调用finalizeTapSay");
+
               }
             } else {
-              console.log("录音结束，没有检测到语音内容，将调用endTapSay");
+              console.log("endTapSay");
               endTapSay();
             }
           }
@@ -1340,39 +1362,37 @@ Hi, how are you? Meet me on Wednesday. </div>
         recognition.onerror = (event) => {
           console.error("[Global] recognition error =>", event.error);
            
-          // 特殊处理 no-speech 错误，不终止录音
-          // 但如果已经获取到语音，则不重新启动
+
           if (event.error === 'no-speech' && isRecording && voiceInputSpan.innerText.trim() === "") {
-            console.log("检测到 no-speech 错误，但继续保持录音状态");
+            console.log(" no-speech");
             try {
-              // 确保先停止当前识别再重新启动
-              console.log("尝试安全重启录音 - 先停止当前识别");
-              isRecording = false; // 临时设置为false以防onend事件自动重启
+
+              isRecording = false; 
               recognition.stop();
               
-              // 设置一个短暂延时后再重新启动
+        
               setTimeout(() => {
-                if (!isRecording) { // 确认还没有被重新启动
+                if (!isRecording) { 
                   isRecording = true;
                   try {
                     recognition.start();
-                    console.log("成功延时重启录音(no-speech错误后)");
+                    console.log("reprolong after no-speech)");
                   } catch(e) {
-                    console.error("延时重启失败:", e);
+                    console.error("faile:", e);
                     isRecording = false;
                     endTapSay();
                   }
                 }
               }, 100);
               
-              return; // 不执行后续终止录音的代码
+              return; 
             } catch (e) {
-              console.error("no-speech错误后重启录音失败:", e);
-              // 如果重启失败，才执行终止录音逻辑
+              console.error("no-speech restart fail:", e);
+
             }
           }
            
-          // 其他错误或重启失败，执行正常的错误处理
+
           isRecording = false;
           isListening = false;
           micStatusSpan.innerHTML = "🔴 Error";
@@ -1389,22 +1409,22 @@ Hi, how are you? Meet me on Wednesday. </div>
             icon.classList.remove('recording');
           });
 
-          // 如果已经获取到语音，仍然发送到API
+
           if (voiceInputSpan.innerText.trim()) {
-            console.log("录音结束，检测到语音内容，将调用finalizeTapSay");
+            console.log("finalizeTapSay");
             setTimeout(finalizeTapSay, 100);
           } else {
-            console.log("录音结束，没有检测到语音内容，将调用endTapSay");
+            console.log("no vice input endTapSay");
             endTapSay();
           }
         };
 
         recognition.start();
         
-        // 启动「硬停止」计时器
+
         hardStopTimer = setTimeout(() => {
           if (recognition && isRecording) {
-            // 调用stopRecording确保正确设置isRecording状态并清理资源
+
             stopRecording();
           }
         }, maxRecordingTime);
@@ -1431,8 +1451,7 @@ Hi, how are you? Meet me on Wednesday. </div>
       clearTimeout(highlightTimeout);
       if (recognition) {
         try {
-          // 不再设置 recognition.onend = null
-          // recognition.onend = null;  // 删除这一行
+
           recognition.abort();
         } catch(e) {
           console.error("[Global] endTapSay => error stopping:", e);
@@ -1462,12 +1481,12 @@ Hi, how are you? Meet me on Wednesday. </div>
      * Called after speech recognition ends, sending results to API
      *******************************************************/
     function finalizeTapSay() {
-      console.log("======== finalizeTapSay被调用！========");
+      console.log("======== finalizeTapSay========");
       const transcript = (voiceInputSpan.innerText || "").trim();
-      console.log("语音识别结果:", transcript);
+      console.log("voice:", transcript);
       
       if (!transcript) {
-        console.log("没有语音内容，不会发送到API");
+        console.log("no voice input wont sent to API");
         endTapSay();
         return;
       }
@@ -1477,13 +1496,13 @@ Hi, how are you? Meet me on Wednesday. </div>
       let merged = (parted + " <||> " + textNoPunc).trimEnd();
       finalOutputSpan.innerText = textNoPunc;
       
-      console.log("原始文本:", parted);
-      console.log("处理后将发送:", merged);
+      console.log("original:", parted);
+      console.log("processed:", merged);
 
       let finalIndex = (activeMode === MODE_INPUT) ? localTapIndex :
                        (tapStartIndex !== -1 ? tapStartIndex : localTapIndex);
       
-      console.log("即将调用sendToAPI");
+      console.log("sendToAPI");
       sendToAPI(merged, finalIndex, activeMode === MODE_EXPERIENCE);
       console.log("==============================");
       
@@ -1506,21 +1525,21 @@ Hi, how are you? Meet me on Wednesday. </div>
       {
         target: "Your best bet is to drop him and go after another player.",
         error: "Your best bet is to drop him and go after another.",
-        tip: "Tap near the mistake till the mic icon is green, then speak correction. Here's like 'another player'."
+        tip: "<strong>Tap</strong> near the mistake till the mic icon is green, then speak correction. Here's like say 'another player'."
       },
       {
-        target: "Energy consumption trends in US goods are shifting rapidly.",
-        error: "Energy consumption trends in us good are shifting rapidly.",
-        tip: "Great! It also works on capitalization issues along the way. Here try 'US households'."
+        target: "Educational reforms require collaboration between teachers and policymakers.",
+        error: "Educational reform require collaboration between teachers and policymakers.",
+        tip: "Great! Also for replacement correction."
       },
       {
-        target: "She has been living in Paris for the past five years.",
-        error: "She has lived in Paris since five years.",
-        tip: "Multiple mistakes can be corrected multiple times"
+        target: "Artificial intelligence is transforming the way businesses operate globally.",
+        error: "Artificial intelligent are transform the way businesses operate globally.",
+        tip: "Multiple mistakes in a row can be corrected in one time."
       },
       {
         target: "The cat sat on the mat. The dog chased the cat. The mouse ran away quickly.",
-        error: "The cat sat on the mat. The dog chase the cat. The mouse ran away quickly.",
+        error: "The cat sat on the mat. The dog chase cat. The mouse ran away quickly.",
         tip: "This also works for multi-sentence paragraphs"
       },
       {
@@ -1629,7 +1648,8 @@ Hi, how are you? Meet me on Wednesday. </div>
     function attachTranscriptionLongPress(errorSentenceEl) {
       let pressTimerExp = null;
       let longPressStarted = false;
-      let longPressThreshold = 100;
+      let longPressThreshold = 100; // PC端长按阈值
+      let mobileLongPressThreshold = 300; // 移动端长按阈值，略长一些以便区分点击和长按
       let isDraggingAndRecording = false;
       let stopRecordingTimer = null;  
 
@@ -1708,13 +1728,132 @@ Hi, how are you? Meet me on Wednesday. </div>
           isDraggingAndRecording = true;
           handleExpLongPress();
           showLongPressFeedback(e.clientX, e.clientY);
-        }, longPressThreshold);
+        }, mobileLongPressThreshold); 
+      });
+
+
+      errorSentenceEl.addEventListener("touchstart", (e) => {
+  
+        e.preventDefault();
+        
+    
+        errorSentenceEl.dataset.touchStarted = "true";
+        
+     
+        if (stopRecordingTimer) {
+          clearTimeout(stopRecordingTimer);
+          stopRecordingTimer = null;
+        }
+
+        if (isDragging) return;
+        removeCursor();
+
+        const touch = e.touches[0];
+        const rect = e.currentTarget.getBoundingClientRect();
+        const text = errorSentenceEl.innerText;
+        
+
+        const x = touch.clientX;
+        const y = touch.clientY;
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(x, y);
+          if (range) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+  
+          const style = window.getComputedStyle(errorSentenceEl);
+          const fontSize = parseFloat(style.fontSize);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const touchX = touch.clientX - rect.left - paddingLeft;
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(touchX / averageCharWidth);
+        }
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+
+        startRecording();
+
+   
+        const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+        errorText.innerText = sentenceInfo.sentence;
+        originalSentence = sentenceInfo.sentence;
+        originalErrorSpan.innerText = sentenceInfo.sentence;
+        selectedSentence = sentenceInfo.sentence;
+        
+ 
+        currentSentenceInfo = sentenceInfo;
+    
+        tapStartIndex = sentenceInfo.relativePosition;
+        console.log("Touch start - Relative position set to:", sentenceInfo.relativePosition);
+
+   
+        pressTimerExp = setTimeout(() => {
+          longPressStarted = true;
+          isDraggingAndRecording = true;
+          handleExpLongPress();
+          showLongPressFeedback(touch.clientX, touch.clientY);
+        }, mobileLongPressThreshold);
       });
 
       errorSentenceEl.addEventListener("mousemove", () => {
         if (pressTimerExp && !longPressStarted) {
           clearTimeout(pressTimerExp);
           pressTimerExp = null;
+        }
+      });
+
+  
+      errorSentenceEl.addEventListener("touchmove", (e) => {
+        if (pressTimerExp && !longPressStarted) {
+          clearTimeout(pressTimerExp);
+          pressTimerExp = null;
+        }
+        
+ 
+        if (isDragging || isDraggingAndRecording) {
+          e.preventDefault();
+          
+          const touch = e.touches[0];
+          if (document.caretRangeFromPoint) {
+            const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+            if (range && range.startContainer === errorSentenceEl.firstChild) {
+              localTapIndex = range.startOffset;
+            }
+          } else {
+    
+            const rect = errorSentenceEl.getBoundingClientRect();
+            const style = window.getComputedStyle(errorSentenceEl);
+            const paddingLeft = parseFloat(style.paddingLeft);
+            const touchX = touch.clientX - rect.left - paddingLeft;
+            const fontSize = parseFloat(style.fontSize);
+            const averageCharWidth = fontSize * 0.6;
+            localTapIndex = Math.round(touchX / averageCharWidth);
+          }
+          
+          const text = errorSentenceEl.innerText;
+          localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+          
+     
+          const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+          console.log("Touch move - Position info:", {
+            localTapIndex: localTapIndex,
+            startIndex: sentenceInfo.startIndex,
+            relativePosition: sentenceInfo.relativePosition,
+            sentence: sentenceInfo.sentence
+          });
+          
+          errorText.innerText = sentenceInfo.sentence;
+          originalSentence = sentenceInfo.sentence;
+          originalErrorSpan.innerText = sentenceInfo.sentence;
+          selectedSentence = sentenceInfo.sentence;
+          
+     
+          currentSentenceInfo = sentenceInfo;
+          tapStartIndex = sentenceInfo.relativePosition;
+          
+ 
+          showCursorAtPosition();
         }
       });
 
@@ -1727,7 +1866,7 @@ Hi, how are you? Meet me on Wednesday. </div>
           isDragging = false;
           errorSentenceEl.classList.remove("dragging");
           
-          // 清除任何现有的定时器
+    
           if (stopRecordingTimer) {
             clearTimeout(stopRecordingTimer);
             stopRecordingTimer = null;
@@ -1735,7 +1874,7 @@ Hi, how are you? Meet me on Wednesday. </div>
           
           console.log("拖动结束，继续录音直到捕获语音或达到最大时长");
           
-          // 恢复标准的onresult处理，以便语音结果能够触发停止录音
+ 
           if (recognition) {
             // 添加一个标记，表示这是长按拖动后的录音
             recognition.isAfterDragging = true;
@@ -1811,42 +1950,41 @@ Hi, how are you? Meet me on Wednesday. </div>
               voiceInputSpan.innerText = transcript;
               finalOutputSpan.innerText = transcript;
               
-              // 如果检测到语音并获得最终结果，停止录音
-              if (event.results[0].isFinal && recognition && isRecording) {
-                console.log("检测到语音并获得最终结果，停止录音");
-                
-                // 停止录音，然后直接调用finalizeTapSay处理结果
-                setTimeout(() => {
-                  if (isRecording) {
-                    // 先保存transcript，避免stopRecording清除
-                    const savedTranscript = voiceInputSpan.innerText.trim();
-                    
-                    // 停止录音
-                    stopRecording();
-                    
-                    // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
-                    if (savedTranscript) {
-                      console.log("直接调用finalizeTapSay处理录音结果");
-                      voiceInputSpan.innerText = savedTranscript;
-                      setTimeout(finalizeTapSay, 100);
-                    }
-                  }
-                }, 100);
+              // 记录最后一次检测到语音的时间
+              lastSpeechTime = new Date();
+              
+              // 清除之前的沉默计时器
+              if (silenceTimer) {
+                clearTimeout(silenceTimer);
+                silenceTimer = null;
               }
+              
+              // 设置新的沉默计时器，在用户停止说话后一段时间再停止录音
+              silenceTimer = setTimeout(() => {
+                if (isRecording && recognition) {
+                  console.log("移动端：用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
+                  // 先保存transcript，避免stopRecording清除
+                  const savedTranscript = voiceInputSpan.innerText.trim();
+                  
+                  // 停止录音
+                  stopRecording();
+                  
+                  // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
+                  if (savedTranscript) {
+                    console.log("移动端：调用finalizeTapSay处理录音结果");
+                    voiceInputSpan.innerText = savedTranscript;
+                    setTimeout(finalizeTapSay, 100);
+                  }
+                }
+              }, silenceThreshold);
+              
+              // 不再在检测到最终结果后就立即停止录音
+              // if (event.results[0].isFinal && recognition && isRecording) {
+              //   console.log("检测到语音并获得最终结果，停止录音");
+              //   ...
+              // }
             };
           }
-          
-          // 不再设置3秒后停止录音
-          // 让录音继续，直到捕获到语音内容或达到最大录音时长(30秒)
-          // stopRecordingTimer = setTimeout(() => {
-          //   if (recognition) {
-          //     try {
-          //       recognition.stop();
-          //     } catch (ex) {
-          //       console.error("[Transcription] error stopping:", ex);
-          //     }
-          //   }
-          // }, 3000);
         }
       });
     }
@@ -2083,9 +2221,17 @@ Hi, how are you? Meet me on Wednesday. </div>
         cursorElement.className = "cursor-indicator";
         cursorElement.style.position = "absolute";
 
-        cursorElement.style.left = (rangeRect.left + window.scrollX) + "px";
-        cursorElement.style.top = (rangeRect.top + window.scrollY) + "px";
+        // 使用clientX和clientY坐标，而不是pageX和pageY，以适应移动设备的滚动
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+        
+        cursorElement.style.left = (rangeRect.left + scrollX) + "px";
+        cursorElement.style.top = (rangeRect.top + scrollY) + "px";
         cursorElement.style.height = rangeRect.height + "px";
+        // 增加光标宽度，使其在移动设备上更容易看到
+        cursorElement.style.width = "3px";
+        // 确保光标在最上层显示
+        cursorElement.style.zIndex = "9999";
 
         document.body.appendChild(cursorElement);
         cursorElement.dataset.index = localTapIndex.toString();
@@ -2095,6 +2241,13 @@ Hi, how are you? Meet me on Wednesday. </div>
           cursorTimeout = setTimeout(() => { removeCursor(); }, 6000);
         }
         touchIndexSpan.innerText = String(localTapIndex);
+        
+        // 添加日志以便调试
+        console.log("Cursor created at position:", localTapIndex, "with coordinates:", {
+          left: rangeRect.left + scrollX,
+          top: rangeRect.top + scrollY,
+          height: rangeRect.height
+        });
       } catch (e) {
         console.error("[Transcription] Error creating cursor:", e);
       }
@@ -2522,18 +2675,47 @@ Hi, how are you? Meet me on Wednesday. </div>
           
           if (window.stopRecordingTimer) {
             clearTimeout(window.stopRecordingTimer);
+            window.stopRecordingTimer = null;
           }
           
-          window.stopRecordingTimer = setTimeout(() => {
-            if (recognition) {
-              console.log("Free input: stopping recording after 3s");
-              try {
-                recognition.stop();
-              } catch (ex) {
-                console.error("Error stopping recognition:", ex);
+
+
+          if (recognition) {
+            recognition.onresult = (event) => {
+              const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+              voiceInputSpan.innerText = transcript;
+              finalOutputSpan.innerText = transcript;
+              
+              // 记录最后一次检测到语音的时间
+              lastSpeechTime = new Date();
+              
+              // 清除之前的沉默计时器
+              if (silenceTimer) {
+                clearTimeout(silenceTimer);
+                silenceTimer = null;
               }
-            }
-          }, 3000);
+              
+              // 设置新的沉默计时器，在用户停止说话后一段时间再停止录音
+              silenceTimer = setTimeout(() => {
+                if (isRecording && recognition) {
+                  console.log("自由输入模式：用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
+                  // 先保存transcript，避免stopRecording清除
+                  const savedTranscript = voiceInputSpan.innerText.trim();
+                  
+                  // 停止录音
+                  stopRecording();
+                  
+                  // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
+                  if (savedTranscript) {
+                    console.log("自由输入模式：调用finalizeTapSay处理录音结果");
+                    voiceInputSpan.innerText = savedTranscript;
+                    setTimeout(finalizeTapSay, 100);
+                  }
+                }
+              }, silenceThreshold);
+            };
+          }
+          
         }
       }
       
@@ -2898,7 +3080,7 @@ Hi, how are you? Meet me on Wednesday. </div>
       const inputModeContainer = document.getElementById("input-mode");
       if (inputModeContainer) {
         inputModeContainer.insertBefore(
-          addTipBox("Tap on the place you want to edit, till the mic icon is green, then speak correction. "),
+          addTipBox( '<strong>Long press</strong> the place you want to edit a bit till the mic icon turns green, then speak correction.'),
           inputModeContainer.firstChild
         );
       }
@@ -3075,18 +3257,21 @@ Hi, how are you? Meet me on Wednesday. </div>
       clearTimeout(hardStopTimer); // 清除硬停止计时器
       hardStopTimer = null;
       
-      // 记录是否是在拖动后停止录音
-      const isAfterDragging = recognition && recognition.isAfterDragging;
+      // 清除沉默计时器
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
       
-      // 在停止录音前先将isRecording设为false
-      // 这样在onend事件触发时不会尝试重新启动录音
+
+      const isAfterDragging = recognition && recognition.isAfterDragging;
+
       isRecording = false;
       isListening = false;
       
       if (recognition) {
         try { 
-          // 不再设置 recognition.onend = null，确保onend事件能够正常触发
-          // recognition.onend = null;  // 删除这一行
+
           console.log("调用recognition.stop()");
           recognition.stop(); 
         } catch(e) { 
