@@ -816,6 +816,26 @@
   </style>
 </head>
 <body>
+  <!-- Pre-heat overlay -->
+  <div id="preheat-overlay" style="
+    position:fixed;inset:0;
+    background:rgba(255,255,255,.9);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    z-index:5000;">
+    <p id="preheat-status" style="
+      font-size:1.2rem;margin-bottom:24px;">
+      Initializing speech recognition...
+    </p>
+    <button id="preheat-continue" style="
+      display:none;padding:10px 28px;
+      border:none;border-radius:8px;
+      background:#28a745;color:#fff;
+      font-size:1rem;cursor:pointer;">
+      Continue
+    </button>
+  </div>
+
   <!-- Header load -->
   <header id="header-container"></header>
 
@@ -963,6 +983,52 @@ Hi, how are you? Meet me on Wednesday. </div>
   <div id="float-menu"></div>
 
   <script>
+    /* ---------- Speech engine pre-warm overlay ---------- */
+    function preheatSpeechRecognition() {
+      // wrap pre-heat in Promise
+      return new Promise((resolve) => {
+        // ask mic permission early
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {});
+        }
+
+        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        // if not supported, skip
+        if (!Rec) { resolve("unsupported"); return; }
+
+        try {
+          const r = new Rec();
+          r.lang = "en-US";
+          r.interimResults = false;
+          r.maxAlternatives = 1;
+
+          r.onstart = () => { r.abort(); };      // abort right after start
+          r.onend   = () => { resolve("ok"); };
+          r.onerror = () => { resolve("error"); };
+
+          r.start();
+        } catch (_) { resolve("exception"); }
+      });
+    }
+
+    (async () => {
+      const overlay = document.getElementById("preheat-overlay");
+      const status  = document.getElementById("preheat-status");
+      const button  = document.getElementById("preheat-continue");
+
+      try {
+        status.textContent = "Warming up speech engine...";
+        await preheatSpeechRecognition();        // wait for warm-up
+        status.textContent = "Speech engine ready!";
+      } catch {
+        status.textContent = "Unable to initialize speech engine, you can still continue.";
+      }
+
+      // show continue button
+      button.style.display = "inline-block";
+      button.addEventListener("click", () => { overlay.style.display = "none"; });
+    })();
+
     /***********************************************
      * ============ A) Universal UI & Code ============
      ***********************************************/
