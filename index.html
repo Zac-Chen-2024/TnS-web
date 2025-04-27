@@ -1733,13 +1733,7 @@ Hi, how are you? Meet me on Wednesday. </div>
 
 
       errorSentenceEl.addEventListener("touchstart", (e) => {
-  
-        e.preventDefault();
-        
-    
-        errorSentenceEl.dataset.touchStarted = "true";
-        
-     
+        // Clear any stop timer
         if (stopRecordingTimer) {
           clearTimeout(stopRecordingTimer);
           stopRecordingTimer = null;
@@ -1748,45 +1742,40 @@ Hi, how are you? Meet me on Wednesday. </div>
         if (isDragging) return;
         removeCursor();
 
+        // Store touch start info
+        errorSentenceEl.dataset.touchStarted = "true";
         const touch = e.touches[0];
         const rect = e.currentTarget.getBoundingClientRect();
         const text = errorSentenceEl.innerText;
         
-
-        const x = touch.clientX;
-        const y = touch.clientY;
+        // Use caretRangeFromPoint for precise location
         if (document.caretRangeFromPoint) {
-          const range = document.caretRangeFromPoint(x, y);
+          const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
           if (range) {
             localTapIndex = range.startOffset;
           }
         } else {
-  
+          // Fallback calculation
           const style = window.getComputedStyle(errorSentenceEl);
-          const fontSize = parseFloat(style.fontSize);
           const paddingLeft = parseFloat(style.paddingLeft);
           const touchX = touch.clientX - rect.left - paddingLeft;
+          const fontSize = parseFloat(style.fontSize);
           const averageCharWidth = fontSize * 0.6;
-          localTapIndex = Math.round(touchX / averageCharWidth);
+          localTapIndex = Math.max(0, Math.min(text.length, Math.round(touchX / averageCharWidth)));
         }
-        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
-
-
-        startRecording();
-
-   
+        
+        // Get the sentence at this position - but don't start recording yet
         const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
         errorText.innerText = sentenceInfo.sentence;
         originalSentence = sentenceInfo.sentence;
         originalErrorSpan.innerText = sentenceInfo.sentence;
         selectedSentence = sentenceInfo.sentence;
         
- 
+        // Save sentence info including relative position
         currentSentenceInfo = sentenceInfo;
-    
+        // Record relative position for finalizeTapSay
         tapStartIndex = sentenceInfo.relativePosition;
         console.log("Touch start - Relative position set to:", sentenceInfo.relativePosition);
-
    
         pressTimerExp = setTimeout(() => {
           longPressStarted = true;
@@ -1923,13 +1912,22 @@ Hi, how are you? Meet me on Wednesday. </div>
         }
       });
 
-      errorSentenceEl.addEventListener("touchend", () => {
+      errorSentenceEl.addEventListener("touchend", (e) => {
         if (errorSentenceEl.dataset.touchStarted) {
           delete errorSentenceEl.dataset.touchStarted;
+          
+          // 如果没有触发长按，则视为普通点击
+          if (!longPressStarted) {
+            // 短按操作 - 开始录音
+            console.log("短按操作 - 开始录音");
+            startRecording();
+          }
         }
+        
         clearTimeout(pressTimerExp);
         pressTimerExp = null;
         longPressStarted = false;
+        
         if (isDraggingAndRecording) {
           isDraggingAndRecording = false;
           isDragging = false;
@@ -2003,7 +2001,14 @@ Hi, how are you? Meet me on Wednesday. </div>
 
       isDragging = true;
       element.classList.add("dragging");
+      
+      // 确保光标显示在正确位置
       showCursorAtPosition();
+      
+      // 添加触觉反馈（如果设备支持）
+      if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(50); // 短震动提示用户长按已触发
+      }
       
       // Start recording but set to not auto-process results
       startRecording(true);
@@ -2089,6 +2094,7 @@ Hi, how are you? Meet me on Wednesday. </div>
         currentSentenceInfo = sentenceInfo;
         tapStartIndex = sentenceInfo.relativePosition;
 
+        // 确保每次移动都更新光标位置
         showCursorAtPosition();
       };
 
@@ -2228,8 +2234,20 @@ Hi, how are you? Meet me on Wednesday. </div>
         cursorElement.style.left = (rangeRect.left + scrollX) + "px";
         cursorElement.style.top = (rangeRect.top + scrollY) + "px";
         cursorElement.style.height = rangeRect.height + "px";
-        // 增加光标宽度，使其在移动设备上更容易看到
-        cursorElement.style.width = "3px";
+        
+        // 判断是否为移动设备，增强光标显示效果
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          // 移动设备上使用更大更明显的光标
+          cursorElement.style.width = "4px";
+          cursorElement.style.backgroundColor = "#FF4500"; // 鲜明的橙红色
+          cursorElement.style.boxShadow = "0 0 8px rgba(255, 69, 0, 0.9)"; // 加强光晕效果
+          // 添加脉冲动画
+          cursorElement.style.animation = "blink 0.8s infinite";
+        } else {
+          cursorElement.style.width = "2px";
+        }
+        
         // 确保光标在最上层显示
         cursorElement.style.zIndex = "9999";
 
@@ -2254,8 +2272,30 @@ Hi, how are you? Meet me on Wednesday. </div>
     }
 
     function showLongPressFeedback(x, y) {
-      // A placeholder for any long-press feedback
+      // 创建一个视觉反馈元素
       console.log("Long-press at:", x, y);
+      
+      // 创建一个圆形涟漪效果
+      const ripple = document.createElement('div');
+      ripple.style.position = 'absolute';
+      ripple.style.width = '40px';
+      ripple.style.height = '40px';
+      ripple.style.left = (x - 20) + 'px';
+      ripple.style.top = (y - 20) + 'px';
+      ripple.style.borderRadius = '50%';
+      ripple.style.backgroundColor = 'rgba(255, 69, 0, 0.3)';
+      ripple.style.border = '2px solid rgba(255, 69, 0, 0.5)';
+      ripple.style.zIndex = '9998';
+      ripple.style.pointerEvents = 'none';
+      ripple.style.animation = 'pulsate 0.8s ease-out';
+      ripple.style.animationIterationCount = '1';
+      
+      document.body.appendChild(ripple);
+      
+      // 移除反馈元素
+      setTimeout(() => {
+        ripple.remove();
+      }, 800);
     }
 
     /*******************************************************
