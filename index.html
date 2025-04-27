@@ -816,31 +816,6 @@
   </style>
 </head>
 <body>
-  <!-- Speech-engine testing overlay -->
-  <div id="preheat-overlay" style="
-    position:fixed;inset:0;
-    background:rgba(255,255,255,.92);
-    display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    z-index:5000;font-family:'Segoe UI',system-ui,sans-serif;">
-    <!-- top-right Skip -->
-    <button id="preheat-skip" style="
-      position:absolute;top:14px;right:18px;
-      background:none;border:none;font-size:0.95rem;
-      color:#007bff;cursor:pointer;">Skip</button>
-
-    <p id="preheat-status" style="
-      font-size:1.2rem;margin-bottom:24px;line-height:1.6;text-align:center;">
-      Please say <strong>"I'm ready"</strong> to verify the speech engine.
-    </p>
-
-    <button id="preheat-continue" style="
-      display:none;padding:10px 32px;
-      border:none;border-radius:8px;
-      background:#28a745;color:#fff;
-      font-size:1rem;cursor:pointer;">Continue</button>
-  </div>
-
   <!-- Header load -->
   <header id="header-container"></header>
 
@@ -988,97 +963,6 @@ Hi, how are you? Meet me on Wednesday. </div>
   <div id="float-menu"></div>
 
   <script>
-    /* ---------- Interactive warm-up: user says "I'm ready" ---------- */
-    const READY_PHRASE   = "i'm ready";      // phrase to detect
-    const TEST_API       = "/ready_check";   // backend endpoint (change if needed)
-    const MAX_API_RETRY  = 4;                // retries before giving up
-
-    async function verifyWithAPI(text) {
-      // POST to backend; if unreachable, fallback to local match
-      try {
-        const resp  = await fetch(TEST_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text })
-        });
-        const data = await resp.json();
-        return Boolean(data?.ok);
-      } catch (_) {
-        return text.toLowerCase().includes(READY_PHRASE);
-      }
-    }
-
-    function startReadyTest() {
-      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!Rec) {
-        document.getElementById("preheat-status").textContent =
-          "Speech recognition is not supported; you may continue.";
-        showContinue();
-        return;
-      }
-      const r = new Rec();
-      r.lang = "en-US";
-      r.interimResults = false;
-      r.maxAlternatives = 1;
-
-      let apiTrials = 0;
-
-      r.onresult = async (evt) => {
-        const txt    = evt.results[0][0].transcript.trim();
-        const status = document.getElementById("preheat-status");
-        status.textContent = `Heard "${txt}", verifying...`;
-
-        const ok = await verifyWithAPI(txt);
-        if (ok) {
-          status.textContent = "Speech engine is ready!";
-          showContinue();
-          r.abort();
-        } else if (++apiTrials >= MAX_API_RETRY) {
-          status.textContent =
-            "Verification failed several times; you may still continue.";
-          showContinue();
-          r.abort();
-        } else {
-          status.textContent =
-            "Phrase not recognized. Please say \"I'm ready\" again.";
-          r.abort();
-          setTimeout(() => { try { r.start(); } catch(_){} }, 400);
-        }
-      };
-
-      r.onerror = () => {
-        document.getElementById("preheat-status").textContent =
-          "An error occurred. You may click Skip or refresh to retry.";
-      };
-
-      r.onend = () => {
-        if (!document.getElementById("preheat-continue").style.display) {
-          setTimeout(() => { try { r.start(); } catch(_){} }, 300);
-        }
-      };
-
-      // request mic permission early
-      navigator.mediaDevices?.getUserMedia({ audio: true }).catch(()=>{});
-      r.start();
-    }
-
-    function showContinue() {
-      const btn = document.getElementById("preheat-continue");
-      btn.style.display = "inline-block";
-      btn.onclick = () => {
-        document.getElementById("preheat-overlay").style.display = "none";
-      };
-    }
-
-    document.getElementById("preheat-skip").addEventListener("click", () => {
-      const warn =
-        "If you are using Android, skipping the test may cause the first " +
-        "speech input to fail or require extra wait time. Continue anyway?";
-      if (confirm(warn)) showContinue();
-    });
-
-    startReadyTest();
-
     /***********************************************
      * ============ A) Universal UI & Code ============
      ***********************************************/
@@ -3311,6 +3195,40 @@ Hi, how are you? Meet me on Wednesday. </div>
         document.addEventListener('pointerdown', suggestionsDismissHandler, { passive: true });
       }, 0);
     }
+
+    /* ---------- Android warm-up warning (simple banner) ---------- */
+    (function () {
+      // detect Android handset / tablet
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (!isAndroid) return;                    // quit if not Android
+
+      // create a small fixed banner
+      const banner = document.createElement("div");
+      banner.id = "android-warn-banner";
+      banner.innerHTML = `
+        <span style="margin-bottom:10px;display:block;text-align:center;">
+          ⚠️ On Android the first speech-recognition call may fail.
+          If it happens, tap Restore and wait ~10 s, then try again.
+        </span>
+        <button id="android-warn-close"
+                style="border:none;background:#fff1;border-radius:4px;
+                       padding:4px 12px;cursor:pointer;font-size:.9rem;
+                       margin:0 auto;display:block;">
+          Close
+        </button>`;
+      banner.style.cssText = `
+        position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);
+        background:#ffeeba;color:#856404;font-size:.9rem;
+        padding:12px 16px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.25);
+        z-index:5000;display:flex;flex-direction:column;max-width:90%;`;
+
+      document.body.appendChild(banner);
+
+      // close handler
+      document.getElementById("android-warn-close").onclick = () => {
+        banner.remove();
+      };
+    })();
   </script>
 </body>
 </html>
