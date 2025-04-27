@@ -605,6 +605,7 @@
       -webkit-touch-callout: none !important;
       -webkit-user-drag: none !important;
       pointer-events: auto !important;
+      touch-action: none !important;   /* 彻底禁用浏览器默认手势 */
     }
     
     .editable-sentence-box:hover {
@@ -1794,7 +1795,7 @@ Hi, how are you? Meet me on Wednesday. </div>
           handleExpLongPress();
           showLongPressFeedback(touch.clientX, touch.clientY);
         }, mobileLongPressThreshold);
-      });
+      }, { passive: false });   // ← 一定要写
 
       errorSentenceEl.addEventListener("mousemove", () => {
         if (pressTimerExp && !longPressStarted) {
@@ -1855,7 +1856,7 @@ Hi, how are you? Meet me on Wednesday. </div>
  
           showCursorAtPosition();
         }
-      });
+      }, { passive: false });
 
       errorSentenceEl.addEventListener("mouseup", () => {
         clearTimeout(pressTimerExp);

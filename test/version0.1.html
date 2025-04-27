@@ -1,626 +1,3345 @@
-<!DOCTYPE html>
+<!DOCTYPE html>      
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- Ensure proper scaling on mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tap&amp;Say Text Editor</title>
+  <title>Tap&Say Text Editor</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
   <style>
-    
-    /* Global styles */
-    body {
-      font-family: Arial, sans-serif;
+    /*******************************************************
+     * 0) Page Layout: Sticky Footer + Gradient Background
+     *******************************************************/
+    html, body {
       margin: 0;
       padding: 0;
-      background-color: #f4f4f4;
+      width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
+      min-height: 100vh; /* Ensure page is at least as tall as the viewport */
     }
-    header, footer {
-      background: #007bff;
-      color: white;
-      text-align: center;
-      padding: 10px 0;
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+    }
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1.2rem 0 0.2rem 0;/* Reduce vertical padding */
+    }
+    #header-container, #footer-container {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      flex-shrink: 0;
     }
     .container {
-      flex: 1;
-      width: 90%;
-      max-width: 800px;
-      margin: 20px auto;
+      width: 85%;
+      max-width: 900px; /* Limit maximum width */
+      margin: 0 auto;
+      box-sizing: border-box;
     }
-    .card {
+
+    /* Adjust card spacing */
+    #monitoring-card {
+      margin-bottom: 2rem !important;
+    }
+    #experience-mode, #input-mode {
+      margin-bottom: 0rem !important;
+    }
+    #event-log-card {
+      margin-top: 1rem !important;
+      margin-bottom: 0 !important;
+    }
+    /* Keep the spacing between mode buttons and the main card unchanged */
+    #mode-buttons {
+      margin-bottom: 20px;
+    }
+
+    /*******************************************************
+     * Additional Class for JS Dynamic Toggle:
+     * Disable Long Press Menu / Text Selection
+     *******************************************************/
+    .disable-ime {
+      -webkit-touch-callout: none; /* Disable iOS long press menu */
+      -webkit-user-select: none;   /* Disable text selection on iOS */
+      user-select: none;           /* Disable text selection on Android/PC */
+    }
+
+    /*******************************************************
+     * 1) Mode Button Container (#mode-buttons):
+     * Large Buttons with Rounded Corners
+     *******************************************************/
+    #mode-buttons {
+      display: flex;
+      justify-content: space-between; /* Align buttons to both ends */
+      align-items: center;
+      margin-bottom: 20px; /* Consistent spacing with other cards */
+      gap: 15px; /* Space between buttons */
+      width: 100%; /* Ensure width matches container */
+    }
+    .mode-button {
+      flex: 1; /* Evenly distribute button space */
+      max-width: calc(50% - 10px); /* Prevent buttons from becoming too wide */
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 15px;
       background: #ffffff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      cursor: pointer;
+      font-size: 1rem;
+      color: #4a5568;
+      text-align: center;
+      transition: all 0.3s ease;
     }
+    .mode-button.active {
+      background: #4299e1;
+      color: #fff;
+    }
+    .mode-button:hover:not(.active) {
+      background: #f7fafc;
+      transform: translateY(-1px);
+    }
+
+    /*******************************************************
+     * 2) Card (.card): Rounded Corners + Shadow
+     *******************************************************/
+    .card {
+      border-radius: 15px;
+      padding: 30px; /* Maintain consistent internal padding */
+      margin-bottom: 20px; /* Reduce spacing between cards */
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      font-size: 1rem; /* Smaller base font size */
+    }
+    .card:last-child {
+      margin-bottom: 0;
+    }
+    .card h3 {
+      font-size: 1.5rem; /* Smaller title font size */
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Add a recording status indicator dot style */
+    .recording-status-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background-color: #666;  /* Default color is gray */
+      display: inline-block;
+      transition: background-color 0.3s ease;
+      vertical-align: middle;
+      margin-left: 0;
+    }
+
+    .recording-status-dot.recording {
+      background-color: #28a745; /* Turn green when recording */
+      animation: pulse 2s infinite;
+    }
+
+    /* Add microphone icon style */
+    .mic-icon {
+      color: #666; /* Default is gray */
+      transition: color 0.3s ease;
+      margin-right: 0px !important;
+    }
+
+    .mic-icon.recording {
+      color: #28a745; /* Turn green when recording */
+    }
+
+    /* Removed 'stopped' class, because the default is gray */
+    .recording-status-dot.stopped {
+      background-color: #666;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /*******************************************************
+     * 3) #text-editor
+     *******************************************************/
     #text-editor {
       width: 100%;
-      min-height: 300px;
-      border: 1px solid #ccc;
-      padding: 10px;
-      border-radius: 5px;
-      outline: none;
-      font-size: 16px;
-      background: white;
-      white-space: pre-wrap;
+      min-height: 350px; /* Reduce minimum height */
+      box-sizing: border-box;
+      resize: vertical;      
+      overflow: auto;        
+      margin: 0 auto;
+      background: #fff;      
+      border: 2px solid #e2e8f0;
+      border-radius: 15px;
+      padding: 1.5rem;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: #2d3748;
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
-    /* Placeholder when empty */
-    #text-editor:empty:before {
-      content: "Type here or drag a .doc/.txt file here";
-      color: gray;
+    #text-editor:focus {
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66,153,225,0.15);
     }
-    /* Recording status */
+    #text-editor, 
+    #text-editor * {
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+
+    /*******************************************************
+     * 4) Highlight Color: Light Blue
+     *******************************************************/
+    .highlighted-sentence {
+      background-color: #cce7ff;
+      transition: background 0.3s;
+    }
+
+    /*******************************************************
+     * 5) Monitoring / Log: Rounded Corners + Clean
+     *******************************************************/
     #mic-status {
       font-weight: bold;
       color: red;
     }
-    /* Event log area */
+    #mic-status.recording {
+      color: #28a745; /* Green */
+    }
+    #mic-status.recording-active {
+      color: #28a745; /* Green */
+    }
     #event-log {
-      font-size: 14px;
+      font-size: 0.9rem;
       max-height: 200px;
       overflow-y: auto;
       background: #f9f9f9;
-      padding: 10px;
+      padding: 8px;
       border: 1px solid #ccc;
       border-radius: 5px;
-      box-sizing: border-box;
     }
-    /* --- Monitoring window: Original Error Sentence --- */
-    #original-error-sentence {
-      font-weight: bold;
-      color: #333;
-    }
-    /* --- 圆形悬浮框（左右分半） --- */
-    #select-overlay {
-      position: fixed;
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      overflow: hidden;
-      display: flex;
-      border: 2px solid #000;
-      background: rgba(255,255,255,0.95);
-      left: 0;
-      top: 0;
-      transform: translate(-50%, -50%);
-      z-index: 1000;
+
+    /*******************************************************
+     * 6) Floating Suggestions Box: Modern Style
+     *******************************************************/
+    .suggestions-box-floating {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+      padding: 6px;
+      z-index: 2000;
+      user-select: none;
+      pointer-events: auto;
+      max-height: 160px;
+      overflow-y: auto;
       transition: all 0.3s ease;
     }
-    #select-overlay .half {
-      width: 50%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
+    .suggestions-box-floating div {
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      border-radius: 6px;
       cursor: pointer;
-      font-weight: bold;
-      text-align: center;
-      padding: 5px;
+      transition: all 0.2s;
+      background-color: rgba(176, 196, 255, 0.2); /* Light blue background */
+      border-left: 3px solid rgba(65, 105, 225, 0.5); /* Add a left border */
     }
-    #select-overlay .half.left {
-      border-right: 1px solid #000;
+    .suggestions-box-floating div:nth-child(2n) {
+      background-color: rgba(186, 159, 255, 0.2); /* Light purple background */
+      border-left: 3px solid rgba(138, 43, 226, 0.5);
     }
-    /* --- Spinner 样式：与悬浮框同大 --- */
-    @keyframes spin {
-      from { transform: translate(-50%, -50%) rotate(0deg); }
-      to { transform: translate(-50%, -50%) rotate(360deg); }
+    .suggestions-box-floating div:nth-child(3n) {
+      background-color: rgba(255, 160, 160, 0.2); /* Light red background */
+      border-left: 3px solid rgba(220, 20, 60, 0.5);
     }
-    .spinner {
-      width: 150px;
-      height: 150px;
-      border: 8px solid #ccc;
-      border-top-color: #007bff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      position: relative;
-      top: 0;
-      left: 0;
+    .suggestions-box-floating div:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background-color: rgba(178, 235, 242, 0.4); /* Slightly darker on hover */
     }
-    /* --- 建议列表（矩形悬浮框） --- */
-    .suggestions-box {
-      text-align: left;
-      max-height: 150px;
-      overflow-y: auto;
-      width: 100%;
-      box-sizing: border-box;
-      padding: 5px;
+    .suggestions-box-floating div:active {
+      transform: translateY(0);
     }
-    .suggestions-box div {
-      padding: 5px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-      word-wrap: break-word;
-    }
-    .suggestions-box div:hover {
-      background-color: #f0f0f0;
-    }
-    /* --- 高亮整句 --- */
-    .highlighted-sentence {
-      background-color: yellow;
-    }
-    /* --- Toast 提醒 --- */
+
+    /*******************************************************
+     * 7) Toast: Fixed Bottom Notification
+     *******************************************************/
     .toast {
       position: fixed;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.8);
       color: #fff;
-      padding: 10px 20px;
+      padding: 12px 24px;
       border-radius: 5px;
-      z-index: 2000;
+      z-index: 3000;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
-    #tips-card {
-  position: fixed;
-  right: 20px;
-  /* 仅指定上下间距，让浏览器自动计算卡片高度 */
-  top: 150px;    /* 距顶部留出给页眉的空间，按需调整 */
-  bottom: 120px; /* 距底部留出给页脚的空间，按需调整 */
-  
-  /* 不要再写 height: 430px，这会干扰 top/bottom */
-  /* 如果想给它一个最大高度，也用 max-height */
-  max-height: calc(100vh - 160px); /* 80+80=160，高度再扣一下边距 */
 
-  width: 160px;
-  overflow-y: auto;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  z-index: 2000;
-}
-    #tips-card h4 {
-      margin-top: 0;
+    /*******************************************************
+     * 8) Drawer: (Removed old drawer style, replaced by float menu)
+     *******************************************************/
+
+    /*******************************************************
+     * 9) Tip Card: Colored Left Border + Rounded Corners
+     *******************************************************/
+    .tip-box {
+      background: #f0f2f4; /* Darker background */
+      border-left: 4px solid #007bff;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #495057;
     }
-    #tips-card ul {
-      padding-left: 20px;
-      margin: 0;
+    .tip-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      font-weight: normal; 
     }
-    #tips-card li {
-      margin-bottom: 5px;
-      list-style: disc;
+    .tip-content i {
+      color: #ffc107;
     }
-    /* --- 响应式调整 Tips 卡片 --- */
-    @media screen and (max-width: 800px) {
-      #tips-card {
-        position: static;
-        width: 90%;
-        margin: 10px auto;
-        transform: none;
+
+    /* Enhanced styles for PC */
+    @media (min-width: 481px) {
+      .tip-content {
+        font-size: 1.1rem;
       }
+      
+      #experience-mode .card {
+        padding: 30px;
+      }
+      
+      #experience-undo-button,
+      #skip-sentence-button {
+        padding: 20px !important;
+        font-size: 1.2rem !important;
+      }
+      
+      #target-sentence,
+      #error-sentence {
+        font-size: 1.3rem;
+        line-height: 1.8;
+      }
+      
+      #sentence-index {
+        font-size: 1.2rem;
+      }
+      
+      .nav-button {
+        padding: 0.7rem 1rem;
+        font-size: 1rem;
+        border-radius: 10px;
+      }
+      
+      #input-mode .card {
+        padding: 50px; /* match Experience Mode card spacing */
+      }
+      
+      #text-editor {
+        min-height: 280px;
+      }
+      
+      #monitoring-card p {
+        font-size: 1rem;
+        margin: 0.7rem 0;
+      }
+
+      
+    }
+
+    /* Enhanced styles for Experience Mode Cards (PC Only) */
+    @media (min-width: 481px) {
+      #experience-mode .card {
+        padding: 30px;
+      }
+      
+      /* Adjust button styles */
+      #experience-undo-button,
+      #skip-sentence-button {
+        padding: 20px !important;
+        font-size: 1.2rem !important;
+      }
+      
+      /* Adjust target and error sentence fonts */
+      #target-sentence,
+      #error-sentence {
+        font-size: 1.3rem;
+        line-height: 1.8;
+      }
+      
+      /* Adjust sentence index style */
+      #sentence-index {
+        font-size: 1.2rem;
+      }
+      
+      /* Adjust navigation buttons */
+      .nav-button {
+        padding: 0.7rem 1rem;
+        font-size: 1rem;
+        border-radius: 10px;
+      }
+    }
+
+    /* Mobile styles remain unchanged */
+    @media (max-width: 480px) {
+      .main-content {
+        padding: 1rem 0 0.1rem 0; /* Reduced bottom padding to minimize space above footer */
+      }
+      
+      .container {
+        width: 94%;
+      }
+      
+      .card {
+        padding: 15px;
+        margin-bottom: 15px; 
+        font-size: 0.9rem; 
+      }
+      
+      /* Adjust card margins for mobile */
+      #experience-mode, #input-mode {
+        margin-bottom: 0 !important; /* Remove bottom margin to minimize space above footer */
+      }
+      
+      #event-log-card {
+        margin-bottom: 0 !important; /* Remove bottom margin to minimize space above footer */
+      }
+      
+      .card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+      }
+      
+      /* Adjust the Transcription mode title size */
+      #experience-mode h3,
+      #input-mode h3 {
+        font-size: 1.2rem !important;
+        margin-bottom: 1rem;
+      }
+      
+      /* Unify button style for mobile */
+      .mode-button,
+      #experience-undo-button,
+      #skip-sentence-button,
+      #next-pair-button,
+      #simple-undo-button,
+      .clear-button {
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        transition: all 0.2s ease !important;
+      }
+
+      /* Special handling for Next Sentence button */
+      #skip-sentence-button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 36px !important;
+        text-align: center !important;
+        line-height: 1.2 !important;
+      }
+
+      #skip-sentence-button:not([style*="background: #6c757d"]) {
+        background: #007bff !important;
+        color: #fff !important;
+        cursor: pointer !important;
+      }
+
+      #skip-sentence-button[style*="background: #6c757d"] {
+        background: #6c757d !important;
+        color: #fff !important;
+        cursor: default !important;
+        opacity: 0.7 !important;
+      }
+
+      /* Adjust suggestion box style */
+      .suggestions-box-floating {
+        max-width: 90vw !important;
+        width: auto !important;
+        font-size: 1.0rem !important;
+      }
+
+      .suggestions-box-floating div {
+        padding: 8px 10px !important;
+        margin-bottom: 3px !important;
+        line-height: 1.5 !important;
+      }
+
+      /* Adjust navigation buttons */
+      .nav-button {
+        padding: 6px 10px !important;
+        font-size: 0.9rem !important;
+      }
+      
+      #text-editor {
+        min-height: 200px;
+        padding: 1rem;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+      
+      #monitoring-card p {
+        font-size: 0.9rem;
+        margin: 0.5rem 0;
+      }
+      
+      #event-log {
+        font-size: 0.85rem;
+        max-height: 150px;
+      }
+      
+      #mode-buttons {
+        margin-bottom: 15px; 
+        gap: 10px;
+      }
+
+      /* Adjust clear button style */
+      .clear-button {
+        padding: 4px 10px !important;
+        font-size: 0.85rem !important;
+      }
+
+      /* Adjust Undo button height in free input mode */
+      #simple-undo-button {
+        min-height: 36px !important;
+      }
+
+      /* Adjust the font size of the error and target sentences */
+      #target-sentence {
+        font-size: 1.1rem !important;
+        line-height: 1.6 !important;
+      }
+
+      #error-sentence {
+        font-size: 1.2rem !important;
+        line-height: 1.6 !important;
+      }
+
+      /* Adjust suggestion box font size */
+      .suggestions-box-floating {
+        max-width: 90vw !important;
+        width: auto !important;
+        font-size: 1.0rem !important;
+      }
+
+      .suggestions-box-floating div {
+        padding: 8px 10px !important;
+        margin-bottom: 3px !important;
+        line-height: 1.5 !important;
+      }
+    }
+
+    /* Base styles for navigation buttons */
+    .nav-button {
+      padding: 0.7rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: #007bff;
+      box-shadow: 0 2px 6px rgba(0,123,255,0.3);
+      cursor: pointer;
+      color: #ffffff;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .nav-button:hover {
+      background: #0056b3;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,123,255,0.4);
+    }
+
+    .nav-button:active {
+      transform: translateY(0);
+      background: #004494;
+      box-shadow: 0 2px 4px rgba(0,123,255,0.2);
+    }
+
+    /*******************************************************
+     * New: Error sentence text box style
+     *******************************************************/
+    .editable-sentence-box {
+      width: 100%;
+      min-height: 150px; 
+      padding: 12px 15px;
+      background: #f8f9fa;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      cursor: text;
+      transition: all 0.2s ease;
+      box-sizing: border-box; 
+      
+      /* Enhanced text selection disabling for experience mode */
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      -webkit-touch-callout: none !important;
+      -webkit-user-drag: none !important;
+      pointer-events: auto !important;
+    }
+    
+    .editable-sentence-box:hover {
+      background: #f1f3f5;
+      border-color: #cbd5e0;
+    }
+    
+    .editable-sentence-box.active {
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66,153,225,0.15);
+    }
+    
+    .edit-indicator {
+      display: inline-block;
+      margin-left: 8px;
+      font-size: 0.8rem;
+      color: #666;
+      font-style: italic;
+    }
+
+    /*******************************************************
+     * New: Cursor feedback at click position
+     *******************************************************/
+    .cursor-indicator {
+      display: inline-block;
+      width: 2px;
+      height: 1.5em; 
+      background-color: #E6B422;
+      animation: blink 1s infinite;
+      position: absolute;
+      z-index: 10;
+      pointer-events: none; 
+      margin-top: 0; 
+      border-radius: 1px; 
+      box-shadow: 0 0 3px rgba(230, 180, 34, 0.5);
+    }
+    
+    /* 移动设备上的光标样式 */
+    @media (hover: none) {
+      .cursor-indicator {
+        width: 3px !important;
+        background-color: #FF4500 !important; /* 使用更鲜艳的颜色 */
+        box-shadow: 0 0 5px rgba(255, 69, 0, 0.8) !important; /* 增强光晕效果 */
+        z-index: 9999 !important; /* 确保在最上层 */
+      }
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .dragging {
+      cursor: text !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+
+    /* Only enable text selection if .dragging is applied with higher priority */
+    .editable-sentence-box.dragging {
+      cursor: text !important;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+    }
+
+    /* Prevent iOS from text selection on long-press in experience mode */
+    @media (hover: none) {
+      .editable-sentence-box {
+        touch-action: manipulation; 
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      
+      /* Special handling for free input mode */
+      #simple-editor {
+        touch-action: manipulation;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      
+      /* Allow text selection on short press */
+      #simple-editor:focus {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+    }
+
+    /* Animation keyframes for long-press feedback */
+    @keyframes pulsate {
+      0% { transform: scale(0.8); opacity: 0.7; }
+      50% { transform: scale(1.2); opacity: 0.5; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    /* Add new floating button and menu style */
+    #float-menu-button {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 25px;
+      background: #007bff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: all 0.3s ease;
+      z-index: 3000;
+    }
+
+    #float-menu-button:hover {
+      transform: scale(1.1);
+      background: #0056b3;
+    }
+
+    #float-menu {
+      position: fixed;
+      bottom: 80px;
+      left: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 3000;
+      min-width: 180px;
+    }
+
+    #float-menu button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: #f8f9fa;
+      color: #495057;
+      cursor: pointer;
+      text-align: left;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #float-menu button:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+
+    #float-menu button i {
+      font-size: 1.1rem;
+      color: #007bff;
+    }
+
+    /* Add clear button style */
+    .clear-button {
+      padding: 4px 12px;
+      font-size: 0.9rem;
+      border: none;
+      border-radius: 4px;
+      background: #dc3545;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-left: auto;
+    }
+    .clear-button:hover {
+      background: #c82333;
+      transform: translateY(-1px);
+    }
+    .clear-button:active {
+      transform: translateY(0);
+    }
+    
+    /* Adjust the title row style to accommodate the button */
+    .card h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.2rem;
+    }
+
+    /* Add disabled state style */
+    #simple-undo-button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+
+    /* Remove other complex styles */
+    #simple-undo-button {
+      margin-top: 12px;
+      width: 100%;
+      padding: 20px;
+      font-size: 20px;
+      border: none;
+      border-radius: 6px;
+      background: #28a745;
+      color: #fff;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <!-- 默认页眉 -->
-  <header id="header-container">默认页眉</header>
-  <div class="container">
-    <!-- Monitoring window -->
-    <div class="card">
-      <h3>Tap&amp;Say Monitoring Window</h3>
-      <p><strong>Error Sentence:</strong> <span id="error-text">None</span></p>
-      <p><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
-      <p><strong>Touch Index (relative to sentence):</strong> <span id="touch-index">None</span></p>
-      <p><strong>Speech Input:</strong> <span id="voice-input">None</span></p>
-      <p><strong>Final Output:</strong> <span id="final-output">None</span></p>
-      <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Recording stopped</span></p>
+  <!-- Header load -->
+  <header id="header-container"></header>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="container">
+      <!-- Mode Switch Buttons -->
+      <div id="mode-buttons">
+        <button id="mode-experience" class="mode-button active">Demo</button>
+        <button id="mode-input" class="mode-button">Free-input</button>
+      </div>
     </div>
-    <!-- Text Editor -->
-    <div class="card">
-      <h2>Tap&amp;Say Text Editor</h2>
-      <div id="text-editor" contenteditable="true"></div>
+
+    <!-- Monitoring Area -->
+    <div class="container">
+      <div class="card" id="monitoring-card">
+        <p><strong>Erroneous Sentence:</strong> <span id="error-text">None</span></p>
+        <p><strong>Touch Location (character index):</strong> <span id="touch-index">None</span></p>
+        <p><strong>Correction Command:</strong> <span id="final-output">None</span></p>
+        <p><strong>Recording Status:</strong> <span id="mic-status">🔴 Stopped</span></p>
+        <p style="display:none;"><strong>Original Error Sentence:</strong> <span id="original-error-sentence">None</span></p>
+        <p style="display:none;"><strong>Speech Input:</strong> <span id="voice-input">None</span></p>
+      </div>
     </div>
-    <!-- Event Log -->
-    <div class="card">
-      <h3>Event Log</h3>
-      <div id="event-log">No events recorded</div>
+
+    <!-- ============ Transcription Mode ============ -->
+    <div class="container">
+      <div class="card" id="experience-mode">
+        <h3>Demo <i class="fas fa-microphone mic-icon"></i><span class="recording-status-dot"></span></h3>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <button class="nav-button" id="prev-sentence" style="visibility:hidden;">←</button>
+            <span id="sentence-index">1/5</span>
+            <button class="nav-button" id="next-sentence">→</button>
+          </div>
+          <div>
+            <p><strong>Target Sentence:</strong></p>
+            <div id="target-sentence" style="user-select:none; margin-bottom: 15px;"></div>
+          </div>
+          <p><strong>Erroneous Sentence:</strong> <span class="edit-indicator"></span></p>
+          <div id="error-sentence" class="editable-sentence-box"></div>
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button id="experience-undo-button" style="
+              flex:1;
+              padding:20px;
+              font-size:20px;
+              border:none;
+              border-radius:6px;
+              background:#28a745;
+              color:#fff;
+              box-shadow:0 2px 6px rgba(0,0,0,0.2);
+              cursor:pointer;
+            ">Restore Erroneous Sentence</button>
+            <button id="skip-sentence-button" style="
+              flex:1;
+              padding:20px;
+              font-size:20px;
+              border:none;
+              border-radius:6px;
+              background:#6c757d;
+              color:#fff;
+              box-shadow:0 2px 6px rgba(0,0,0,0.2);
+              cursor:pointer;
+            ">Next Sentence</button>
+          </div>
+          <button id="next-pair-button" style="
+            width:100%;
+            margin-top:10px;
+            padding:20px;
+            font-size:20px;
+            border:none;
+            border-radius:6px;
+            background:#007bff;
+            color:#fff;
+            box-shadow:0 2px 6px rgba(0,0,0,0.2);
+            cursor:pointer;
+            display:none;
+          ">Next Sentence</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Free Input Mode ============ -->
+    <div class="container">
+      <div class="card" id="input-mode" style="display:none;">
+        <h3>
+          Free-Input
+          <i class="fas fa-microphone mic-icon"></i>
+          <span class="recording-status-dot"></span>
+          <button class="clear-button" id="clear-text-button">Clear</button>
+        </h3>
+        <div id="simple-editor" contenteditable="true" style="
+          width: 100%;
+          min-height: 401px;
+          box-sizing: border-box;
+          resize: vertical;      
+          overflow: auto;        
+          margin: 0 auto;
+          background: #fff;      
+          border: 2px solid #e2e8f0;
+          border-radius: 15px;
+          padding: 1.5rem;
+          font-size: 1.1rem;
+          line-height: 1.6;
+          color: #2d3748;
+          transition: border-color 0.3s, box-shadow 0.3s;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          cursor: text;
+        ">Try to long press on Wednesday till the mic icon is green, then speak 'on Tuesday'.
+
+Hi, how are you? Meet me on Wednesday. </div>
+        
+        <button id="simple-undo-button" style="
+          margin-top:12px;
+          width:100%;
+          padding:20px;
+          font-size:20px;
+          border:none;
+          border-radius:6px;
+          background:#28a745;
+          color:#fff;
+          box-shadow:0 2px 6px rgba(0,0,0,0.2);
+          cursor:pointer;
+        ">Undo Last Change</button>
+      </div>
+    </div>
+
+    <!-- Event Log Area -->
+    <div class="container">
+      <div class="card" id="event-log-card">
+        <h3>Event Log</h3>
+        <div id="event-log">No events recorded</div>
+      </div>
     </div>
   </div>
 
-  <!-- 右侧固定 Tips 卡片，通过 JS 动态生成列表 -->
-  <div id="tips-card">
-    <h4>Tips</h4>
-    <ul id="tips-list"></ul>
-  </div>
+  <!-- Footer load -->
+  <footer id="footer-container"></footer>
 
-  <footer id="footer-container">默认页脚</footer>
+  <!-- New floating button and menu -->
+  <button id="float-menu-button">
+    <!-- The icon will be replaced with SVG in JS -->
+  </button>
+  <div id="float-menu"></div>
 
   <script>
+    /***********************************************
+     * ============ A) Universal UI & Code ============
+     ***********************************************/
+     const API_URL = "https://tns.drziangchen.uk/correct";
+     const PUNCTUATION_API_URL = "https://tns.drziangchen.uk/restore_punctuation";
 
-    //目前问题：
-//1、语音输入无声时会直接输入监控内容å
-//2、语音输入只能在文本框0位置输入
-//3、tips卡片设计
-    async function loadHeaderFooter() {
-      try {
-        const headerResponse = await fetch('header.html');
-        const headerHtml = await headerResponse.text();
-        document.getElementById('header-container').innerHTML = headerHtml;
-      } catch (error) {
-        console.warn("加载 header.html 失败，使用默认页眉。", error);
-      }
-      try {
-        const footerResponse = await fetch('footer.html');
-        const footerHtml = await footerResponse.text();
-        document.getElementById('footer-container').innerHTML = footerHtml;
-      } catch (error) {
-        console.warn("加载 footer.html 失败，使用默认页脚。", error);
-      }
-    }
-    loadHeaderFooter();
 
-    const API_URL = "https://f728-35-184-108-131.ngrok-free.app/correct";
 
-    let pressTimer, tapTriggered = false, globalTapIndex = -1;
-    let initialX = 0, initialY = 0;
-    let currentMode = null; 
-    let selectOverlay = null; 
-    let overlayTimeout = null; 
-    let originalSentence = ""; 
-    let recognition, isListening = false, silenceTimer;
 
-    const editor = document.getElementById("text-editor");
+    // Two Mode Constants
+    const MODE_EXPERIENCE = "experience";
+    const MODE_INPUT = "input";
+    let activeMode = MODE_EXPERIENCE; // default
+
+    // Global variables
+    let disableIME = false;
+    let isListening = false;
+    let isRecording = false;
+    let recognition = null;
+    let globalTapIndex = -1;
+    let localTapIndex = -1;
+    let tapStartIndex = -1;
+    let originalSentence = "";
+    let lastHighlightedSentence = "";
+    let highlightTimeout = null;
+    let suggestionsBox = null;
+    let suggestionsTimer = null;
+    let undoStack = [];
+    let isDragging = false;
+    let cursorElement = null;
+    let cursorTimeout = null;
+    let selectedSentence = ""; // used in Transcription mode, also referenced by some universal functions
+    let isDraggingAndRecording = false; // new variable for marking drag+record
+    let useWebkitSpeech = true;
+    let maxRecordingTime = 10000; 
+    let hardStopTimer = null; 
+    let recordingStartTime = null;
+    let currentSentenceInfo = null; // store current sentence details
+    let silenceTimer = null; 
+    let lastSpeechTime = null; 
+    let silenceThreshold = 1000; // 新增：沉默2秒后停止录音
+
+    // DOM Elements
+    const monitoringCard = document.getElementById("monitoring-card");
+    const eventLogCard = document.getElementById("event-log-card");
     const errorText = document.getElementById("error-text");
     const originalErrorSpan = document.getElementById("original-error-sentence");
-    const touchIndex = document.getElementById("touch-index");
-    const voiceInput = document.getElementById("voice-input");
-    const micStatus = document.getElementById("mic-status");
+    const touchIndexSpan = document.getElementById("touch-index");
+    const voiceInputSpan = document.getElementById("voice-input");
+    const micStatusSpan = document.getElementById("mic-status");
+    const finalOutputSpan = document.getElementById("final-output");
     const eventLog = document.getElementById("event-log");
-    const finalOutput = document.getElementById("final-output");
+    
+    // UI button references
+    const modeExperienceBtn = document.getElementById("mode-experience");
+    const modeInputBtn = document.getElementById("mode-input");
 
-    // 动态生成 Tips 列表
-    let tips = [
-  "Select the location where you want to make changes",
-  "Long press the editor for 1 second to pop up options",
-  "Click to trigger the corresponding function",
-  "For the Tap&Say option, speak out the modified content",
-  "Right-click to cancel Tap&Say modifications",
-  ];
-    let tipsListEl = document.getElementById("tips-list");
-    tips.forEach(tip => {
-      let li = document.createElement("li");
-      li.textContent = tip;
-      tipsListEl.appendChild(li);
-    });
+    // Containers for experience mode & free input mode
+    const modeExperienceContainer = document.getElementById("experience-mode");
+    const modeInputContainer = document.getElementById("input-mode");
 
-    document.addEventListener("contextmenu", function(e) {
-      if (currentMode === "tap" && selectOverlay) {
-        e.preventDefault();
-        removeHighlight();
-        replaceHighlightedSentence(originalSentence);
-        removeOverlay();
+    /*******************************************************
+     * Universal: Toast / Event Log / IME toggle
+     *******************************************************/
+    function logEvent(message) {
+      const p = document.createElement("p");
+      const now = new Date().toLocaleString("en-US", {hour12: false});
+      p.innerText = `[${now}] ${message}`;
+      eventLog.appendChild(p);
+    }
+    function updateIMEButtonText(enabled) {
+      const button = document.getElementById('toggle-ime');
+      if (button) {
+        button.textContent = enabled ? 'Disable IME' : 'Enable IME';
       }
-    });
-
-    function showToast(message) {
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.innerText = message;
-      document.body.appendChild(toast);
-      requestAnimationFrame(() => { toast.style.opacity = 1; });
-      setTimeout(() => {
-        toast.style.opacity = 0;
-        setTimeout(() => { toast.remove(); }, 500);
-      }, 2000);
     }
 
-    window.onload = function() {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-          .catch(err => {
-            showToast("请允许麦克风访问以使用 Tap&Say。");
+    /*******************************************************
+     * Universal: remove punctuation
+     *******************************************************/
+    function removePunctuation(str) {
+      return str.replace(/[^a-zA-Z0-9'\s]/g, "");
+    }
+
+    /*******************************************************
+     * Universal: Underline diff ranges
+     *******************************************************/
+    function underlineDiffRanges(text, diffRanges) {
+      let result = "";
+      let currentIndex = 0;
+      const validRanges = diffRanges.filter(range => 
+        range[0] >= 0 && range[0] < text.length && range[1] > 0 && range[1] <= text.length
+      );
+      
+      validRanges.forEach(function(range) {
+        let [start, end] = range;
+        end = Math.min(end, text.length);
+        
+        let diffText = text.substring(start, end);
+        let leadingSpaceMatch = diffText.match(/^(\s+)/);
+        let leadingSpaceLength = leadingSpaceMatch ? leadingSpaceMatch[0].length : 0;
+        
+        result += text.substring(currentIndex, start);
+        
+        if (leadingSpaceLength > 0) {
+          result += diffText.substring(0, leadingSpaceLength);
+          if (leadingSpaceLength < diffText.length) {
+            result += '<span style="border-bottom: 2px solid blue;">'
+                      + diffText.substring(leadingSpaceLength) + '</span>';
+          }
+        } else {
+          result += '<span style="border-bottom: 2px solid blue;">' + diffText + '</span>';
+        }
+        
+        currentIndex = end;
+      });
+      result += text.substring(currentIndex);
+      return result;
+    }
+
+    /*******************************************************
+     * Universal: simple replacement function
+     *******************************************************/
+    function replaceFirstOccurrence(fullText, oldPart, newPart) {
+      let safe = oldPart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let reg = new RegExp(safe, "i");
+      return fullText.replace(reg, newPart);
+    }
+
+    /*******************************************************
+     * Universal: remove the cursor
+     *******************************************************/
+    function removeCursor() {
+      if (cursorTimeout) {
+        clearTimeout(cursorTimeout);
+        cursorTimeout = null;
+      }
+      if (cursorElement) {
+        cursorElement.remove();
+        cursorElement = null;
+      }
+    }
+
+    /*******************************************************
+     * Universal: remove Suggestions Box
+     *******************************************************/
+    function removeSuggestionsBox() {
+      if (suggestionsBox) {
+        suggestionsBox.remove();
+        suggestionsBox = null;
+      }
+    }
+
+    /*******************************************************
+     * Universal: Send data to the /correct API and handle response
+     *******************************************************/
+    function sendToAPI(mergedStr, loc, isExperienceMode) {
+      console.log("======== sendToAPI========");
+      console.log("content:", {
+        merged_string: mergedStr,
+        touch_location: loc,
+        isExperienceMode: isExperienceMode
+      });
+      console.log("==============================");
+      
+      let finalLoc = parseInt(loc, 10) || 0;
+      logEvent(`Sending /correct => merged_string:${mergedStr}, touch_location:${finalLoc}, isExpMode:${isExperienceMode}`);
+      fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ merged_string: mergedStr, touch_location: finalLoc })
+      })
+      .then(resp => resp.json())
+      .then(data => {
+        console.log("API return:", data);
+        let corrs = data.filtered_corrections || [];
+        logEvent("API corrections => " + JSON.stringify(corrs));
+        applyFirstSuggestionAndShowBox(corrs, isExperienceMode);
+      })
+      .catch(err => {
+        console.error("API error:", err);
+        logEvent("API call error => " + err);
+      });
+    }
+
+    /*******************************************************
+     * Universal: Apply the first suggestion and show more options
+     * Note: This will be merged/overridden later by Transcription & Free-input modes
+     *******************************************************/
+    function applyFirstSuggestionAndShowBox(corrections, isExperienceMode) {
+      // This part will be used by the Transcription mode & Free-input mode logic or overridden later
+    }
+
+    /*******************************************************
+     * Universal: Speech Recognition
+     *******************************************************/
+    function startRecording(dontProcessResults = false) {
+      if (isRecording) {
+        console.log("Already recording");
+        return;
+      }
+
+ 
+      recordingStartTime = new Date();
+      console.log("record start:", recordingStartTime.toISOString());
+      
+
+      lastSpeechTime = null;
+
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
+
+
+      if (window.stopRecordingTimer) {
+        clearTimeout(window.stopRecordingTimer);
+        window.stopRecordingTimer = null;
+      }
+
+      if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
+        console.warn("Speech recognition not supported in this browser.");
+        return;
+      }
+      
+      isRecording = true;
+      isListening = true;
+
+      micStatusSpan.innerHTML = "🟢 Recording...";
+      micStatusSpan.className = "recording-active";
+
+      // Update the status indicator dot and mic icon
+      const dots = document.querySelectorAll('.recording-status-dot');
+      const micIcons = document.querySelectorAll('.mic-icon');
+      dots.forEach(dot => {
+        dot.classList.remove('stopped');
+        dot.classList.add('recording');
+      });
+      micIcons.forEach(icon => {
+        icon.classList.add('recording');
+      });
+
+      try {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = true;
+        recognition.continuous = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+          isRecording = true;
+          isListening = true;
+          console.log("recognition.onstart 触发，录音正式开始，时间:", new Date().toISOString());
+        };
+
+        recognition.onresult = (event) => {
+          const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+          voiceInputSpan.innerText = transcript;
+          finalOutputSpan.innerText = transcript;
+          
+
+          lastSpeechTime = new Date();
+          
+
+          if (silenceTimer) {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
+          }
+          
+
+          silenceTimer = setTimeout(() => {
+            if (isRecording && recognition) {
+              console.log("用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
+
+              const savedTranscript = voiceInputSpan.innerText.trim();
+              
+
+              stopRecording();
+              
+
+              if (savedTranscript) {
+                console.log("调用finalizeTapSay处理录音结果");
+                voiceInputSpan.innerText = savedTranscript;
+                setTimeout(finalizeTapSay, 100);
+              }
+            }
+          }, silenceThreshold);
+          
+        };
+
+        recognition.onend = () => {
+
+          console.log("Recognition onend triggered, isRecording:", isRecording, "current time:", new Date().toISOString());
+          
+
+          if (recordingStartTime) {
+            const duration = new Date() - recordingStartTime;
+          }
+          
+
+          if (isRecording && voiceInputSpan.innerText.trim() === "") {
+            console.log("WebSpeechAPI restart");
+            try {
+
+              const shouldRestart = isRecording; 
+              isRecording = false;
+              
+              setTimeout(() => {
+                if (shouldRestart && !isRecording) {
+                  isRecording = true;
+                  isListening = true;
+                  try {
+
+                    recognition.start();
+
+                    console.log("prolong succeed"); 
+                  } catch (e) {
+                    console.error("prolong failed:", e);
+                    isRecording = false;
+                    isListening = false;
+                    endTapSay();
+                  }
+                }
+              }, 100);
+            } catch (e) {
+              console.error("restart fail:", e);
+
+              isRecording = false;
+              isListening = false;
+              micStatusSpan.innerHTML = "🔴 Stopped";
+              micStatusSpan.className = "";
+              removeCursor();
+
+              // Update the status indicator dot and mic icon
+              const dots = document.querySelectorAll('.recording-status-dot');
+              const micIcons = document.querySelectorAll('.mic-icon');
+              dots.forEach(dot => {
+                dot.classList.remove('recording');
+              });
+              micIcons.forEach(icon => {
+                icon.classList.remove('recording');
+              });
+
+              if (voiceInputSpan.innerText.trim()) {
+                console.log("finalizeTapSay");
+                
+                // 检查是否已经在onresult中处理过结果
+                if (!recognition || !recognition.isAfterDragging) {
+                  setTimeout(finalizeTapSay, 100);
+                } else {
+
+                }
+              } else {
+                console.log("no voice input endTapSay");
+                endTapSay();
+              }
+            }
+          } else {
+
+            console.log("normal recording"); 
+            
+
+            isRecording = false;
+            isListening = false;
+            micStatusSpan.innerHTML = "🔴 Stopped";
+            micStatusSpan.className = "";
+            removeCursor();
+
+            // Update the status indicator dot and mic icon
+            const dots = document.querySelectorAll('.recording-status-dot');
+            const micIcons = document.querySelectorAll('.mic-icon');
+            dots.forEach(dot => {
+              dot.classList.remove('recording');
+            });
+            micIcons.forEach(icon => {
+              icon.classList.remove('recording');
+            });
+
+            if (voiceInputSpan.innerText.trim()) {
+              console.log("finalizeTapSay");
+              
+              // 检查是否已经在onresult中处理过结果
+              if (!recognition || !recognition.isAfterDragging) {
+                setTimeout(finalizeTapSay, 100);
+              } else {
+
+              }
+            } else {
+              console.log("endTapSay");
+              endTapSay();
+            }
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.error("[Global] recognition error =>", event.error);
+           
+
+          if (event.error === 'no-speech' && isRecording && voiceInputSpan.innerText.trim() === "") {
+            console.log(" no-speech");
+            try {
+
+              isRecording = false; 
+              recognition.stop();
+              
+        
+              setTimeout(() => {
+                if (!isRecording) { 
+                  isRecording = true;
+                  try {
+                    recognition.start();
+                    console.log("reprolong after no-speech)");
+                  } catch(e) {
+                    console.error("faile:", e);
+                    isRecording = false;
+                    endTapSay();
+                  }
+                }
+              }, 100);
+              
+              return; 
+            } catch (e) {
+              console.error("no-speech restart fail:", e);
+
+            }
+          }
+           
+
+          isRecording = false;
+          isListening = false;
+          micStatusSpan.innerHTML = "🔴 Error";
+          micStatusSpan.className = "";
+          removeCursor();
+
+          // Update the status indicator dot and mic icon
+          const dots = document.querySelectorAll('.recording-status-dot');
+          const micIcons = document.querySelectorAll('.mic-icon');
+          dots.forEach(dot => {
+            dot.classList.remove('recording');
           });
+          micIcons.forEach(icon => {
+            icon.classList.remove('recording');
+          });
+
+
+          if (voiceInputSpan.innerText.trim()) {
+            console.log("finalizeTapSay");
+            setTimeout(finalizeTapSay, 100);
+          } else {
+            console.log("no vice input endTapSay");
+            endTapSay();
+          }
+        };
+
+        recognition.start();
+        
+
+        hardStopTimer = setTimeout(() => {
+          if (recognition && isRecording) {
+
+            stopRecording();
+          }
+        }, maxRecordingTime);
+      } catch (e) {
+        isRecording = false;
+        isListening = false;
+        micStatusSpan.innerHTML = "🔴 Error";
+        micStatusSpan.className = "";
+        removeCursor();
+
+        // Update the status indicator dot and mic icon
+        const dots = document.querySelectorAll('.recording-status-dot');
+        const micIcons = document.querySelectorAll('.mic-icon');
+        dots.forEach(dot => {
+          dot.classList.remove('recording');
+        });
+        micIcons.forEach(icon => {
+          icon.classList.remove('recording');
+        });
+      }
+    }
+
+    function endTapSay() {
+      clearTimeout(highlightTimeout);
+      if (recognition) {
+        try {
+
+          recognition.abort();
+        } catch(e) {
+          console.error("[Global] endTapSay => error stopping:", e);
+        }
+        recognition = null;
+      }
+      isRecording = false;
+      isListening = false;
+      micStatusSpan.innerHTML = "🔴 Stopped";
+      micStatusSpan.className = "";
+      removeCursor();
+      voiceInputSpan.innerText = "";
+
+      // Update the status indicator dot and mic icon
+      const dots = document.querySelectorAll('.recording-status-dot');
+      const micIcons = document.querySelectorAll('.mic-icon');
+      dots.forEach(dot => {
+        dot.classList.remove('recording');
+      });
+      micIcons.forEach(icon => {
+        icon.classList.remove('recording');
+      });
+    }
+
+    /*******************************************************
+     * Universal: finalizeTapSay
+     * Called after speech recognition ends, sending results to API
+     *******************************************************/
+    function finalizeTapSay() {
+      console.log("======== finalizeTapSay========");
+      const transcript = (voiceInputSpan.innerText || "").trim();
+      console.log("voice:", transcript);
+      
+      if (!transcript) {
+        console.log("no voice input wont sent to API");
+        endTapSay();
+        return;
+      }
+      let parted = errorText.innerText.trimEnd();
+      parted = parted.replace(/([.!?])(\S)/g, "$1 $2");
+      let textNoPunc = removePunctuation(transcript).trimEnd();
+      let merged = (parted + " <||> " + textNoPunc).trimEnd();
+      finalOutputSpan.innerText = textNoPunc;
+      
+      console.log("original:", parted);
+      console.log("processed:", merged);
+
+      let finalIndex = (activeMode === MODE_INPUT) ? localTapIndex :
+                       (tapStartIndex !== -1 ? tapStartIndex : localTapIndex);
+      
+      console.log("sendToAPI");
+      sendToAPI(merged, finalIndex, activeMode === MODE_EXPERIENCE);
+      console.log("==============================");
+      
+      voiceInputSpan.innerText = "";
+      lastHighlightedSentence = errorText.innerText;
+      tapStartIndex = -1;
+
+      clearTimeout(highlightTimeout);
+      highlightTimeout = setTimeout(() => {
+        removeCursor();
+      }, 3000);
+    }
+
+    /***********************************************
+     * ============ B) Transcription Mode ============
+     ***********************************************/
+    // Data for Transcription mode
+    let currentPairIndex = 0;
+    const sentencePairs = [
+      {
+        target: "Your best bet is to drop him and go after another player.",
+        error: "Your best bet is to drop him and go after another.",
+        tip: "<strong>Tap</strong> near the mistake till the mic icon is green, then speak correction. Here's like say 'another player'."
+      },
+      {
+        target: "Educational reforms require collaboration between teachers and policymakers.",
+        error: "Educational reform require collaboration between teachers and policymakers.",
+        tip: "Great! Also for replacement correction."
+      },
+      {
+        target: "Artificial intelligence is transforming the way businesses operate globally.",
+        error: "Artificial intelligent are transform the way businesses operate globally.",
+        tip: "Multiple mistakes in a row can be corrected in one time."
+      },
+      {
+        target: "The cat sat on the mat. The dog chased the cat. The mouse ran away quickly.",
+        error: "The cat sat on the mat. The dog chase cat. The mouse ran away quickly.",
+        tip: "This also works for multi-sentence paragraphs"
+      },
+      {
+        target: "They were discussing the implications of the new policy.",
+        error: "They were discuss about the implications of the new policy.",
+        tip: "If the first suggestion isn't correct, pick another from the list"
+      }
+    ];
+
+    /*******************************************************
+     * Transcription: Initialize Experience Mode
+     *******************************************************/
+    function initializeExperienceMode() {
+      updateSentencePair(0);
+      attachExpListeners();
+    }
+
+    /*******************************************************
+     * Transcription: Bind events (long press, drag, click) to the erroneous sentence
+     *******************************************************/
+    function attachExpListeners() {
+      const prev = document.getElementById("prev-sentence");
+      const next = document.getElementById("next-sentence");
+      const skip = document.getElementById("skip-sentence-button");
+      const nextPair = document.getElementById("next-pair-button");
+      const expUndo = document.getElementById("experience-undo-button");
+      const errorSentenceEl = document.getElementById("error-sentence");
+      if (!prev || !next || !skip || !nextPair || !expUndo || !errorSentenceEl) return;
+
+      // Prevent default context menu and double click selection
+      errorSentenceEl.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        return false;
+      });
+      errorSentenceEl.addEventListener('dblclick', e => {
+        e.preventDefault();
+        return false;
+      });
+      errorSentenceEl.addEventListener('selectstart', e => {
+        if (!isDragging) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      prev.addEventListener("click", () => {
+        if (currentPairIndex > 0) {
+          currentPairIndex--;
+          updateSentencePair(currentPairIndex);
+        }
+      });
+      next.addEventListener("click", () => {
+        if (currentPairIndex < sentencePairs.length - 1) {
+          currentPairIndex++;
+          updateSentencePair(currentPairIndex);
+        }
+      });
+      skip.addEventListener("click", () => {
+        if (currentPairIndex < sentencePairs.length - 1) {
+          currentPairIndex++;
+          updateSentencePair(currentPairIndex);
+          console.log("Skipped current sentence");
+        } else {
+          console.log("This is the last sentence");
+        }
+      });
+      nextPair.addEventListener("click", () => {
+        if (currentPairIndex < sentencePairs.length - 1) {
+          currentPairIndex++;
+          updateSentencePair(currentPairIndex);
+        } else {
+          console.log("All sentences completed!");
+        }
+      });
+      expUndo.addEventListener("click", () => {
+        const errorSentenceEl = document.getElementById("error-sentence");
+        if (!errorSentenceEl) return;
+        
+        const originalErrorSentence = sentencePairs[currentPairIndex].error;
+        errorSentenceEl.innerText = originalErrorSentence;
+        
+        // Reset selected sentence
+        selectedSentence = "";
+        
+        // Reset Skip button
+        const skipBtn = document.getElementById("skip-sentence-button");
+        if (skipBtn) {
+          skipBtn.textContent = "Next Sentence";
+          skipBtn.style.background = "#6c757d";
+          skipBtn.style.opacity = "0.7";
+          skipBtn.style.pointerEvents = "none";
+          skipBtn.style.cursor = "default";
+        }
+        
+        errorSentenceEl.style.background = "";
+        errorSentenceEl.style.borderColor = "";
+        logEvent("Restored to original error sentence");
+      });
+
+      attachTranscriptionLongPress(errorSentenceEl);
+    }
+
+    /*******************************************************
+     * Transcription: Long press and drag to select text
+     *******************************************************/
+    function attachTranscriptionLongPress(errorSentenceEl) {
+      let pressTimerExp = null;
+      let longPressStarted = false;
+      let longPressThreshold = 100; // PC端长按阈值
+      let mobileLongPressThreshold = 300; // 移动端长按阈值，略长一些以便区分点击和长按
+      let isDraggingAndRecording = false;
+      let stopRecordingTimer = null;  
+
+      // Modify recognition.onresult for this mode
+      if (recognition) {
+        // 保存原始处理函数，以便在拖动结束后恢复
+        const originalOnResult = recognition.onresult;
+        
+        recognition.onresult = (event) => {
+          const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+          voiceInputSpan.innerText = transcript;
+          finalOutputSpan.innerText = transcript;
+
+          // If in drag mode, update the currently selected text based on cursor
+          if (isDraggingAndRecording) {
+            const text = errorSentenceEl.innerText;
+            const currentSentence = getCurrentSentenceForTranscription(text, localTapIndex);
+            errorText.innerText = currentSentence;
+            originalSentence = currentSentence;
+            originalErrorSpan.innerText = currentSentence;
+            selectedSentence = currentSentence;
+          }
+        };
+      }
+
+      errorSentenceEl.addEventListener("mousedown", (e) => {
+        // Clear any stop timer
+        if (stopRecordingTimer) {
+          clearTimeout(stopRecordingTimer);
+          stopRecordingTimer = null;
+        }
+
+        if (isDragging) return;
+        removeCursor();
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const text = errorSentenceEl.innerText;
+        
+        // Use caretRangeFromPoint for precise location
+        const x = e.clientX;
+        const y = e.clientY;
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(x, y);
+          if (range) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+          // Fallback
+          const style = window.getComputedStyle(errorSentenceEl);
+          const fontSize = parseFloat(style.fontSize);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const clickX = e.clientX - rect.left - paddingLeft;
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(clickX / averageCharWidth);
+        }
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        // Start recording
+        startRecording();
+
+        // Get the sentence at this position
+        const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+        errorText.innerText = sentenceInfo.sentence;
+        originalSentence = sentenceInfo.sentence;
+        originalErrorSpan.innerText = sentenceInfo.sentence;
+        selectedSentence = sentenceInfo.sentence;
+        
+        // Save sentence info including relative position
+        currentSentenceInfo = sentenceInfo;
+        // Record relative position for finalizeTapSay
+        tapStartIndex = sentenceInfo.relativePosition;
+        console.log("Mouse down - Relative position set to:", sentenceInfo.relativePosition);
+
+        pressTimerExp = setTimeout(() => {
+          longPressStarted = true;
+          isDraggingAndRecording = true;
+          handleExpLongPress();
+          showLongPressFeedback(e.clientX, e.clientY);
+        }, mobileLongPressThreshold); 
+      });
+
+
+      errorSentenceEl.addEventListener("touchstart", (e) => {
+  
+        e.preventDefault();
+        
+    
+        errorSentenceEl.dataset.touchStarted = "true";
+        
+     
+        if (stopRecordingTimer) {
+          clearTimeout(stopRecordingTimer);
+          stopRecordingTimer = null;
+        }
+
+        if (isDragging) return;
+        removeCursor();
+
+        const touch = e.touches[0];
+        const rect = e.currentTarget.getBoundingClientRect();
+        const text = errorSentenceEl.innerText;
+        
+
+        const x = touch.clientX;
+        const y = touch.clientY;
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(x, y);
+          if (range) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+  
+          const style = window.getComputedStyle(errorSentenceEl);
+          const fontSize = parseFloat(style.fontSize);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const touchX = touch.clientX - rect.left - paddingLeft;
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(touchX / averageCharWidth);
+        }
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+
+        startRecording();
+
+   
+        const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+        errorText.innerText = sentenceInfo.sentence;
+        originalSentence = sentenceInfo.sentence;
+        originalErrorSpan.innerText = sentenceInfo.sentence;
+        selectedSentence = sentenceInfo.sentence;
+        
+ 
+        currentSentenceInfo = sentenceInfo;
+    
+        tapStartIndex = sentenceInfo.relativePosition;
+        console.log("Touch start - Relative position set to:", sentenceInfo.relativePosition);
+
+   
+        pressTimerExp = setTimeout(() => {
+          longPressStarted = true;
+          isDraggingAndRecording = true;
+          handleExpLongPress();
+          showLongPressFeedback(touch.clientX, touch.clientY);
+        }, mobileLongPressThreshold);
+      });
+
+      errorSentenceEl.addEventListener("mousemove", () => {
+        if (pressTimerExp && !longPressStarted) {
+          clearTimeout(pressTimerExp);
+          pressTimerExp = null;
+        }
+      });
+
+  
+      errorSentenceEl.addEventListener("touchmove", (e) => {
+        if (pressTimerExp && !longPressStarted) {
+          clearTimeout(pressTimerExp);
+          pressTimerExp = null;
+        }
+        
+ 
+        if (isDragging || isDraggingAndRecording) {
+          e.preventDefault();
+          
+          const touch = e.touches[0];
+          if (document.caretRangeFromPoint) {
+            const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+            if (range && range.startContainer === errorSentenceEl.firstChild) {
+              localTapIndex = range.startOffset;
+            }
+          } else {
+    
+            const rect = errorSentenceEl.getBoundingClientRect();
+            const style = window.getComputedStyle(errorSentenceEl);
+            const paddingLeft = parseFloat(style.paddingLeft);
+            const touchX = touch.clientX - rect.left - paddingLeft;
+            const fontSize = parseFloat(style.fontSize);
+            const averageCharWidth = fontSize * 0.6;
+            localTapIndex = Math.round(touchX / averageCharWidth);
+          }
+          
+          const text = errorSentenceEl.innerText;
+          localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+          
+     
+          const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+          console.log("Touch move - Position info:", {
+            localTapIndex: localTapIndex,
+            startIndex: sentenceInfo.startIndex,
+            relativePosition: sentenceInfo.relativePosition,
+            sentence: sentenceInfo.sentence
+          });
+          
+          errorText.innerText = sentenceInfo.sentence;
+          originalSentence = sentenceInfo.sentence;
+          originalErrorSpan.innerText = sentenceInfo.sentence;
+          selectedSentence = sentenceInfo.sentence;
+          
+     
+          currentSentenceInfo = sentenceInfo;
+          tapStartIndex = sentenceInfo.relativePosition;
+          
+ 
+          showCursorAtPosition();
+        }
+      });
+
+      errorSentenceEl.addEventListener("mouseup", () => {
+        clearTimeout(pressTimerExp);
+        pressTimerExp = null;
+        longPressStarted = false;
+        if (isDraggingAndRecording) {
+          isDraggingAndRecording = false;
+          isDragging = false;
+          errorSentenceEl.classList.remove("dragging");
+          
+    
+          if (stopRecordingTimer) {
+            clearTimeout(stopRecordingTimer);
+            stopRecordingTimer = null;
+          }
+          
+          console.log("拖动结束，继续录音直到捕获语音或达到最大时长");
+          
+ 
+          if (recognition) {
+            // 添加一个标记，表示这是长按拖动后的录音
+            recognition.isAfterDragging = true;
+            
+            recognition.onresult = (event) => {
+              const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+              voiceInputSpan.innerText = transcript;
+              finalOutputSpan.innerText = transcript;
+              
+              // 如果检测到语音并获得最终结果，停止录音
+              if (event.results[0].isFinal && recognition && isRecording) {
+                console.log("检测到语音并获得最终结果，停止录音");
+                
+                // 停止录音，然后直接调用finalizeTapSay处理结果
+                setTimeout(() => {
+                  if (isRecording) {
+                    // 先保存transcript，避免stopRecording清除
+                    const savedTranscript = voiceInputSpan.innerText.trim();
+                    
+                    // 停止录音
+                    stopRecording();
+                    
+                    // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
+                    if (savedTranscript) {
+                      console.log("直接调用finalizeTapSay处理录音结果");
+                      voiceInputSpan.innerText = savedTranscript;
+                      setTimeout(finalizeTapSay, 100);
+                    }
+                  }
+                }, 100);
+              }
+            };
+          }
+          
+          // 不再设置3秒后停止录音
+          // 让录音继续，直到捕获到语音内容或达到最大录音时长(30秒)
+          // stopRecordingTimer = setTimeout(() => {
+          //   if (recognition) {
+          //     try {
+          //       recognition.stop();
+          //     } catch (ex) {
+          //       console.error("[Transcription] error stopping:", ex);
+          //     }
+          //   }
+          // }, 3000);
+        }
+      });
+
+      errorSentenceEl.addEventListener("touchend", () => {
+        if (errorSentenceEl.dataset.touchStarted) {
+          delete errorSentenceEl.dataset.touchStarted;
+        }
+        clearTimeout(pressTimerExp);
+        pressTimerExp = null;
+        longPressStarted = false;
+        if (isDraggingAndRecording) {
+          isDraggingAndRecording = false;
+          isDragging = false;
+          errorSentenceEl.classList.remove("dragging");
+          
+          // 清除任何现有的定时器
+          if (stopRecordingTimer) {
+            clearTimeout(stopRecordingTimer);
+            stopRecordingTimer = null;
+          }
+          
+          console.log("触摸拖动结束，继续录音直到捕获语音或达到最大时长");
+          
+          // 恢复标准的onresult处理，以便语音结果能够触发停止录音
+          if (recognition) {
+            recognition.onresult = (event) => {
+              const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+              voiceInputSpan.innerText = transcript;
+              finalOutputSpan.innerText = transcript;
+              
+              // 记录最后一次检测到语音的时间
+              lastSpeechTime = new Date();
+              
+              // 清除之前的沉默计时器
+              if (silenceTimer) {
+                clearTimeout(silenceTimer);
+                silenceTimer = null;
+              }
+              
+              // 设置新的沉默计时器，在用户停止说话后一段时间再停止录音
+              silenceTimer = setTimeout(() => {
+                if (isRecording && recognition) {
+                  console.log("移动端：用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
+                  // 先保存transcript，避免stopRecording清除
+                  const savedTranscript = voiceInputSpan.innerText.trim();
+                  
+                  // 停止录音
+                  stopRecording();
+                  
+                  // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
+                  if (savedTranscript) {
+                    console.log("移动端：调用finalizeTapSay处理录音结果");
+                    voiceInputSpan.innerText = savedTranscript;
+                    setTimeout(finalizeTapSay, 100);
+                  }
+                }
+              }, silenceThreshold);
+              
+              // 不再在检测到最终结果后就立即停止录音
+              // if (event.results[0].isFinal && recognition && isRecording) {
+              //   console.log("检测到语音并获得最终结果，停止录音");
+              //   ...
+              // }
+            };
+          }
+        }
+      });
+    }
+
+    /*******************************************************
+     * Transcription: Actually handle the long press drag select
+     *******************************************************/
+    function handleExpLongPress() {
+      console.log('[Transcription] handleExpLongPress started');
+      
+      const element = document.getElementById("error-sentence");
+      if (!element) {
+        console.warn('[Transcription] Error: element not found');
+        return;
+      }
+
+      isDragging = true;
+      element.classList.add("dragging");
+      showCursorAtPosition();
+      
+      // Start recording but set to not auto-process results
+      startRecording(true);
+
+      const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+          if (range && range.startContainer === element.firstChild) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+          const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const moveX = e.clientX - rect.left - paddingLeft;
+          const fontSize = parseFloat(style.fontSize);
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(moveX / averageCharWidth);
+        }
+        const text = element.innerText;
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        // Dynamically update the selected sentence
+        const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+        console.log("Mouse move - Position info:", {
+          localTapIndex: localTapIndex,
+          startIndex: sentenceInfo.startIndex,
+          relativePosition: sentenceInfo.relativePosition,
+          sentence: sentenceInfo.sentence
+        });
+        
+        errorText.innerText = sentenceInfo.sentence;
+        originalSentence = sentenceInfo.sentence;
+        originalErrorSpan.innerText = sentenceInfo.sentence;
+        selectedSentence = sentenceInfo.sentence;
+        
+        // Update current sentence info
+        currentSentenceInfo = sentenceInfo;
+        tapStartIndex = sentenceInfo.relativePosition;
+        
+        showCursorAtPosition();
+      };
+
+      const handleTouchMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        const touch = e.touches[0];
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+          if (range && range.startContainer === element.firstChild) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+          const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const moveX = touch.clientX - rect.left - paddingLeft;
+          const fontSize = parseFloat(style.fontSize);
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(moveX / averageCharWidth);
+        }
+        const text = element.innerText;
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+
+        // Dynamically update the selected sentence
+        const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+        console.log("Touch move - Position info:", {
+          localTapIndex: localTapIndex,
+          startIndex: sentenceInfo.startIndex,
+          relativePosition: sentenceInfo.relativePosition,
+          sentence: sentenceInfo.sentence
+        });
+        
+        errorText.innerText = sentenceInfo.sentence;
+        originalSentence = sentenceInfo.sentence;
+        originalErrorSpan.innerText = sentenceInfo.sentence;
+        selectedSentence = sentenceInfo.sentence;
+        
+        currentSentenceInfo = sentenceInfo;
+        tapStartIndex = sentenceInfo.relativePosition;
+
+        showCursorAtPosition();
+      };
+
+      const endDrag = (e) => {
+        if (e && e.type === 'touchend') e.preventDefault();
+        isDragging = false;
+        element.classList.remove("dragging");
+        
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", endDrag);
+        element.removeEventListener("touchmove", handleTouchMove);
+        document.removeEventListener("touchend", endDrag);
+
+        // If recording is in progress, now send the speech content
+        if (isDraggingAndRecording) {
+          isDraggingAndRecording = false;
+          if (recognition) {
+            console.log("Speech recognition ended and processing results");
+            recognition.stop();
+            
+            // Add a short delay to ensure recognition results are processed
+            setTimeout(() => {
+              if (voiceInputSpan.innerText && voiceInputSpan.innerText.trim()) {
+                if (currentSentenceInfo) {
+                  const relativePosition = currentSentenceInfo.relativePosition;
+                  console.log("End drag - Final position:", {
+                    currentSentenceInfo: currentSentenceInfo,
+                    relativePosition: relativePosition
+                  });
+                  
+                  // Use final recognition result to handle correction, passing relative position
+                  handleRecognitionResult(voiceInputSpan.innerText, relativePosition);
+                }
+              }
+            }, 300);
+          }
+        }
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", endDrag);
+      element.addEventListener("touchmove", handleTouchMove, { passive: false });
+      document.addEventListener("touchend", endDrag, { passive: false });
+    }
+
+    function getCurrentSentenceForTranscription(text, position) {
+      const sentenceSeparators = /[.!?]/;
+      let startPos = 0;
+      let foundSeparator = false;
+      
+      // Search backward for sentence boundary
+      for (let i = position - 1; i >= 0; i--) {
+        if (sentenceSeparators.test(text[i]) &&
+          (i + 1 >= text.length || text[i + 1] === ' ' || text[i + 1] === '\n')) {
+          startPos = i + 1;
+          while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
+            startPos++;
+          }
+          foundSeparator = true;
+          break;
+        }
+      }
+      
+      if (!foundSeparator) {
+        startPos = 0;
+        while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
+          startPos++;
+        }
+      }
+      
+      let endPos = text.length;
+      let foundEndSeparator = false;
+      
+      // Search forward for sentence boundary
+      for (let i = position; i < text.length; i++) {
+        if (sentenceSeparators.test(text[i])) {
+          endPos = i + 1;
+          foundEndSeparator = true;
+          break;
+        }
+      }
+      
+      if (!foundEndSeparator) {
+        endPos = text.length;
+      }
+      
+      const sentence = text.substring(startPos, endPos).trim();
+      selectedSentence = sentence;
+      
+      const relativePos = position - startPos;
+      
+      console.log("Sentence detection:", {
+        fullText: text,
+        position: position,
+        startPos: startPos,
+        endPos: endPos,
+        relativePosition: relativePos,
+        sentence: sentence
+      });
+      
+      return {
+        sentence: sentence,
+        startIndex: startPos,
+        endIndex: endPos,
+        relativePosition: relativePos
+      };
+    }
+
+    /*******************************************************
+     * Transcription: show cursor during long press
+     *******************************************************/
+    function showCursorAtPosition() {
+      removeCursor();
+      const element = document.getElementById("error-sentence");
+      if (!element) return;
+
+      const text = element.textContent;
+      const textNode = element.firstChild;
+      if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+
+      try {
+        const style = window.getComputedStyle(element);
+        const range = document.createRange();
+        range.setStart(textNode, localTapIndex);
+        range.collapse(true);
+
+        const rangeRect = range.getBoundingClientRect();
+        
+        cursorElement = document.createElement("span");
+        cursorElement.className = "cursor-indicator";
+        cursorElement.style.position = "absolute";
+
+        // 使用clientX和clientY坐标，而不是pageX和pageY，以适应移动设备的滚动
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+        
+        cursorElement.style.left = (rangeRect.left + scrollX) + "px";
+        cursorElement.style.top = (rangeRect.top + scrollY) + "px";
+        cursorElement.style.height = rangeRect.height + "px";
+        // 增加光标宽度，使其在移动设备上更容易看到
+        cursorElement.style.width = "3px";
+        // 确保光标在最上层显示
+        cursorElement.style.zIndex = "9999";
+
+        document.body.appendChild(cursorElement);
+        cursorElement.dataset.index = localTapIndex.toString();
+        cursorElement.dataset.elementId = "error-sentence";
+
+        if (!isRecording && !isDragging) {
+          cursorTimeout = setTimeout(() => { removeCursor(); }, 6000);
+        }
+        touchIndexSpan.innerText = String(localTapIndex);
+        
+        // 添加日志以便调试
+        console.log("Cursor created at position:", localTapIndex, "with coordinates:", {
+          left: rangeRect.left + scrollX,
+          top: rangeRect.top + scrollY,
+          height: rangeRect.height
+        });
+      } catch (e) {
+        console.error("[Transcription] Error creating cursor:", e);
+      }
+    }
+
+    function showLongPressFeedback(x, y) {
+      // A placeholder for any long-press feedback
+      console.log("Long-press at:", x, y);
+    }
+
+    /*******************************************************
+     * Transcription: check if the user has completed corrections
+     *******************************************************/
+    function checkCompletion() {
+      const targetSentence = document.getElementById("target-sentence");
+      const errorSentence = document.getElementById("error-sentence");
+      const skipBtn = document.getElementById("skip-sentence-button");
+      if (!targetSentence || !errorSentence) return;
+
+      if (errorSentence.innerText.trim() === targetSentence.textContent.trim()) {
+        errorSentence.style.background = "#e6ffed";
+        errorSentence.style.borderColor = "#34d058";
+        setTimeout(() => {
+          errorSentence.style.background = "";
+          errorSentence.style.borderColor = "";
+        }, 2000);
+
+        if (skipBtn && skipBtn.parentNode) {
+          const parentElement = skipBtn.parentNode;
+          let newElement;
+          if (currentPairIndex === sentencePairs.length - 1) {
+            newElement = document.createElement("div");
+            newElement.id = "skip-sentence-button";
+            newElement.textContent = "That's the last one";
+            newElement.style.flex = "1";
+            newElement.style.padding = "14px";
+            newElement.style.fontSize = "16px";
+            newElement.style.border = "none";
+            newElement.style.borderRadius = "6px";
+            newElement.style.background = "#6c757d";
+            newElement.style.color = "#fff";
+            newElement.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+            newElement.style.cursor = "default";
+            newElement.style.opacity = "0.7";
+            newElement.style.textAlign = "center";
+            newElement.style.userSelect = "none";
+            newElement.style.pointerEvents = "none";
+          } else {
+            newElement = document.createElement("button");
+            newElement.id = "skip-sentence-button";
+            newElement.textContent = "Next Sentence";
+            newElement.style.flex = "1";
+            newElement.style.padding = "14px";
+            newElement.style.fontSize = "16px";
+            newElement.style.border = "none";
+            newElement.style.borderRadius = "6px";
+            newElement.style.background = "#007bff";
+            newElement.style.color = "#fff";
+            newElement.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+            newElement.style.cursor = "pointer";
+
+            newElement.addEventListener("click", function nextHandler() {
+              currentPairIndex++;
+              updateSentencePair(currentPairIndex);
+            });
+          }
+          parentElement.replaceChild(newElement, skipBtn);
+        }
+      }
+    }
+
+    /*******************************************************
+     * Transcription: update the sentence pair
+     *******************************************************/
+    function updateSentencePair(index) {
+      const targetSentence = document.getElementById("target-sentence");
+      const errorSentenceEl = document.getElementById("error-sentence");
+      const indexSpan = document.getElementById("sentence-index");
+      const prev = document.getElementById("prev-sentence");
+      const next = document.getElementById("next-sentence");
+
+      const oldTip = document.querySelector('.tip-box');
+      if (oldTip) oldTip.remove();
+
+      const container = document.getElementById("experience-mode");
+      container.insertBefore(addTipBox(sentencePairs[index].tip), container.firstChild);
+
+      if (targetSentence) targetSentence.textContent = sentencePairs[index].target;
+      if (errorSentenceEl) {
+        errorSentenceEl.textContent = sentencePairs[index].error;
+        originalSentence = sentencePairs[index].error;
+      }
+
+      if (indexSpan) indexSpan.textContent = (index + 1) + "/" + sentencePairs.length;
+      if (prev) prev.style.visibility = (index === 0) ? "hidden" : "visible";
+      if (next) next.style.visibility = (index === sentencePairs.length - 1) ? "hidden" : "visible";
+
+      const skipBtn = document.getElementById("skip-sentence-button");
+      if (skipBtn && skipBtn.parentNode) {
+        const parentElement = skipBtn.parentNode;
+        const disabledBtn = document.createElement("div");
+        disabledBtn.id = "skip-sentence-button";
+        disabledBtn.textContent = "Next Sentence";
+        disabledBtn.style.flex = "1";
+        disabledBtn.style.padding = "14px";
+        disabledBtn.style.fontSize = "16px";
+        disabledBtn.style.border = "none";
+        disabledBtn.style.borderRadius = "6px";
+        disabledBtn.style.background = "#6c757d";
+        disabledBtn.style.color = "#fff";
+        disabledBtn.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+        disabledBtn.style.cursor = "default";
+        disabledBtn.style.opacity = "0.7";
+        disabledBtn.style.textAlign = "center";
+        disabledBtn.style.userSelect = "none";
+        disabledBtn.style.pointerEvents = "none";
+        parentElement.replaceChild(disabledBtn, skipBtn);
+      }
+    }
+
+    function addTipBox(tip) {
+      const tipBox = document.createElement('div');
+      tipBox.className = 'tip-box';
+      tipBox.innerHTML = `
+        <div class="tip-content">
+          ${tip}
+        </div>
+      `;
+      return tipBox;
+    }
+
+    /*******************************************************
+     * Override: applyFirstSuggestionAndShowBox (Transcription)
+     *******************************************************/
+    const originalApply = applyFirstSuggestionAndShowBox;
+    applyFirstSuggestionAndShowBox = function(corrections, isExperienceMode) {
+      if (!corrections.length) return;
+      
+      if (isExperienceMode) {
+        // ========== Original Transcription Logic ==========
+        if (!document.getElementById("error-sentence")) return;
+        
+        let candidateObj = corrections[0];
+        let candidate = candidateObj.corrected_text.trimEnd();
+        let diffRanges = candidateObj.diff_ranges;
+        
+        const errorSentenceEl = document.getElementById("error-sentence");
+        let entireText = errorSentenceEl.innerText;
+        
+        // Replace the previously selected sentence with candidate
+        let updatedText = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+        errorSentenceEl.innerText = updatedText;
+        selectedSentence = candidate;
+
+        // Underline diffs
+        if (diffRanges && diffRanges.length > 0) {
+          let newSentenceIndex = updatedText.indexOf(candidate);
+          if (newSentenceIndex >= 0) {
+            let newHtml = updatedText.substring(0, newSentenceIndex);
+            newHtml += underlineDiffRanges(candidate, diffRanges);
+            newHtml += updatedText.substring(newSentenceIndex + candidate.length);
+            errorSentenceEl.innerHTML = newHtml;
+            
+            setTimeout(() => {
+              errorSentenceEl.innerText = errorSentenceEl.innerText;
+            }, 2000);
+          }
+        }
+
+        // If there are multiple suggestions, show them
+        if (corrections.length > 1) {
+          let rect = errorSentenceEl.getBoundingClientRect();
+          suggestionsBox = createSuggestionBox(rect, corrections, true);
+          if (suggestionsBox) {
+            document.body.appendChild(suggestionsBox);
+            clearTimeout(suggestionsTimer);
+            suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
+          }
+        }
+        checkCompletion();
+      } else {
+        // If not Experience Mode, call the free-input logic
+        originalApply(corrections, isExperienceMode);
       }
     };
 
-    editor.addEventListener("mousedown", function (event) {
-      tapTriggered = false;
-      globalTapIndex = getCaretIndex(event.clientX, event.clientY);
-      initialX = event.clientX;
-      initialY = event.clientY;
-      pressTimer = setTimeout(() => {
-        tapTriggered = true;
-        if (!selectOverlay) {
-          showSelectOverlay(initialX, initialY);
+    /*******************************************************
+     * Transcription: create a suggestion box
+     *******************************************************/
+    function createSuggestionBox(rect, corrections, isExpMode) {
+      let box = document.createElement("div");
+      box.className = "suggestions-box-floating";
+      
+      if (isExpMode) {
+        // Transcription mode positioning
+        const errorSentenceEl = document.getElementById("error-sentence");
+        if (errorSentenceEl) {
+          const text = errorSentenceEl.innerText;
+          const firstSuggestion = corrections[0].corrected_text.trimEnd();
+          const range = document.createRange();
+          const textNode = errorSentenceEl.firstChild;
+          
+          if (textNode) {
+            const startIndex = text.indexOf(firstSuggestion);
+            if (startIndex !== -1) {
+              try {
+                range.setStart(textNode, startIndex);
+                range.setEnd(textNode, startIndex + 1);
+                const selectedRect = range.getBoundingClientRect();
+                const boxLeft = selectedRect.left + window.scrollX;
+                const boxTop = selectedRect.bottom + window.scrollY + 5;
+
+                box.style.left = boxLeft + "px";
+                box.style.top = boxTop + "px";
+                box.style.minWidth = selectedRect.width + "px";
+                box.style.width = "auto";
+                box.style.maxWidth = "500px";
+              } catch (e) {
+                console.error('[SuggestionBox] Error setting range:', e);
+              }
+            }
+          }
         }
-      }, 1000);
-    });
-    editor.addEventListener("mouseup", function () {
-      if (!tapTriggered) {
-        clearTimeout(pressTimer);
-      }
-    });
-
-    function getCaretIndex(x, y) {
-      let range;
-      if (document.caretRangeFromPoint) {
-        range = document.caretRangeFromPoint(x, y);
-      } else if (document.caretPositionFromPoint) {
-        let pos = document.caretPositionFromPoint(x, y);
-        if (!pos) return -1;
-        range = document.createRange();
-        range.setStart(pos.offsetNode, pos.offset);
-        range.collapse(true);
-      }
-      if (!range) return -1;
-      let preCaretRange = range.cloneRange();
-      preCaretRange.selectNodeContents(editor);
-      preCaretRange.setEnd(range.startContainer, range.startOffset);
-      return preCaretRange.toString().length;
-    }
-
-    function getSelectedSentenceAndRelativeIndex(globalIndex) {
-      let text = editor.innerText;
-      let sentences = text.match(/[^.!?。！？]*[.!?。！？]/g) || [text];
-      let selectedSentence = sentences.find(s => {
-        let sentenceStart = text.indexOf(s);
-        return sentenceStart <= globalIndex && globalIndex <= sentenceStart + s.length;
-      }) || text;
-      let sentenceStartIndex = text.indexOf(selectedSentence);
-      let relativeIndex = globalIndex - sentenceStartIndex;
-      return { sentence: selectedSentence, relativeIndex: relativeIndex };
-    }
-
-    function adjustIndexWithinWord(sentence, index) {
-      if (index <= 0 || index >= sentence.length) return index;
-      const isWordChar = ch => /[a-zA-Z0-9]/.test(ch);
-      let leftChar = sentence[index - 1];
-      let rightChar = sentence[index];
-      if (isWordChar(leftChar) && isWordChar(rightChar)) {
-        let wordStart = index - 1;
-        while (wordStart > 0 && isWordChar(sentence[wordStart - 1])) {
-          wordStart--;
+      } else {
+        // Free input mode positioning
+        const simpleEditor = document.getElementById('simple-editor');
+        if (simpleEditor && originalSentence) {
+          const text = simpleEditor.textContent;
+          const sentenceStart = text.indexOf(originalSentence);
+          
+          if (sentenceStart !== -1) {
+            try {
+              const range = document.createRange();
+              const textNode = simpleEditor.firstChild;
+              range.setStart(textNode, sentenceStart);
+              range.setEnd(textNode, sentenceStart + originalSentence.length);
+              
+              const sentenceRect = range.getBoundingClientRect();
+              
+              box.style.position = 'absolute';
+              box.style.top = (sentenceRect.bottom + window.scrollY + 5) + 'px';
+              box.style.left = (sentenceRect.left + window.scrollX) + 'px';
+              box.style.width = 'auto';
+              box.style.maxWidth = simpleEditor.offsetWidth - 40 + 'px';
+              box.style.zIndex = '1000';
+              
+              document.body.appendChild(box);
+            } catch (e) {
+              console.error('[SuggestionBox] Error calculating position:', e);
+            }
+          }
         }
-        let wordEnd = index;
-        while (wordEnd < sentence.length && isWordChar(sentence[wordEnd])) {
-          wordEnd++;
-        }
-        let distToStart = index - wordStart;
-        let distToEnd = wordEnd - index;
-        return distToStart <= distToEnd ? wordStart : wordEnd;
       }
-      return index;
-    }
 
-    function showSelectOverlay(x, y) {
-      selectOverlay = document.createElement("div");
-      selectOverlay.id = "select-overlay";
-      selectOverlay.style.left = x + "px";
-      selectOverlay.style.top = y + "px";
-      selectOverlay.innerHTML = `
-        <div class="half left">Tap&amp;Say</div>
-        <div class="half right">Voice Input</div>
-      `;
-      document.body.appendChild(selectOverlay);
-      overlayTimeout = setTimeout(() => { removeOverlay(); }, 3000);
-      selectOverlay.querySelector(".half.left").addEventListener("click", () => {
-        clearTimeout(overlayTimeout);
-        handleSelection("tap");
-      });
-      selectOverlay.querySelector(".half.right").addEventListener("click", () => {
-        clearTimeout(overlayTimeout);
-        handleSelection("voice");
-      });
-    }
+      for (let i = 1; i < corrections.length; i++) {
+        let candidateObj = corrections[i];
+        let candidate = candidateObj.corrected_text.trimEnd();
+        let diffRanges = candidateObj.diff_ranges;
 
-    function handleSelection(mode) {
-      currentMode = (mode === "voice") ? "voice" : "tap";
-      if (currentMode === "tap") {
-        let { sentence, relativeIndex } = getSelectedSentenceAndRelativeIndex(globalTapIndex);
-        originalSentence = sentence;
-        originalErrorSpan.innerText = originalSentence;
-        let adjustedIndex = adjustIndexWithinWord(sentence, relativeIndex);
-        let errorSentenceWithMarker = sentence.slice(0, adjustedIndex) + " <|> " + sentence.slice(adjustedIndex);
-        errorText.innerText = errorSentenceWithMarker;
-        touchIndex.innerText = adjustedIndex;
-        highlightSentence(sentence);
-      }
-      updateOverlayToSpinner();
-      startRecording();
-    }
-
-    function highlightSentence(sentence) {
-      let html = editor.innerHTML;
-      let safe = escapeRegExp(sentence);
-      let re = new RegExp(safe, "m");
-      editor.innerHTML = html.replace(re, `<span class="highlighted-sentence">${sentence}</span>`);
-    }
-
-    function updateOverlayToSpinner() {
-      if (selectOverlay) {
-        selectOverlay.innerHTML = '<div class="spinner"></div>';
-      }
-    }
-
-    function transformOverlayToRectangle(corrections) {
-      if (!selectOverlay) return;
-      selectOverlay.style.width = "220px";
-      selectOverlay.style.height = "auto";
-      selectOverlay.style.borderRadius = "10px";
-      selectOverlay.innerHTML = `<div class="suggestions-box"></div>`;
-      let sugBox = selectOverlay.querySelector(".suggestions-box");
-      let top3 = corrections.slice(0, 3);
-      top3.forEach(corr => {
         let div = document.createElement("div");
-        div.innerText = corr;
-        div.addEventListener("click", () => {
-          removeHighlight();
-          replaceHighlightedSentence(corr);
-          removeOverlay();
-        });
-        sugBox.appendChild(div);
-      });
-    }
-
-    function removeHighlight() {
-      let html = editor.innerHTML;
-      html = html.replace(/<span class="highlighted-sentence">(.*?)<\/span>/, "$1");
-      editor.innerHTML = html;
-    }
-
-    function replaceHighlightedSentence(newText) {
-      let html = editor.innerHTML;
-      let safe = escapeRegExp(originalSentence);
-      let re = new RegExp(safe, "m");
-      editor.innerHTML = html.replace(re, newText);
-    }
-
-    function removeOverlay() {
-      if (selectOverlay) {
-        selectOverlay.remove();
-        selectOverlay = null;
-      }
-      if (overlayTimeout) {
-        clearTimeout(overlayTimeout);
-        overlayTimeout = null;
-      }
-    }
-
-    function startRecording() {
-      if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
-        showToast("您的浏览器不支持语音识别。");
-        return;
-      }
-      let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "en-US";
-      recognition.onstart = function() {
-        isListening = true;
-        micStatus.innerText = "🟢 Recording...";
-        silenceTimer = setTimeout(() => {
-          if (isListening) recognition.stop();
-        }, 5000);
-      };
-      recognition.onresult = function(event) {
-        clearTimeout(silenceTimer);
-        let transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        voiceInput.innerText = transcript;
-      };
-      recognition.onerror = function(event) {
-        console.error("Speech recognition error:", event.error);
-        micStatus.innerText = "❌ Recording error";
-        if (isListening) recognition.stop();
-      };
-      recognition.onend = function() {
-        isListening = false;
-        micStatus.innerText = "🔴 Recording stopped";
-        finalizeTapSay();
-      };
-      recognition.start();
-    }
-
-    // ----去掉语音识别自动添加的标点----
-    function removePunctuation(str) {
-      return str.replace(/[^a-zA-Z0-9\s]/g, "");
-    }
-    // ---------------------------------------
-
-    function finalizeTapSay() {
-      let transcriptText = voiceInput.innerText.trim();
-      if (transcriptText === "") {
-        showToast("未检测到输入，请提高音量再试。");
-        removeOverlay();
-        return;
-      }
-      if (currentMode === "voice") {
-        let noPunct = removePunctuation(transcriptText);
-        insertTextAtCursor(noPunct + " ");
-        removeOverlay();
-      } else {
-        let errorSentenceWithMarker = errorText.innerText;
-        let finalLabel = errorSentenceWithMarker + "<||>" + transcriptText + "</s>";
-        finalOutput.innerText = finalLabel;
-        logEvent("Final output: " + finalLabel, transcriptText, touchIndex.innerText);
-        sendToAPI(errorSentenceWithMarker, touchIndex.innerText, transcriptText);
-      }
-    }
-
-    function sendToAPI(sentence, cursorPos, voice) {
-      fetch(API_URL, {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-             sentence: sentence,
-             cursor_position: parseInt(cursorPos, 10),
-             voice: voice,
-             original_sentence: originalSentence
-         })
-      })
-      .then(response => response.json())
-      .then(data => {
-         let corrections = data.corrections || [];
-         logEvent("API corrections: " + JSON.stringify(corrections), "", "");
-         transformOverlayToRectangle(corrections.slice(0, 3));
-      })
-      .catch(error => {
-         console.error("API error:", error);
-         logEvent("API call error: " + error, "", "");
-      });
-    }
-
-    function insertTextAtCursor(text) {
-      editor.focus();
-      if (document.queryCommandSupported('insertHTML')) {
-        document.execCommand('insertHTML', false, text);
-      } else {
-        let sel = window.getSelection();
-        if (!sel.rangeCount) return;
-        let range = sel.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode(text));
-        range.collapse(false);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
-    }
-
-    function escapeRegExp(string) {
-      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    function logEvent(message, speech, index) {
-      let p = document.createElement("p");
-      p.innerText = `[${new Date().toLocaleString("en-US",{hour12:false})}] ${message}`;
-      eventLog.appendChild(p);
-    }
-
-    ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
-      editor.addEventListener(evtName, e => {
-        e.preventDefault();
-        e.stopPropagation();
-      }, false);
-    });
-    editor.addEventListener("dragover", () => { editor.style.background = "#fafafa"; });
-    editor.addEventListener("dragleave", () => { editor.style.background = "white"; });
-    editor.addEventListener("drop", e => {
-      editor.style.background = "white";
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        const file = files[0];
-        const fname = file.name.toLowerCase();
-        if (fname.endsWith(".txt") || fname.endsWith(".doc")) {
-          const reader = new FileReader();
-          reader.onload = function(evt) {
-            editor.innerText = evt.target.result;
-            logEvent("File loaded: " + file.name, "0", "");
-          };
-          reader.readAsText(file, "UTF-8");
+        if (diffRanges && diffRanges.length > 0) {
+          div.innerHTML = underlineDiffRanges(candidate, diffRanges);
         } else {
-          showToast("仅支持 .txt 或 .doc 文件。");
+          div.innerText = candidate;
+        }
+
+        div.onclick = (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          if (isExpMode) {
+            // Transcription mode
+            const errorSentenceEl = document.getElementById("error-sentence");
+            if (!errorSentenceEl) return;
+
+            let entireText = errorSentenceEl.innerText;
+            let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+            errorSentenceEl.innerText = updated;
+            selectedSentence = candidate;
+
+            if (diffRanges && diffRanges.length > 0) {
+              let newSentenceIndex = updated.indexOf(candidate);
+              if (newSentenceIndex >= 0) {
+                let newHtml = updated.substring(0, newSentenceIndex);
+                newHtml += underlineDiffRanges(candidate, diffRanges);
+                newHtml += updated.substring(newSentenceIndex + candidate.length);
+                errorSentenceEl.innerHTML = newHtml;
+                
+                setTimeout(() => {
+                  errorSentenceEl.innerText = errorSentenceEl.innerText;
+                }, 2000);
+              }
+            }
+            checkCompletion();
+          } else {
+            // Free input mode
+            window.replaceSentenceInSimpleEditor(originalSentence, candidate);
+            originalSentence = candidate;
+          }
+          removeSuggestionsBox();
+        };
+        box.appendChild(div);
+      }
+      return box;
+    }
+
+
+    /*******************************************************
+     * ============ C) Free Input Mode ============
+     *******************************************************/
+
+    /*******************************************************
+     * Free Input: add events to the simple text area
+     *******************************************************/
+    function attachFreeInputListeners() {
+      const editor = document.getElementById('simple-editor');
+      if (!editor) return;
+      
+      // Push initial content to undo stack
+      simpleUndoStack = [editor.innerHTML];
+      updateUndoButtonState();
+      
+      let pressTimer = null;
+      let lastContent = editor.innerHTML;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let isTouchMoved = false;
+      let touchStartTime = 0;
+      
+      // PC mouse handling
+      editor.addEventListener('mousedown', (e) => {
+        if (activeMode !== MODE_INPUT) return;
+        handlePressStart(e.clientX, e.clientY, false);
+      });
+
+      document.addEventListener('mouseup', () => {
+        handlePressEnd();
+      });
+
+      // Mobile touch handling
+      editor.addEventListener('touchstart', (e) => {
+        if (activeMode !== MODE_INPUT) return;
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchStartTime = Date.now();
+        isTouchMoved = false;
+        
+        // Prevent default on long press for iOS text selection
+        if (e.touches.length === 1) {
+          const isScrollArea = (touch.clientY > (editor.offsetTop + editor.offsetHeight - 40));
+          if (!isScrollArea) {
+            e.preventDefault();
+          }
+        }
+        
+        handlePressStart(touch.clientX, touch.clientY, true);
+      });
+
+      editor.addEventListener('touchmove', (e) => {
+        if (pressTimer) {
+          const touch = e.touches[0];
+          const moveX = Math.abs(touch.clientX - touchStartX);
+          const moveY = Math.abs(touch.clientY - touchStartY);
+          if (moveX > 10 || moveY > 10) {
+            isTouchMoved = true;
+            handlePressEnd();
+          }
+        }
+      });
+
+      editor.addEventListener('touchend', (e) => {
+        if (!isTouchMoved) {
+          const touchEndTime = Date.now();
+          const touchDuration = touchEndTime - touchStartTime;
+          
+          if (touchDuration < 500) {
+            // Short press, handle selection
+            const touch = e.changedTouches[0];
+            const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+            if (range) {
+              const selection = window.getSelection();
+              selection.removeAllRanges();
+              selection.addRange(range);
+            }
+          }
+          handlePressEnd();
+        }
+      });
+
+      function handlePressStart(clientX, clientY, isTouch) {
+        editor.focus();
+        
+        if (window.stopRecordingTimer) {
+          clearTimeout(window.stopRecordingTimer);
+          window.stopRecordingTimer = null;
+        }
+        
+        pressTimer = setTimeout(() => {
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          
+          isDraggingAndRecording = true;
+          
+          const range = document.caretRangeFromPoint(clientX, clientY);
+          if (range) {
+            const sentenceInfo = getFreeInputSentence(editor.textContent, range.startOffset);
+            errorText.innerText = sentenceInfo.sentence;
+            originalSentence = sentenceInfo.sentence;
+            originalErrorSpan.innerText = sentenceInfo.sentence;
+            localTapIndex = range.startOffset;
+            
+            startRecording(true);
+          }
+        }, isTouch ? 700 : 500);
+      }
+      
+      function handlePressEnd() {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+        
+        if (isDraggingAndRecording) {
+          isDraggingAndRecording = false;
+          
+          if (window.stopRecordingTimer) {
+            clearTimeout(window.stopRecordingTimer);
+            window.stopRecordingTimer = null;
+          }
+          
+
+
+          if (recognition) {
+            recognition.onresult = (event) => {
+              const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+              voiceInputSpan.innerText = transcript;
+              finalOutputSpan.innerText = transcript;
+              
+              // 记录最后一次检测到语音的时间
+              lastSpeechTime = new Date();
+              
+              // 清除之前的沉默计时器
+              if (silenceTimer) {
+                clearTimeout(silenceTimer);
+                silenceTimer = null;
+              }
+              
+              // 设置新的沉默计时器，在用户停止说话后一段时间再停止录音
+              silenceTimer = setTimeout(() => {
+                if (isRecording && recognition) {
+                  console.log("自由输入模式：用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
+                  // 先保存transcript，避免stopRecording清除
+                  const savedTranscript = voiceInputSpan.innerText.trim();
+                  
+                  // 停止录音
+                  stopRecording();
+                  
+                  // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
+                  if (savedTranscript) {
+                    console.log("自由输入模式：调用finalizeTapSay处理录音结果");
+                    voiceInputSpan.innerText = savedTranscript;
+                    setTimeout(finalizeTapSay, 100);
+                  }
+                }
+              }, silenceThreshold);
+            };
+          }
+          
         }
       }
-    });
+      
+      // Listen for input changes, push to undo stack
+      editor.addEventListener('input', function() {
+        const currentContent = this.innerHTML;
+        if (currentContent !== lastContent) {
+          simpleUndoStack.push(currentContent);
+          if (simpleUndoStack.length > 20) {
+            simpleUndoStack.shift();
+          }
+          lastContent = currentContent;
+          updateUndoButtonState();
+        }
+      });
+      
+      // File drag and drop
+      editor.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.background = "#fafafa";
+      });
+      
+      editor.addEventListener('dragleave', function() {
+        this.style.background = "#fff";
+      });
+      
+      editor.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.background = "#fff";
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          const file = files[0];
+          const fname = file.name.toLowerCase();
+          if (fname.endsWith(".txt") || fname.endsWith(".doc")) {
+            let reader = new FileReader();
+            reader.onload = (evt) => {
+              this.textContent = evt.target.result;
+              simpleUndoStack.push(this.innerHTML);
+              lastContent = this.innerHTML;
+              updateUndoButtonState();
+              logEvent("File loaded: " + file.name);
+            };
+            reader.readAsText(file, "UTF-8");
+          } else {
+            console.warn("Only .txt or .doc files are supported");
+          }
+        }
+      });
+
+      // Add mobile drag event handling
+      editor.addEventListener('mousemove', (e) => {
+        if (isDraggingAndRecording) {
+          const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+          if (range) {
+            const sentenceInfo = getFreeInputSentence(editor.textContent, range.startOffset);
+            errorText.innerText = sentenceInfo.sentence;
+            originalSentence = sentenceInfo.sentence;
+            originalErrorSpan.innerText = sentenceInfo.sentence;
+          }
+        }
+      });
+
+      editor.addEventListener('touchmove', (e) => {
+        if (isDraggingAndRecording) {
+          const touch = e.touches[0];
+          const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
+          if (range) {
+            const sentenceInfo = getFreeInputSentence(editor.textContent, range.startOffset);
+            errorText.innerText = sentenceInfo.sentence;
+            originalSentence = sentenceInfo.sentence;
+            originalErrorSpan.innerText = sentenceInfo.sentence;
+          }
+        } else if (pressTimer) {
+          const touch = e.touches[0];
+          const moveX = Math.abs(touch.clientX - touchStartX);
+          const moveY = Math.abs(touch.clientY - touchStartY);
+          if (moveX > 10 || moveY > 10) {
+            isTouchMoved = true;
+            handlePressEnd();
+          }
+        }
+      });
+    }
+
+    // Get a sentence (free input)
+    function getFreeInputSentence(text, position) {
+      const sentenceSeparators = /[.!?]/;
+      let startPos = 0;
+      for (let i = position - 1; i >= 0; i--) {
+        if (sentenceSeparators.test(text[i]) &&
+          (i + 1 >= text.length || text[i + 1] === ' ' || text[i + 1] === '\n')) {
+          startPos = i + 1;
+          while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\n')) {
+            startPos++;
+          }
+          break;
+        }
+      }
+      
+      let endPos = text.length;
+      for (let i = position; i < text.length; i++) {
+        if (sentenceSeparators.test(text[i])) {
+          endPos = i + 1;
+          break;
+        }
+      }
+      return { sentence: text.substring(startPos, endPos).trim(), startPos: startPos, endPos: endPos };
+    }
+
+    // Undo stack for Free Input mode
+    let simpleUndoStack = [''];
+    const simpleUndoButton = document.getElementById('simple-undo-button');
+
+    // Update the state of the undo button
+    function updateUndoButtonState() {
+      const simpleUndoButton = document.getElementById('simple-undo-button');
+      if (simpleUndoButton) {
+        if (simpleUndoStack.length <= 1) {
+          simpleUndoButton.disabled = true;
+          simpleUndoButton.style.background = '#6c757d';
+          simpleUndoButton.style.cursor = 'not-allowed';
+        } else {
+          simpleUndoButton.disabled = false;
+          simpleUndoButton.style.background = '#28a745';
+          simpleUndoButton.style.cursor = 'pointer';
+        }
+      }
+    }
+
+    if (simpleUndoButton) {
+      updateUndoButtonState();
+      
+      simpleUndoButton.addEventListener('click', function() {
+        const simpleEditor = document.getElementById('simple-editor');
+        if (simpleEditor && simpleUndoStack.length > 1) {
+          simpleUndoStack.pop();
+          const previousContent = simpleUndoStack[simpleUndoStack.length - 1];
+          simpleEditor.innerHTML = previousContent;
+          
+          const range = document.createRange();
+          const selection = window.getSelection();
+          range.selectNodeContents(simpleEditor);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          
+          simpleEditor.focus();
+          updateUndoButtonState();
+        }
+      });
+    }
+
+    // Replace sentence in free input mode
+    window.replaceSentenceInSimpleEditor = function(originalText, newText) {
+      const simpleEditor = document.getElementById('simple-editor');
+      if (!simpleEditor) return false;
+      
+      const currentContent = simpleEditor.innerHTML;
+      const updatedContent = currentContent.replace(originalText, newText);
+      
+      if (currentContent !== updatedContent) {
+        simpleUndoStack.push(updatedContent);
+        simpleEditor.innerHTML = updatedContent;
+        updateUndoButtonState();
+        return true;
+      }
+      return false;
+    };
+
+    /*******************************************************
+     * Override: applyFirstSuggestionAndShowBox (Free Input)
+     *******************************************************/
+    const originalApplyGlobal = applyFirstSuggestionAndShowBox;
+    applyFirstSuggestionAndShowBox = function(corrections, isExperienceMode) {
+      if (!corrections.length) return;
+      
+      if (isExperienceMode) {
+        originalApplyGlobal(corrections, isExperienceMode);
+      } else {
+        // ========== Free Input Mode Logic ==========
+        const simpleEditor = document.getElementById('simple-editor');
+        if (!simpleEditor) return;
+        
+        let candidateObj = corrections[0];
+        let candidate = candidateObj.corrected_text.trimEnd();
+        let diffRanges = candidateObj.diff_ranges;
+        
+        if (window.replaceSentenceInSimpleEditor(originalSentence, candidate)) {
+          originalSentence = candidate;
+          simpleEditor.focus();
+
+          if (corrections.length > 1) {
+            suggestionsBox = createSuggestionBox(null, corrections, false);
+            if (suggestionsBox) {
+              document.body.appendChild(suggestionsBox);
+              clearTimeout(suggestionsTimer);
+              suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
+            }
+          }
+        }
+      }
+    };
+
+    /*******************************************************
+     * Transcription: create a suggestion box (repeated for free input)
+     *******************************************************/
+    function createSuggestionBox(rect, corrections, isExpMode) {
+      let box = document.createElement("div");
+      box.className = "suggestions-box-floating";
+      
+      if (isExpMode) {
+        const errorSentenceEl = document.getElementById("error-sentence");
+        if (errorSentenceEl) {
+          const text = errorSentenceEl.innerText;
+          const firstSuggestion = corrections[0].corrected_text.trimEnd();
+          const range = document.createRange();
+          const textNode = errorSentenceEl.firstChild;
+          
+          if (textNode) {
+            const startIndex = text.indexOf(firstSuggestion);
+            if (startIndex !== -1) {
+              try {
+                range.setStart(textNode, startIndex);
+                range.setEnd(textNode, startIndex + 1);
+                const selectedRect = range.getBoundingClientRect();
+                const boxLeft = selectedRect.left + window.scrollX;
+                const boxTop = selectedRect.bottom + window.scrollY + 5;
+
+                box.style.left = boxLeft + "px";
+                box.style.top = boxTop + "px";
+                box.style.minWidth = selectedRect.width + "px";
+                box.style.width = "auto";
+                box.style.maxWidth = "500px";
+              } catch (e) {
+                console.error('[SuggestionBox] Error setting range:', e);
+              }
+            }
+          }
+        }
+      } else {
+        // Free input mode positioning
+        const simpleEditor = document.getElementById('simple-editor');
+        if (simpleEditor && originalSentence) {
+          const text = simpleEditor.textContent;
+          const sentenceStart = text.indexOf(originalSentence);
+          
+          if (sentenceStart !== -1) {
+            try {
+              const range = document.createRange();
+              const textNode = simpleEditor.firstChild;
+              range.setStart(textNode, sentenceStart);
+              range.setEnd(textNode, sentenceStart + originalSentence.length);
+              
+              const sentenceRect = range.getBoundingClientRect();
+              
+              box.style.position = 'absolute';
+              box.style.top = (sentenceRect.bottom + window.scrollY + 5) + 'px';
+              box.style.left = (sentenceRect.left + window.scrollX) + 'px';
+              box.style.width = 'auto';
+              box.style.maxWidth = simpleEditor.offsetWidth - 40 + 'px';
+              box.style.zIndex = '1000';
+              
+              document.body.appendChild(box);
+            } catch (e) {
+              console.error('[SuggestionBox] Error calculating position:', e);
+            }
+          }
+        }
+      }
+
+      for (let i = 1; i < corrections.length; i++) {
+        let candidateObj = corrections[i];
+        let candidate = candidateObj.corrected_text.trimEnd();
+        let diffRanges = candidateObj.diff_ranges;
+
+        let div = document.createElement("div");
+        if (diffRanges && diffRanges.length > 0) {
+          div.innerHTML = underlineDiffRanges(candidate, diffRanges);
+        } else {
+          div.innerText = candidate;
+        }
+
+        div.onclick = (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          if (isExpMode) {
+            const errorSentenceEl = document.getElementById("error-sentence");
+            if (!errorSentenceEl) return;
+
+            let entireText = errorSentenceEl.innerText;
+            let updated = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+            errorSentenceEl.innerText = updated;
+            selectedSentence = candidate;
+
+            if (diffRanges && diffRanges.length > 0) {
+              let newSentenceIndex = updated.indexOf(candidate);
+              if (newSentenceIndex >= 0) {
+                let newHtml = updated.substring(0, newSentenceIndex);
+                newHtml += underlineDiffRanges(candidate, diffRanges);
+                newHtml += updated.substring(newSentenceIndex + candidate.length);
+                errorSentenceEl.innerHTML = newHtml;
+                
+                setTimeout(() => {
+                  errorSentenceEl.innerText = errorSentenceEl.innerText;
+                }, 2000);
+              }
+            }
+            checkCompletion();
+          } else {
+            window.replaceSentenceInSimpleEditor(originalSentence, candidate);
+            originalSentence = candidate;
+          }
+          removeSuggestionsBox();
+        };
+        box.appendChild(div);
+      }
+      return box;
+    }
+
+
+    /*******************************************************
+     * ============ D) window.onload & Main Entry ============
+     *******************************************************/
+    window.onload = async function() {
+      // Try to load header/footer
+      try {
+        const headerRes = await fetch("header.html");
+        const headerHtml = await headerRes.text();
+        document.getElementById("header-container").innerHTML = headerHtml;
+
+        const footerRes = await fetch("footer.html");
+        const footerHtml = await footerRes.text();
+        document.getElementById("footer-container").innerHTML = footerHtml;
+      } catch(e) {
+        console.warn("Failed to load header/footer:", e);
+      }
+
+      // Hide monitoring and event log by default
+      monitoringCard.style.display = "none";
+      eventLogCard.style.display = "none";
+
+      // Check mic permission
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({audio: true})
+        .catch(err => {
+          console.warn("Mic permission error:", err);
+        });
+      }
+
+      // Default mode
+      modeExperienceContainer.style.display = "block";
+      modeInputContainer.style.display = "none";
+      modeExperienceBtn.classList.add("active");
+      modeInputBtn.classList.remove("active");
+      activeMode = MODE_EXPERIENCE;
+
+      // Initialize Transcription mode
+      initializeExperienceMode();
+
+      // Add tip box for Free Input mode
+      const inputModeContainer = document.getElementById("input-mode");
+      if (inputModeContainer) {
+        inputModeContainer.insertBefore(
+          addTipBox( '<strong>Long press</strong> the place you want to edit a bit till the mic icon turns green, then speak correction.'),
+          inputModeContainer.firstChild
+        );
+      }
+
+      // Bind free input listeners
+      attachFreeInputListeners();
+
+      // Cancel text selection in Transcription mode
+      document.addEventListener('mouseup', () => {
+        if (activeMode === MODE_EXPERIENCE && !isDragging) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const errorSentenceEl = document.getElementById("error-sentence");
+            if (errorSentenceEl && !errorSentenceEl.classList.contains('dragging')) {
+              selection.removeAllRanges();
+            }
+          }
+        }
+      });
+      document.addEventListener('selectionchange', () => {
+        if (activeMode === MODE_EXPERIENCE && !isDragging) {
+          const errorSentenceEl = document.getElementById("error-sentence");
+          if (errorSentenceEl && !errorSentenceEl.classList.contains('dragging')) {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              if (errorSentenceEl.contains(range.commonAncestorContainer)) {
+                selection.removeAllRanges();
+              }
+            }
+          }
+        }
+      });
+
+      // Mode switch listeners
+      modeExperienceBtn.addEventListener("click", function() {
+        if (!this.classList.contains("active")) {
+          this.classList.add("active");
+          modeInputBtn.classList.remove("active");
+          modeExperienceContainer.style.display = "block";
+          modeInputContainer.style.display = "none";
+          activeMode = MODE_EXPERIENCE;
+        }
+      });
+      modeInputBtn.addEventListener("click", function() {
+        if (!this.classList.contains("active")) {
+          this.classList.add("active");
+          modeExperienceBtn.classList.remove("active");
+          modeExperienceContainer.style.display = "none";
+          modeInputContainer.style.display = "block";
+          activeMode = MODE_INPUT;
+        }
+      });
+
+      // Log
+      logEvent("Application initialized - Monitoring and logs are hidden by default");
+
+
+      /*******************************************************
+       * Floating menu logic
+       *******************************************************/
+      const menuButton = document.getElementById('float-menu-button');
+      const menu = document.getElementById('float-menu');
+      menu.innerHTML = `
+        <button id="float-monitoring">
+          Show Monitoring
+        </button>
+        <button id="float-log">
+          Show Event Log
+        </button>
+      `;
+
+      let menuVisible = false;
+      menuButton.innerHTML = `
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path fill="white" d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+        </svg>
+      `;
+
+      menuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuVisible = !menuVisible;
+        menu.style.display = menuVisible ? 'flex' : 'none';
+      });
+      document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && !menuButton.contains(e.target)) {
+          menuVisible = false;
+          menu.style.display = 'none';
+        }
+      });
+
+      const floatMonitoringBtn = document.getElementById('float-monitoring');
+      const floatLogBtn = document.getElementById('float-log');
+      const floatImeBtn = document.getElementById('float-ime');
+
+      if (floatMonitoringBtn) {
+        floatMonitoringBtn.addEventListener('click', () => {
+          const isHidden = (monitoringCard.style.display === 'none');
+          monitoringCard.style.display = isHidden ? 'block' : 'none';
+          floatMonitoringBtn.textContent = isHidden ? 'Hide Monitoring' : 'Show Monitoring';
+        });
+      }
+      if (floatLogBtn) {
+        floatLogBtn.addEventListener('click', () => {
+          const isHidden = (eventLogCard.style.display === 'none');
+          eventLogCard.style.display = isHidden ? 'block' : 'none';
+          floatLogBtn.textContent = isHidden ? 'Hide Event Log' : 'Show Event Log';
+        });
+      }
+      if (floatImeBtn) {
+        floatImeBtn.addEventListener('click', () => {
+          disableIME = !disableIME;
+          const editor = document.getElementById('text-editor');
+          if (editor) {
+            if (disableIME) editor.classList.add('disable-ime');
+            else editor.classList.remove('disable-ime');
+          }
+          floatImeBtn.innerHTML = `
+            <i class="fas fa-keyboard"></i>
+            IME Shortcuts: ${disableIME ? 'OFF' : 'ON'}
+          `;
+        });
+      }
+
+      // Clear button in free input mode
+      const clearButton = document.getElementById('clear-text-button');
+      if (clearButton) {
+        clearButton.addEventListener('click', function() {
+          const simpleEditor = document.getElementById('simple-editor');
+          if (simpleEditor) {
+            const currentContent = simpleEditor.innerHTML;
+            if (currentContent.trim() !== '') {
+              simpleUndoStack.push('');
+              simpleEditor.innerHTML = '';
+              simpleEditor.focus();
+              updateUndoButtonState();
+            }
+          }
+        });
+      }
+    };
+
+    function showRecordingFeedback(isRecording) {
+      if (micStatusSpan) {
+        micStatusSpan.innerHTML = isRecording ? "🟢 Recording..." : "🔴 Stopped";
+        micStatusSpan.className = isRecording ? "recording-active" : "";
+      }
+      
+      const dots = document.querySelectorAll('.recording-status-dot');
+      const micIcons = document.querySelectorAll('.mic-icon');
+      
+      if (isRecording) {
+        dots.forEach(dot => {
+          dot.classList.remove('stopped');
+          dot.classList.add('recording');
+        });
+        micIcons.forEach(icon => {
+          icon.classList.add('recording');
+        });
+      } else {
+        dots.forEach(dot => {
+          dot.classList.remove('recording');
+          dot.classList.add('stopped');
+        });
+        micIcons.forEach(icon => {
+          icon.classList.remove('recording');
+        });
+        
+        removeCursor();
+      }
+    }
+
+    function stopRecording() {
+      clearTimeout(hardStopTimer); // 清除硬停止计时器
+      hardStopTimer = null;
+      
+      // 清除沉默计时器
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
+      
+
+      const isAfterDragging = recognition && recognition.isAfterDragging;
+
+      isRecording = false;
+      isListening = false;
+      
+      if (recognition) {
+        try { 
+
+          console.log("调用recognition.stop()");
+          recognition.stop(); 
+        } catch(e) { 
+          console.error(e); 
+        }
+      }
+      
+      if (micStatusSpan) {
+        micStatusSpan.innerHTML = "🔴 Stopped";
+        micStatusSpan.className = "";
+      }
+      
+      const dots = document.querySelectorAll('.recording-status-dot');
+      const micIcons = document.querySelectorAll('.mic-icon');
+      dots.forEach(dot => {
+        dot.classList.remove('recording');
+      });
+      micIcons.forEach(icon => {
+        icon.classList.remove('recording');
+      });
+      
+      // 添加调试信息
+      console.log("=== stopRecording结束时的状态 ===");
+      console.log("isAfterDragging:", isAfterDragging);
+      console.log("errorText内容:", errorText ? errorText.innerText : "未找到元素");
+      console.log("voiceInputSpan内容:", voiceInputSpan ? voiceInputSpan.innerText : "未找到元素");
+      console.log("==============================");
+    }
+
+    function handleRecognitionResult(transcript, relativePosition = 0) {
+      if (!transcript || !transcript.trim()) return;
+      
+      const lowerCaseTranscript = transcript.toLowerCase();
+      
+      console.log("Processing voice command, relative position:", relativePosition);
+      console.log("Original transcript:", transcript);
+      console.log("Lowercase transcript:", lowerCaseTranscript);
+      
+      try {
+        if (typeof proceedWithAI === 'function') {
+          console.log("Using proceedWithAI, relative position:", relativePosition);
+          proceedWithAI(originalSentence, lowerCaseTranscript, relativePosition);
+        } else {
+          if (activeMode === MODE_EXPERIENCE) {
+            console.log("Using applyCorrection, relative position:", relativePosition);
+            applyCorrection(selectedSentence, lowerCaseTranscript, relativePosition);
+          } else if (activeMode === MODE_INPUT) {
+            voiceInputSpan.innerText = transcript;
+            errorText.innerText = originalSentence;
+            finalOutputSpan.innerText = transcript;
+          }
+        }
+      } catch (error) {
+        console.error("Error processing voice command:", error);
+      }
+    }
+
+    function applyCorrection(sentence, transcript, relativePosition = 0) {
+      console.log("Applying correction, original:", sentence, "correction:", transcript, "relative position:", relativePosition);
+      
+      const mergedStr = sentence + " || " + transcript;
+      
+      let finalPosition = relativePosition;
+      
+      console.log("Sending to API with position:", finalPosition);
+      
+      sendToAPI(mergedStr, finalPosition, activeMode === MODE_EXPERIENCE);
+    }
   </script>
 </body>
 </html>
