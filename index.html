@@ -3206,8 +3206,8 @@ Hi, how are you? Meet me on Wednesday. </div>
       const banner = document.createElement("div");
       banner.id = "android-warn-banner";
       banner.innerHTML = `
-        <span style="margin-bottom:10px;display:block;text-align:center;">
-          ⚠️ On Android the first speech-recognition call may fail.
+        <span style="margin-bottom:10px;display:block;text-align:left;">
+          ⚠️ Due to the system engine's limitation, On Android the first speech-recognition call may fail.
           If it happens, tap Restore and wait ~10 s, then try again.
         </span>
         <button id="android-warn-close"
@@ -3220,7 +3220,7 @@ Hi, how are you? Meet me on Wednesday. </div>
         position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);
         background:#ffeeba;color:#856404;font-size:.9rem;
         padding:12px 16px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.25);
-        z-index:5000;display:flex;flex-direction:column;max-width:90%;`;
+        z-index:5000;display:flex;flex-direction:column;max-width:400px;width:80%;`;
 
       document.body.appendChild(banner);
 
