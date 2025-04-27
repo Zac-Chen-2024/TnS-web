@@ -1214,7 +1214,21 @@ Hi, how are you? Meet me on Wednesday. </div>
         };
 
         recognition.onresult = (event) => {
-          // Take the last result to prevent multiple concatenations
+          // 如果是拖动状态，先不更新UI
+          if (isDragging || isDraggingAndRecording) {
+            // 只记录结果，但不更新UI
+            const res = event.results[event.results.length - 1];
+            const transcript = res[0].transcript.trim();
+            console.log("Drag mode - captured speech:", transcript);
+            
+            // 仍然重置沉默计时器
+            lastSpeechTime = Date.now();
+            clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(closeBySilence, silenceThreshold);
+            return;
+          }
+          
+          // 正常处理结果（非拖动状态）
           const res = event.results[event.results.length - 1];
           const transcript = res[0].transcript.trim();
 
@@ -1762,7 +1776,7 @@ Hi, how are you? Meet me on Wednesday. </div>
 
               // Reset the timer: automatically stop after 1 second of no speech
               clearTimeout(silenceTimer);
-              silenceTimer = setTimeout(closeBySilence, 1000);
+              silenceTimer = setTimeout(closeBySilence, silenceThreshold);
             };
           }
         }
@@ -1803,7 +1817,7 @@ Hi, how are you? Meet me on Wednesday. </div>
 
               // Reset the timer: automatically stop after 1 second of no speech
               clearTimeout(silenceTimer);
-              silenceTimer = setTimeout(closeBySilence, 1000);
+              silenceTimer = setTimeout(closeBySilence, silenceThreshold);
             };
           }
         }
@@ -1826,8 +1840,8 @@ Hi, how are you? Meet me on Wednesday. </div>
       element.classList.add("dragging");
       showCursorAtPosition();
       
-      // Start recording but set to not auto-process results
-      startRecording(true);
+      // 删除startRecording调用，因为录音已经在mousedown/touchstart中启动
+      // 长按只需处理UI相关逻辑，不再重启录音
 
       const handleMouseMove = (e) => {
         if (!isDragging) return;
@@ -2512,7 +2526,7 @@ Hi, how are you? Meet me on Wednesday. </div>
 
               // Reset the timer: automatically stop after 1 second of no speech
               clearTimeout(silenceTimer);
-              silenceTimer = setTimeout(closeBySilence, 1000);
+              silenceTimer = setTimeout(closeBySilence, silenceThreshold);
             };
           }
         }
