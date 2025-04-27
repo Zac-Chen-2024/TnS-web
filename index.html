@@ -2286,6 +2286,12 @@ Hi, how are you? Meet me on Wednesday. </div>
       let box = document.createElement("div");
       box.className = "suggestions-box-floating";
       
+      /* Prevent any pointerdown inside the suggestion box from bubbling */
+      box.addEventListener('pointerdown', (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+      }, true); // useCapture = true (先捕获)
+      
       if (isExpMode) {
         // Transcription mode positioning
         const errorSentenceEl = document.getElementById("error-sentence");
@@ -2358,6 +2364,13 @@ Hi, how are you? Meet me on Wednesday. </div>
         } else {
           div.innerText = candidate;
         }
+
+        /* Block the click sequence at the earliest event */
+        div.addEventListener('pointerdown', (evt) => {
+          /* Prevent browser from generating a follow-up click */
+          evt.preventDefault();
+          evt.stopPropagation();
+        });
 
         div.addEventListener('pointerup', (evt) => {
           evt.preventDefault();
@@ -2755,6 +2768,12 @@ Hi, how are you? Meet me on Wednesday. </div>
       let box = document.createElement("div");
       box.className = "suggestions-box-floating";
       
+      /* Prevent any pointerdown inside the suggestion box from bubbling */
+      box.addEventListener('pointerdown', (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+      }, true); // useCapture = true (先捕获)
+      
       if (isExpMode) {
         const errorSentenceEl = document.getElementById("error-sentence");
         if (errorSentenceEl) {
@@ -2826,6 +2845,13 @@ Hi, how are you? Meet me on Wednesday. </div>
         } else {
           div.innerText = candidate;
         }
+
+        /* Block the click sequence at the earliest event */
+        div.addEventListener('pointerdown', (evt) => {
+          /* Prevent browser from generating a follow-up click */
+          evt.preventDefault();
+          evt.stopPropagation();
+        });
 
         div.addEventListener('pointerup', (evt) => {
           evt.preventDefault();
