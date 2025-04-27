@@ -1650,6 +1650,13 @@ Hi, how are you? Meet me on Wednesday. </div>
       let longPressStarted = false;
       let longPressThreshold = 100; // PC端长按阈值
       let mobileLongPressThreshold = 300; // 移动端长按阈值，略长一些以便区分点击和长按
+      
+      // 特别针对安卓设备调整阈值
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        mobileLongPressThreshold = 500; // 安卓设备需要更长的长按阈值
+      }
+      
       let isDraggingAndRecording = false;
       let stopRecordingTimer = null;  
 
@@ -1733,6 +1740,11 @@ Hi, how are you? Meet me on Wednesday. </div>
 
 
       errorSentenceEl.addEventListener("touchstart", (e) => {
+        // 防止安卓上的默认行为（这可能会阻止点击事件）
+        if (isAndroid) {
+          e.preventDefault();
+        }
+        
         // Clear any stop timer
         if (stopRecordingTimer) {
           clearTimeout(stopRecordingTimer);
@@ -1913,6 +1925,11 @@ Hi, how are you? Meet me on Wednesday. </div>
       });
 
       errorSentenceEl.addEventListener("touchend", (e) => {
+        // 确保在安卓上释放时处理点击事件
+        if (isAndroid && e.cancelable) {
+          e.preventDefault();
+        }
+        
         if (errorSentenceEl.dataset.touchStarted) {
           delete errorSentenceEl.dataset.touchStarted;
           
@@ -1998,6 +2015,9 @@ Hi, how are you? Meet me on Wednesday. </div>
         console.warn('[Transcription] Error: element not found');
         return;
       }
+
+      // 检测安卓设备
+      const isAndroid = /Android/i.test(navigator.userAgent);
 
       isDragging = true;
       element.classList.add("dragging");
@@ -2094,7 +2114,9 @@ Hi, how are you? Meet me on Wednesday. </div>
       };
 
       const endDrag = (e) => {
-        if (e && e.type === 'touchend') e.preventDefault();
+        if (e && e.type === 'touchend') {
+          e.preventDefault();
+        }
         isDragging = false;
         element.classList.remove("dragging");
         
@@ -2131,8 +2153,15 @@ Hi, how are you? Meet me on Wednesday. </div>
 
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", endDrag);
-      element.addEventListener("touchmove", handleTouchMove, { passive: false });
-      document.addEventListener("touchend", endDrag, { passive: false });
+      
+      // 为安卓设备特别处理触摸事件的监听
+      if (isAndroid) {
+        element.addEventListener("touchmove", handleTouchMove, { passive: false, capture: true });
+        document.addEventListener("touchend", endDrag, { passive: false, capture: true });
+      } else {
+        element.addEventListener("touchmove", handleTouchMove, { passive: false });
+        document.addEventListener("touchend", endDrag, { passive: false });
+      }
     }
 
     function getCurrentSentenceForTranscription(text, position) {
@@ -2577,6 +2606,9 @@ Hi, how are you? Meet me on Wednesday. </div>
       let isTouchMoved = false;
       let touchStartTime = 0;
       
+      // 检测是否是安卓设备
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      
       // PC mouse handling
       editor.addEventListener('mousedown', (e) => {
         if (activeMode !== MODE_INPUT) return;
@@ -2596,8 +2628,12 @@ Hi, how are you? Meet me on Wednesday. </div>
         touchStartTime = Date.now();
         isTouchMoved = false;
         
+        // 安卓设备需要特别处理
+        if (isAndroid && e.cancelable) {
+          e.preventDefault(); // 在安卓上阻止默认行为
+        }
         // Prevent default on long press for iOS text selection
-        if (e.touches.length === 1) {
+        else if (e.touches.length === 1) {
           const isScrollArea = (touch.clientY > (editor.offsetTop + editor.offsetHeight - 40));
           if (!isScrollArea) {
             e.preventDefault();
@@ -2620,6 +2656,11 @@ Hi, how are you? Meet me on Wednesday. </div>
       });
 
       editor.addEventListener('touchend', (e) => {
+        // 安卓设备需要特别处理
+        if (isAndroid && e.cancelable) {
+          e.preventDefault();
+        }
+        
         if (!isTouchMoved) {
           const touchEndTime = Date.now();
           const touchDuration = touchEndTime - touchStartTime;
@@ -2646,6 +2687,9 @@ Hi, how are you? Meet me on Wednesday. </div>
           window.stopRecordingTimer = null;
         }
         
+        // 为安卓设备调整长按阈值
+        const longPressTimeout = isTouch ? (isAndroid ? 700 : 500) : 500;
+        
         pressTimer = setTimeout(() => {
           const selection = window.getSelection();
           selection.removeAllRanges();
@@ -2662,7 +2706,7 @@ Hi, how are you? Meet me on Wednesday. </div>
             
             startRecording(true);
           }
-        }, isTouch ? 700 : 500);
+        }, longPressTimeout);
       }
       
       function handlePressEnd() {
