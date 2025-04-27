@@ -1007,6 +1007,7 @@ Hi, how are you? Meet me on Wednesday. </div>
     let lastSpeechTime = null; 
     let silenceThreshold = 1000; // 新增：沉默1秒后停止录音
     let restartPending = false;  // 新增：标记重启流程，避免第二次onend清理新session
+    let hasFinalized = false;    // 新增：防止finalizeTapSay被短时间内多次调用
 
     // DOM Elements
     const monitoringCard = document.getElementById("monitoring-card");
@@ -1220,6 +1221,7 @@ Hi, how are you? Meet me on Wednesday. </div>
         recognition.onstart = () => {
           isRecording = true;
           isListening = true;
+          hasFinalized = false; // 每次开始录音时复位标记
           console.log("recognition.onstart 触发，录音正式开始，时间:", new Date().toISOString());
         };
 
@@ -1447,6 +1449,11 @@ Hi, how are you? Meet me on Wednesday. </div>
      * Called after speech recognition ends, sending results to API
      *******************************************************/
     function finalizeTapSay() {
+      // 防止短时间内多次调用
+      if (hasFinalized) return;
+      hasFinalized = true;
+      setTimeout(() => { hasFinalized = false; }, 500); // 500ms内不再执行
+
       console.log("======== finalizeTapSay========");
       const transcript = (voiceInputSpan.innerText || "").trim();
       console.log("voice:", transcript);
@@ -2334,8 +2341,20 @@ Hi, how are you? Meet me on Wednesday. </div>
         const errorSentenceEl = document.getElementById("error-sentence");
         let entireText = errorSentenceEl.innerText;
         
-        // Replace the previously selected sentence with candidate
-        let updatedText = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+        // 使用确切区间替换，而不是模糊正则
+        let updatedText;
+        if (currentSentenceInfo && currentSentenceInfo.startIndex !== undefined 
+            && currentSentenceInfo.endIndex !== undefined) {
+          // 使用精确的起始和结束位置
+          const {startIndex, endIndex} = currentSentenceInfo;
+          updatedText = entireText.slice(0, startIndex) + 
+                        candidate + 
+                        entireText.slice(endIndex);
+        } else {
+          // 回退到原来的模糊正则替换
+          updatedText = replaceFirstOccurrence(entireText, selectedSentence, candidate);
+        }
+        
         errorSentenceEl.innerText = updatedText;
         selectedSentence = candidate;
 
