@@ -987,6 +987,7 @@ Hi, how are you? Meet me on Wednesday. </div>
     let highlightTimeout = null;
     let suggestionsBox = null;
     let suggestionsTimer = null;
+    let suggestionsDismissHandler = null;   // Stores current document-level listener
     let undoStack = [];
     let isDragging = false;
     let cursorElement = null;
@@ -1110,6 +1111,15 @@ Hi, how are you? Meet me on Wednesday. </div>
       if (suggestionsBox) {
         suggestionsBox.remove();
         suggestionsBox = null;
+      }
+      /* Remove global listener to avoid leaks */
+      if (suggestionsDismissHandler) {
+        document.removeEventListener('pointerdown', suggestionsDismissHandler, { passive: true });
+        suggestionsDismissHandler = null;
+      }
+      if (suggestionsTimer) {
+        clearTimeout(suggestionsTimer);
+        suggestionsTimer = null;
       }
     }
 
@@ -2349,7 +2359,7 @@ Hi, how are you? Meet me on Wednesday. </div>
           div.innerText = candidate;
         }
 
-        div.onclick = (evt) => {
+        div.addEventListener('pointerup', (evt) => {
           evt.preventDefault();
           evt.stopPropagation();
           if (isExpMode) {
@@ -2382,9 +2392,14 @@ Hi, how are you? Meet me on Wednesday. </div>
             originalSentence = candidate;
           }
           removeSuggestionsBox();
-        };
+        });
         box.appendChild(div);
       }
+      
+      // 添加外部点击自动关闭
+      attachOutsideDismiss();
+      suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
+      
       return box;
     }
 
@@ -2812,7 +2827,7 @@ Hi, how are you? Meet me on Wednesday. </div>
           div.innerText = candidate;
         }
 
-        div.onclick = (evt) => {
+        div.addEventListener('pointerup', (evt) => {
           evt.preventDefault();
           evt.stopPropagation();
           if (isExpMode) {
@@ -2843,9 +2858,14 @@ Hi, how are you? Meet me on Wednesday. </div>
             originalSentence = candidate;
           }
           removeSuggestionsBox();
-        };
+        });
         box.appendChild(div);
       }
+      
+      // 添加外部点击自动关闭
+      attachOutsideDismiss();
+      suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
+      
       return box;
     }
 
@@ -3134,6 +3154,20 @@ Hi, how are you? Meet me on Wednesday. </div>
       console.log("Sending to API with position:", finalPosition);
       
       sendToAPI(mergedStr, finalPosition, activeMode === MODE_EXPERIENCE);
+    }
+
+    /* -------- Suggestion-box outside-click helper -------- */
+    function attachOutsideDismiss() {
+      /* Delay 0 ms, so current pointer event won't immediately close the new box */
+      setTimeout(() => {
+        suggestionsDismissHandler = (evt) => {
+          /* Close only when the click/touch is outside the box */
+          if (suggestionsBox && !suggestionsBox.contains(evt.target)) {
+            removeSuggestionsBox();
+          }
+        };
+        document.addEventListener('pointerdown', suggestionsDismissHandler, { passive: true });
+      }, 0);
     }
   </script>
 </body>
