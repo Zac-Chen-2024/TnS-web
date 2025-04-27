@@ -1222,30 +1222,32 @@ Hi, how are you? Meet me on Wednesday. </div>
         };
 
         recognition.onresult = (event) => {
-          const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
-          voiceInputSpan.innerText = transcript;
-          finalOutputSpan.innerText = transcript;
-          
+          const res = event.results[event.results.length - 1];   // 最后一次
+          const text = res[0].transcript.trim();
 
+          voiceInputSpan.innerText = text;     // 实时预览
+          finalOutputSpan.innerText = text;
+          
+          // 记录最后一次检测到语音的时间
           lastSpeechTime = new Date();
           
-
+          // 清除之前的沉默计时器
           if (silenceTimer) {
             clearTimeout(silenceTimer);
             silenceTimer = null;
           }
           
-
+          // 设置新的沉默计时器，在用户停止说话后一段时间再停止录音
           silenceTimer = setTimeout(() => {
             if (isRecording && recognition) {
               console.log("用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
-
+              // 保存当前文本
               const savedTranscript = voiceInputSpan.innerText.trim();
               
-
+              // 停止录音
               stopRecording();
               
-
+              // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
               if (savedTranscript) {
                 console.log("调用finalizeTapSay处理录音结果");
                 voiceInputSpan.innerText = savedTranscript;
@@ -1254,6 +1256,11 @@ Hi, how are you? Meet me on Wednesday. </div>
             }
           }, silenceThreshold);
           
+          // 检查是否为最终结果
+          if (res.isFinal) {
+            // 这里可以添加最终结果的处理逻辑
+            // 但不立即停止录音，让沉默计时器来处理
+          }
         };
 
         recognition.onend = () => {
@@ -1737,7 +1744,11 @@ Hi, how are you? Meet me on Wednesday. </div>
   
         e.preventDefault();
         
-    
+        // 记录触摸起始位置
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        
         errorSentenceEl.dataset.touchStarted = "true";
         
      
@@ -1749,7 +1760,6 @@ Hi, how are you? Meet me on Wednesday. </div>
         if (isDragging) return;
         removeCursor();
 
-        const touch = e.touches[0];
         const rect = e.currentTarget.getBoundingClientRect();
         const text = errorSentenceEl.innerText;
         
@@ -1806,16 +1816,21 @@ Hi, how are you? Meet me on Wednesday. </div>
 
   
       errorSentenceEl.addEventListener("touchmove", (e) => {
-        if (pressTimerExp && !longPressStarted) {
-          clearTimeout(pressTimerExp);
-          pressTimerExp = null;
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - startX);
+        const dy = Math.abs(touch.clientY - startY);
+        
+        // 允许 ±8 px 的手抖
+        if (dx > 8 || dy > 8) {
+          if (pressTimerExp && !longPressStarted) {
+            clearTimeout(pressTimerExp);
+            pressTimerExp = null;
+          }
         }
         
- 
         if (isDragging || isDraggingAndRecording) {
           e.preventDefault();
           
-          const touch = e.touches[0];
           if (document.caretRangeFromPoint) {
             const range = document.caretRangeFromPoint(touch.clientX, touch.clientY);
             if (range && range.startContainer === errorSentenceEl.firstChild) {
@@ -1881,12 +1896,14 @@ Hi, how are you? Meet me on Wednesday. </div>
             recognition.isAfterDragging = true;
             
             recognition.onresult = (event) => {
-              const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
-              voiceInputSpan.innerText = transcript;
-              finalOutputSpan.innerText = transcript;
+              const res = event.results[event.results.length - 1];  // 最后一次
+              const text = res[0].transcript.trim();
+              
+              voiceInputSpan.innerText = text;
+              finalOutputSpan.innerText = text;
               
               // 如果检测到语音并获得最终结果，停止录音
-              if (event.results[0].isFinal && recognition && isRecording) {
+              if (res.isFinal && recognition && isRecording) {
                 console.log("检测到语音并获得最终结果，停止录音");
                 
                 // 停止录音，然后直接调用finalizeTapSay处理结果
@@ -1978,12 +1995,6 @@ Hi, how are you? Meet me on Wednesday. </div>
                   }
                 }
               }, silenceThreshold);
-              
-              // 不再在检测到最终结果后就立即停止录音
-              // if (event.results[0].isFinal && recognition && isRecording) {
-              //   console.log("检测到语音并获得最终结果，停止录音");
-              //   ...
-              // }
             };
           }
         }
@@ -2683,9 +2694,11 @@ Hi, how are you? Meet me on Wednesday. </div>
 
           if (recognition) {
             recognition.onresult = (event) => {
-              const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
-              voiceInputSpan.innerText = transcript;
-              finalOutputSpan.innerText = transcript;
+              const res = event.results[event.results.length - 1];  // 最后一次
+              const text = res[0].transcript.trim();
+              
+              voiceInputSpan.innerText = text;
+              finalOutputSpan.innerText = text;
               
               // 记录最后一次检测到语音的时间
               lastSpeechTime = new Date();
