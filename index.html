@@ -816,24 +816,29 @@
   </style>
 </head>
 <body>
-  <!-- Pre-heat overlay -->
+  <!-- Speech-engine testing overlay -->
   <div id="preheat-overlay" style="
     position:fixed;inset:0;
-    background:rgba(255,255,255,.9);
+    background:rgba(255,255,255,.92);
     display:flex;flex-direction:column;
     align-items:center;justify-content:center;
-    z-index:5000;">
+    z-index:5000;font-family:'Segoe UI',system-ui,sans-serif;">
+    <!-- top-right Skip -->
+    <button id="preheat-skip" style="
+      position:absolute;top:14px;right:18px;
+      background:none;border:none;font-size:0.95rem;
+      color:#007bff;cursor:pointer;">Skip</button>
+
     <p id="preheat-status" style="
-      font-size:1.2rem;margin-bottom:24px;">
-      Initializing speech recognition...
+      font-size:1.2rem;margin-bottom:24px;line-height:1.6;text-align:center;">
+      Please say <strong>"I'm ready"</strong> to verify the speech engine.
     </p>
+
     <button id="preheat-continue" style="
-      display:none;padding:10px 28px;
+      display:none;padding:10px 32px;
       border:none;border-radius:8px;
       background:#28a745;color:#fff;
-      font-size:1rem;cursor:pointer;">
-      Continue
-    </button>
+      font-size:1rem;cursor:pointer;">Continue</button>
   </div>
 
   <!-- Header load -->
@@ -983,51 +988,96 @@ Hi, how are you? Meet me on Wednesday. </div>
   <div id="float-menu"></div>
 
   <script>
-    /* ---------- Speech engine pre-warm overlay ---------- */
-    function preheatSpeechRecognition() {
-      // wrap pre-heat in Promise
-      return new Promise((resolve) => {
-        // ask mic permission early
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {});
-        }
+    /* ---------- Interactive warm-up: user says "I'm ready" ---------- */
+    const READY_PHRASE   = "i'm ready";      // phrase to detect
+    const TEST_API       = "/ready_check";   // backend endpoint (change if needed)
+    const MAX_API_RETRY  = 4;                // retries before giving up
 
-        const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        // if not supported, skip
-        if (!Rec) { resolve("unsupported"); return; }
-
-        try {
-          const r = new Rec();
-          r.lang = "en-US";
-          r.interimResults = false;
-          r.maxAlternatives = 1;
-
-          r.onstart = () => { r.abort(); };      // abort right after start
-          r.onend   = () => { resolve("ok"); };
-          r.onerror = () => { resolve("error"); };
-
-          r.start();
-        } catch (_) { resolve("exception"); }
-      });
+    async function verifyWithAPI(text) {
+      // POST to backend; if unreachable, fallback to local match
+      try {
+        const resp  = await fetch(TEST_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+        const data = await resp.json();
+        return Boolean(data?.ok);
+      } catch (_) {
+        return text.toLowerCase().includes(READY_PHRASE);
+      }
     }
 
-    (async () => {
-      const overlay = document.getElementById("preheat-overlay");
-      const status  = document.getElementById("preheat-status");
-      const button  = document.getElementById("preheat-continue");
-
-      try {
-        status.textContent = "Warming up speech engine...";
-        await preheatSpeechRecognition();        // wait for warm-up
-        status.textContent = "Speech engine ready!";
-      } catch {
-        status.textContent = "Unable to initialize speech engine, you can still continue.";
+    function startReadyTest() {
+      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Rec) {
+        document.getElementById("preheat-status").textContent =
+          "Speech recognition is not supported; you may continue.";
+        showContinue();
+        return;
       }
+      const r = new Rec();
+      r.lang = "en-US";
+      r.interimResults = false;
+      r.maxAlternatives = 1;
 
-      // show continue button
-      button.style.display = "inline-block";
-      button.addEventListener("click", () => { overlay.style.display = "none"; });
-    })();
+      let apiTrials = 0;
+
+      r.onresult = async (evt) => {
+        const txt    = evt.results[0][0].transcript.trim();
+        const status = document.getElementById("preheat-status");
+        status.textContent = `Heard "${txt}", verifying...`;
+
+        const ok = await verifyWithAPI(txt);
+        if (ok) {
+          status.textContent = "Speech engine is ready!";
+          showContinue();
+          r.abort();
+        } else if (++apiTrials >= MAX_API_RETRY) {
+          status.textContent =
+            "Verification failed several times; you may still continue.";
+          showContinue();
+          r.abort();
+        } else {
+          status.textContent =
+            "Phrase not recognized. Please say \"I'm ready\" again.";
+          r.abort();
+          setTimeout(() => { try { r.start(); } catch(_){} }, 400);
+        }
+      };
+
+      r.onerror = () => {
+        document.getElementById("preheat-status").textContent =
+          "An error occurred. You may click Skip or refresh to retry.";
+      };
+
+      r.onend = () => {
+        if (!document.getElementById("preheat-continue").style.display) {
+          setTimeout(() => { try { r.start(); } catch(_){} }, 300);
+        }
+      };
+
+      // request mic permission early
+      navigator.mediaDevices?.getUserMedia({ audio: true }).catch(()=>{});
+      r.start();
+    }
+
+    function showContinue() {
+      const btn = document.getElementById("preheat-continue");
+      btn.style.display = "inline-block";
+      btn.onclick = () => {
+        document.getElementById("preheat-overlay").style.display = "none";
+      };
+    }
+
+    document.getElementById("preheat-skip").addEventListener("click", () => {
+      const warn =
+        "If you are using Android, skipping the test may cause the first " +
+        "speech input to fail or require extra wait time. Continue anyway?";
+      if (confirm(warn)) showContinue();
+    });
+
+    startReadyTest();
 
     /***********************************************
      * ============ A) Universal UI & Code ============
