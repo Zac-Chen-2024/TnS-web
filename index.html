@@ -1005,7 +1005,7 @@ Hi, how are you? Meet me on Wednesday. </div>
     let currentSentenceInfo = null; // store current sentence details
     let silenceTimer = null; 
     let lastSpeechTime = null; 
-    let silenceThreshold = 1000; // 新增：沉默1秒后停止录音
+    let silenceThreshold = 1000; // 新增：沉默2秒后停止录音
 
     // DOM Elements
     const monitoringCard = document.getElementById("monitoring-card");
@@ -1222,19 +1222,45 @@ Hi, how are you? Meet me on Wednesday. </div>
         };
 
         recognition.onresult = (event) => {
-          // 取最后一次结果，防止多次拼接
-          const res = event.results[event.results.length - 1];
-          const transcript = res[0].transcript.trim();
+          const res = event.results[event.results.length - 1];   // 最后一次
+          const text = res[0].transcript.trim();
 
-          voiceInputSpan.innerText  = transcript;   // 预览
-          finalOutputSpan.innerText = transcript;   // 监控
-
-          // 记录最后说话时间，用于沉默计时器
-          lastSpeechTime = Date.now();
-
-          // 重新计时：1 s 无语音就自动 stop()
-          clearTimeout(silenceTimer);
-          silenceTimer = setTimeout(closeBySilence, 1000);
+          voiceInputSpan.innerText = text;     // 实时预览
+          finalOutputSpan.innerText = text;
+          
+          // 记录最后一次检测到语音的时间
+          lastSpeechTime = new Date();
+          
+          // 清除之前的沉默计时器
+          if (silenceTimer) {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
+          }
+          
+          // 设置新的沉默计时器，在用户停止说话后一段时间再停止录音
+          silenceTimer = setTimeout(() => {
+            if (isRecording && recognition) {
+              console.log("用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
+              // 保存当前文本
+              const savedTranscript = voiceInputSpan.innerText.trim();
+              
+              // 停止录音
+              stopRecording();
+              
+              // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
+              if (savedTranscript) {
+                console.log("调用finalizeTapSay处理录音结果");
+                voiceInputSpan.innerText = savedTranscript;
+                setTimeout(finalizeTapSay, 100);
+              }
+            }
+          }, silenceThreshold);
+          
+          // 检查是否为最终结果
+          if (res.isFinal) {
+            // 这里可以添加最终结果的处理逻辑
+            // 但不立即停止录音，让沉默计时器来处理
+          }
         };
 
         recognition.onend = () => {
@@ -1456,14 +1482,6 @@ Hi, how are you? Meet me on Wednesday. </div>
       micIcons.forEach(icon => {
         icon.classList.remove('recording');
       });
-    }
-
-    function closeBySilence() {
-      if (!isRecording) return;
-
-      const text = voiceInputSpan.innerText.trim();
-      stopRecording();            // 调用下面③的 stopRecording()
-      if (text) finalizeTapSay(); // 送后端
     }
 
     /*******************************************************
@@ -1878,19 +1896,34 @@ Hi, how are you? Meet me on Wednesday. </div>
             recognition.isAfterDragging = true;
             
             recognition.onresult = (event) => {
-              // 取最后一次结果，防止多次拼接
-              const res = event.results[event.results.length - 1];
-              const transcript = res[0].transcript.trim();
-
-              voiceInputSpan.innerText  = transcript;   // 预览
-              finalOutputSpan.innerText = transcript;   // 监控
-
-              // 记录最后说话时间，用于沉默计时器
-              lastSpeechTime = Date.now();
-
-              // 重新计时：1 s 无语音就自动 stop()
-              clearTimeout(silenceTimer);
-              silenceTimer = setTimeout(closeBySilence, 1000);
+              const res = event.results[event.results.length - 1];  // 最后一次
+              const text = res[0].transcript.trim();
+              
+              voiceInputSpan.innerText = text;
+              finalOutputSpan.innerText = text;
+              
+              // 如果检测到语音并获得最终结果，停止录音
+              if (res.isFinal && recognition && isRecording) {
+                console.log("检测到语音并获得最终结果，停止录音");
+                
+                // 停止录音，然后直接调用finalizeTapSay处理结果
+                setTimeout(() => {
+                  if (isRecording) {
+                    // 先保存transcript，避免stopRecording清除
+                    const savedTranscript = voiceInputSpan.innerText.trim();
+                    
+                    // 停止录音
+                    stopRecording();
+                    
+                    // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
+                    if (savedTranscript) {
+                      console.log("直接调用finalizeTapSay处理录音结果");
+                      voiceInputSpan.innerText = savedTranscript;
+                      setTimeout(finalizeTapSay, 100);
+                    }
+                  }
+                }, 100);
+              }
             };
           }
           
@@ -1928,22 +1961,40 @@ Hi, how are you? Meet me on Wednesday. </div>
           
           console.log("触摸拖动结束，继续录音直到捕获语音或达到最大时长");
           
-          // 使用统一的closeBySilence处理
+          // 恢复标准的onresult处理，以便语音结果能够触发停止录音
           if (recognition) {
             recognition.onresult = (event) => {
-              // 取最后一次结果，防止多次拼接
-              const res = event.results[event.results.length - 1];
-              const transcript = res[0].transcript.trim();
-
-              voiceInputSpan.innerText  = transcript;   // 预览
-              finalOutputSpan.innerText = transcript;   // 监控
-
-              // 记录最后说话时间，用于沉默计时器
-              lastSpeechTime = Date.now();
-
-              // 重新计时：1 s 无语音就自动 stop()
-              clearTimeout(silenceTimer);
-              silenceTimer = setTimeout(closeBySilence, 1000);
+              const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+              voiceInputSpan.innerText = transcript;
+              finalOutputSpan.innerText = transcript;
+              
+              // 记录最后一次检测到语音的时间
+              lastSpeechTime = new Date();
+              
+              // 清除之前的沉默计时器
+              if (silenceTimer) {
+                clearTimeout(silenceTimer);
+                silenceTimer = null;
+              }
+              
+              // 设置新的沉默计时器，在用户停止说话后一段时间再停止录音
+              silenceTimer = setTimeout(() => {
+                if (isRecording && recognition) {
+                  console.log("移动端：用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
+                  // 先保存transcript，避免stopRecording清除
+                  const savedTranscript = voiceInputSpan.innerText.trim();
+                  
+                  // 停止录音
+                  stopRecording();
+                  
+                  // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
+                  if (savedTranscript) {
+                    console.log("移动端：调用finalizeTapSay处理录音结果");
+                    voiceInputSpan.innerText = savedTranscript;
+                    setTimeout(finalizeTapSay, 100);
+                  }
+                }
+              }, silenceThreshold);
             };
           }
         }
@@ -2639,23 +2690,46 @@ Hi, how are you? Meet me on Wednesday. </div>
             window.stopRecordingTimer = null;
           }
           
+
+
           if (recognition) {
             recognition.onresult = (event) => {
-              // 取最后一次结果，防止多次拼接
-              const res = event.results[event.results.length - 1];
-              const transcript = res[0].transcript.trim();
-
-              voiceInputSpan.innerText  = transcript;   // 预览
-              finalOutputSpan.innerText = transcript;   // 监控
-
-              // 记录最后说话时间，用于沉默计时器
-              lastSpeechTime = Date.now();
-
-              // 重新计时：1 s 无语音就自动 stop()
-              clearTimeout(silenceTimer);
-              silenceTimer = setTimeout(closeBySilence, 1000);
+              const res = event.results[event.results.length - 1];  // 最后一次
+              const text = res[0].transcript.trim();
+              
+              voiceInputSpan.innerText = text;
+              finalOutputSpan.innerText = text;
+              
+              // 记录最后一次检测到语音的时间
+              lastSpeechTime = new Date();
+              
+              // 清除之前的沉默计时器
+              if (silenceTimer) {
+                clearTimeout(silenceTimer);
+                silenceTimer = null;
+              }
+              
+              // 设置新的沉默计时器，在用户停止说话后一段时间再停止录音
+              silenceTimer = setTimeout(() => {
+                if (isRecording && recognition) {
+                  console.log("自由输入模式：用户停止说话" + silenceThreshold/1000 + "秒，准备停止录音");
+                  // 先保存transcript，避免stopRecording清除
+                  const savedTranscript = voiceInputSpan.innerText.trim();
+                  
+                  // 停止录音
+                  stopRecording();
+                  
+                  // 确保voiceInputSpan中有内容，然后调用finalizeTapSay
+                  if (savedTranscript) {
+                    console.log("自由输入模式：调用finalizeTapSay处理录音结果");
+                    voiceInputSpan.innerText = savedTranscript;
+                    setTimeout(finalizeTapSay, 100);
+                  }
+                }
+              }, silenceThreshold);
             };
           }
+          
         }
       }
       
@@ -3194,18 +3268,51 @@ Hi, how are you? Meet me on Wednesday. </div>
     }
 
     function stopRecording() {
-      clearTimeout(hardStopTimer);
-      clearTimeout(silenceTimer);
-      silenceTimer = null;
+      clearTimeout(hardStopTimer); // 清除硬停止计时器
+      hardStopTimer = null;
+      
+      // 清除沉默计时器
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
+      
+
+      const isAfterDragging = recognition && recognition.isAfterDragging;
 
       isRecording = false;
+      isListening = false;
+      
       if (recognition) {
-        try { recognition.stop(); } catch(e){}
-      }
+        try { 
 
-      micStatusSpan.innerHTML = "🔴 Stopped";
-      document.querySelectorAll('.recording-status-dot,.mic-icon')
-              .forEach(el => el.classList.remove('recording'));
+          console.log("调用recognition.stop()");
+          recognition.stop(); 
+        } catch(e) { 
+          console.error(e); 
+        }
+      }
+      
+      if (micStatusSpan) {
+        micStatusSpan.innerHTML = "🔴 Stopped";
+        micStatusSpan.className = "";
+      }
+      
+      const dots = document.querySelectorAll('.recording-status-dot');
+      const micIcons = document.querySelectorAll('.mic-icon');
+      dots.forEach(dot => {
+        dot.classList.remove('recording');
+      });
+      micIcons.forEach(icon => {
+        icon.classList.remove('recording');
+      });
+      
+      // 添加调试信息
+      console.log("=== stopRecording结束时的状态 ===");
+      console.log("isAfterDragging:", isAfterDragging);
+      console.log("errorText内容:", errorText ? errorText.innerText : "未找到元素");
+      console.log("voiceInputSpan内容:", voiceInputSpan ? voiceInputSpan.innerText : "未找到元素");
+      console.log("==============================");
     }
 
     function handleRecognitionResult(transcript, relativePosition = 0) {
