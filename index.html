@@ -2289,14 +2289,17 @@ Hi, how are you? Meet me on Wednesday. </div>
      * Transcription: create a suggestion box
      *******************************************************/
     function createSuggestionBox(rect, corrections, isExpMode) {
-      let box = document.createElement("div");
+      /* --- remove any existing popup BEFORE creating a new one --- */
+      removeSuggestionsBox();   // this also clears old timer & listeners
+
+      const box = document.createElement("div");
       box.className = "suggestions-box-floating";
-      
-      /* Prevent any pointerdown inside the suggestion box from bubbling */
-      box.addEventListener('pointerdown', (evt) => {
-        evt.preventDefault();
-        evt.stopPropagation();
-      }, true); // useCapture = true (先捕获)
+
+      /* Prevent pointerdown inside the box from bubbling */
+      box.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
       
       if (isExpMode) {
         // Transcription mode positioning
@@ -2776,16 +2779,20 @@ Hi, how are you? Meet me on Wednesday. </div>
      * Transcription: create a suggestion box (repeated for free input)
      *******************************************************/
     function createSuggestionBox(rect, corrections, isExpMode) {
-      let box = document.createElement("div");
+      /* --- remove any existing popup BEFORE creating a new one --- */
+      removeSuggestionsBox();   // this also clears old timer & listeners
+
+      const box = document.createElement("div");
       box.className = "suggestions-box-floating";
-      
-      /* Prevent any pointerdown inside the suggestion box from bubbling */
-      box.addEventListener('pointerdown', (evt) => {
-        evt.preventDefault();
-        evt.stopPropagation();
-      }, true); // useCapture = true (先捕获)
+
+      /* Prevent pointerdown inside the box from bubbling */
+      box.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
       
       if (isExpMode) {
+        // Transcription mode positioning
         const errorSentenceEl = document.getElementById("error-sentence");
         if (errorSentenceEl) {
           const text = errorSentenceEl.innerText;
