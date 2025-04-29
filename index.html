@@ -2062,29 +2062,44 @@ Hi, how are you? Meet me on Wednesday. </div>
      * Transcription: show cursor during long press
      *******************************************************/
     function showCursorAtPosition(targetId = "error-sentence") {
-      removeCursor();
+      removeCursor();  // remove any existing cursor indicator
+
       const element = document.getElementById(targetId);
-      if (!element) return;
+      if (!element) return;  // exit if element not found
 
-      const textNode = element.firstChild;
-      if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+      // find the first text node inside the element
+      const textNode = [...element.childNodes].find(n => n.nodeType === Node.TEXT_NODE);
+      if (!textNode) return;  // exit if no text node present
 
+      const len = textNode.length;
+      const pos = Math.max(0, Math.min(localTapIndex, len));
+
+      // create a range at the tap position
       const range = document.createRange();
-      range.setStart(textNode, localTapIndex);
-      range.collapse(true);
+      range.setStart(textNode, pos);
 
-      const rect = range.getBoundingClientRect();
+      // expand the range by one character to work around iOS collapsed-range bug
+      if (pos < len) {
+        range.setEnd(textNode, pos + 1);
+      } else if (pos > 0) {
+        // if tapping at end, expand backwards
+        range.setStart(textNode, pos - 1);
+        range.setEnd(textNode, pos);
+      }
+
+      // use getClientRects()[0] for accurate character rectangle on iOS
+      const rect = (range.getClientRects()[0] || range.getBoundingClientRect());
+
+      // create and position the cursor indicator element
       cursorElement = document.createElement("span");
       cursorElement.className = "cursor-indicator";
       cursorElement.style.position = "absolute";
-      cursorElement.style.left = rect.left + window.scrollX + "px";
-      cursorElement.style.top  = rect.top  + window.scrollY + "px";
+      cursorElement.style.left   = rect.left + window.scrollX + "px";
+      cursorElement.style.top    = rect.top  + window.scrollY + "px";
       cursorElement.style.height = rect.height + "px";
       cursorElement.style.width  = "3px";
       cursorElement.style.zIndex = "9999";
       document.body.appendChild(cursorElement);
-
-      /* no auto-hide here – stopRecording()/endTapSay() will call removeCursor() */
     }
 
     function showLongPressFeedback(x, y) {
