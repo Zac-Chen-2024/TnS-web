@@ -1003,6 +1003,10 @@ Hi, how are you? Meet me on Wednesday. </div>
     let lastSpeechTime = null; 
     let silenceThreshold = 1000; // 修改为2秒，给用户更多的思考时间
 
+    /* ------------------- suggestion popup life-cycle ------------------- */
+    // lifetime of a suggestion popup (ms)
+    const SUGGESTION_TTL = 4000;   
+
     // DOM Elements
     const monitoringCard = document.getElementById("monitoring-card");
     const eventLogCard = document.getElementById("event-log-card");
@@ -1112,14 +1116,16 @@ Hi, how are you? Meet me on Wednesday. </div>
         suggestionsBox.remove();
         suggestionsBox = null;
       }
-      /* Remove global listener to avoid leaks */
-      if (suggestionsDismissHandler) {
-        document.removeEventListener('pointerdown', suggestionsDismissHandler, { passive: true });
-        suggestionsDismissHandler = null;
-      }
+      /* clear life-timer when box is gone */
       if (suggestionsTimer) {
         clearTimeout(suggestionsTimer);
         suggestionsTimer = null;
+      }
+      /* remove global outside-click listeners, if any */
+      if (suggestionsDismissHandler) {
+        document.removeEventListener('pointerdown', suggestionsDismissHandler, { passive: true });
+        document.removeEventListener('click', suggestionsDismissHandler, { passive: true });
+        suggestionsDismissHandler = null;
       }
     }
 
@@ -2411,7 +2417,12 @@ Hi, how are you? Meet me on Wednesday. </div>
       
       // 添加外部点击自动关闭
       attachOutsideDismiss();
-      suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
+      
+      /* --- auto-dismiss after TTL, regardless of user interaction --- */
+      if (suggestionsTimer) clearTimeout(suggestionsTimer);     // cancel previous timer
+      suggestionsTimer = setTimeout(() => {
+        removeSuggestionsBox();                                 // force close
+      }, SUGGESTION_TTL);
       
       return box;
     }
@@ -2890,7 +2901,12 @@ Hi, how are you? Meet me on Wednesday. </div>
       
       // 添加外部点击自动关闭
       attachOutsideDismiss();
-      suggestionsTimer = setTimeout(removeSuggestionsBox, 3000);
+      
+      /* --- auto-dismiss after TTL, regardless of user interaction --- */
+      if (suggestionsTimer) clearTimeout(suggestionsTimer);     // cancel previous timer
+      suggestionsTimer = setTimeout(() => {
+        removeSuggestionsBox();                                 // force close
+      }, SUGGESTION_TTL);
       
       return box;
     }
@@ -3207,7 +3223,7 @@ Hi, how are you? Meet me on Wednesday. </div>
       banner.id = "android-warn-banner";
       banner.innerHTML = `
         <span style="margin-bottom:10px;display:block;text-align:left;">
-          ⚠️ On Android, the first speech-recognition request may fail due to platform limitations. If this happens, tap “Restore,” wait about 10 seconds, then try again.
+          ⚠️ On Android, the first speech-recognition request may fail due to platform limitations. If this happens, tap "Restore," wait about 10 seconds, then try again.
           <br>
           ⚠️ This site currently supports only Chrome, Edge, and the default Android browser. We apologize for any inconvenience.
 
@@ -3243,7 +3259,7 @@ Hi, how are you? Meet me on Wednesday. </div>
       banner.id = "ios-warn-banner";
       banner.innerHTML = `
         <span style="margin-bottom:10px;display:block;text-align:left;">
-          ⚠️ Please allow speech recognition to enable iOS’s offline engine.
+          ⚠️ Please allow speech recognition to enable iOS's offline engine.
           <br>
           ⚠️ This site currently supports only Safari, Chrome, and Edge on iOS. We apologize for any inconvenience.
 
