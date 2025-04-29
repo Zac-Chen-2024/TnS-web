@@ -1026,6 +1026,13 @@ Hi, how are you? Meet me on Wednesday. </div>
     const modeExperienceContainer = document.getElementById("experience-mode");
     const modeInputContainer = document.getElementById("input-mode");
 
+    // 在脚本开头获取元素引用
+    const errorSentenceEl = document.getElementById("error-sentence");
+    if (!errorSentenceEl) {
+      console.error("Could not find error-sentence element");
+      return;
+    }
+
     /*******************************************************
      * Universal: Toast / Event Log / IME toggle
      *******************************************************/
