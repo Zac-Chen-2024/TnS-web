@@ -1652,6 +1652,25 @@ Hi, how are you? Meet me on Wednesday. </div>
       errorSentenceEl.addEventListener("touchstart", (e) => {
         e.preventDefault();
         
+        // 添加详细的调试日志
+        const el = document.getElementById("error-sentence");
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
+        console.log("Touch coords:", x, y);
+
+        let offset = 0;
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(x, y);
+          console.log("caretRangeFromPoint:", range.startOffset, range.startContainer);
+          offset = range.startOffset;
+        } else if (document.caretPositionFromPoint) {
+          const pos = document.caretPositionFromPoint(x, y);
+          console.log("caretPositionFromPoint:", pos.offset, pos.offsetNode);
+          offset = pos.offset;
+        }
+        console.log("Computed offset:", offset);
+        localTapIndex = offset;
+        
         // Record touch start position
         const touch = e.touches[0];
         startX = touch.clientX;
@@ -1670,24 +1689,24 @@ Hi, how are you? Meet me on Wednesday. </div>
         const rect = e.currentTarget.getBoundingClientRect();
         const text = errorSentenceEl.innerText;
         
-        const x = touch.clientX;
-        const y = touch.clientY;
-        if (document.caretRangeFromPoint) {
-          const range = document.caretRangeFromPoint(x, y);
-          if (range) {
-            localTapIndex = range.startOffset;
-          }
-        } else {
-          const style = window.getComputedStyle(errorSentenceEl);
-          const fontSize = parseFloat(style.fontSize);
-          const paddingLeft = parseFloat(style.paddingLeft);
-          const touchX = touch.clientX - rect.left - paddingLeft;
-          const averageCharWidth = fontSize * 0.6;
-          localTapIndex = Math.round(touchX / averageCharWidth);
-        }
-        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+        // 临时允许文本选择
+        errorSentenceEl.style.webkitUserSelect = 'text';
+        errorSentenceEl.style.userSelect       = 'text';
 
-        showCursorAtPosition();            // short tap cursor
+        // 如果offset为0，尝试手动测量
+        if (offset === 0) {
+          offset = measureTapIndexManually(errorSentenceEl, x);
+          console.log("Manual fallback offset:", offset);
+        }
+
+        // 恢复文本选择禁用
+        errorSentenceEl.style.webkitUserSelect = 'none';
+        errorSentenceEl.style.userSelect       = 'none';
+
+        localTapIndex = Math.max(0, Math.min(text.length, offset));
+        console.log("Final localTapIndex:", localTapIndex);
+
+        showCursorAtPosition();
         startRecording();
 
         const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
@@ -2146,90 +2165,6 @@ Hi, how are you? Meet me on Wednesday. </div>
 
       document.body.removeChild(mirror);
       return offset;
-    }
-
-    // 修改touchstart事件处理
-    errorSentenceEl.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      
-      // Record touch start position
-      const touch = e.touches[0];
-      startX = touch.clientX;
-      startY = touch.clientY;
-      
-      errorSentenceEl.dataset.touchStarted = "true";
-      
-      if (stopRecordingTimer) {
-        clearTimeout(stopRecordingTimer);
-        stopRecordingTimer = null;
-      }
-
-      if (isDragging) return;
-      removeCursor();
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const text = errorSentenceEl.innerText;
-      
-      const x = touch.clientX;
-      const y = touch.clientY;
-
-      // debug logs
-      console.log('Touch coordinates:', x, y);
-
-      let offset = 0;
-      if (document.caretPositionFromPoint) {
-        const pos = document.caretPositionFromPoint(x, y);
-        console.log('caretPositionFromPoint:', pos);
-        if (pos) offset = pos.offset;
-      } else if (document.caretRangeFromPoint) {
-        const range = document.caretRangeFromPoint(x, y);
-        console.log('caretRangeFromPoint.range:', range,
-                    'startContainer:', range.startContainer,
-                    'startOffset:', range.startOffset);
-        if (range) offset = range.startOffset;
-      }
-      console.log('Computed offset before clamp:', offset);
-
-      // 临时允许文本选择
-      errorSentenceEl.style.webkitUserSelect = 'text';
-      errorSentenceEl.style.userSelect       = 'text';
-
-      // 如果offset为0，尝试手动测量
-      if (offset === 0) {
-        offset = measureTapIndexManually(errorSentenceEl, x);
-      }
-
-      // 恢复文本选择禁用
-      errorSentenceEl.style.webkitUserSelect = 'none';
-      errorSentenceEl.style.userSelect       = 'none';
-
-      localTapIndex = Math.max(0, Math.min(text.length, offset));
-      console.log('Final localTapIndex:', localTapIndex);
-
-      showCursorAtPosition();
-      startRecording();
-
-      const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
-      errorText.innerText = sentenceInfo.sentence;
-      originalSentence = sentenceInfo.sentence;
-      originalErrorSpan.innerText = sentenceInfo.sentence;
-      selectedSentence = sentenceInfo.sentence;
-      
-      currentSentenceInfo = sentenceInfo;
-      tapStartIndex = sentenceInfo.relativePosition;
-      console.log("Touch start - Relative position set to:", sentenceInfo.relativePosition);
-
-      pressTimerExp = setTimeout(() => {
-        longPressStarted = true;
-        isDraggingAndRecording = true;
-        handleExpLongPress();
-        showLongPressFeedback(touch.clientX, touch.clientY);
-      }, mobileLongPressThreshold);
-    }, { passive: false });
-
-    function showLongPressFeedback(x, y) {
-      // A placeholder for any long-press feedback
-      console.log("Long-press at:", x, y);
     }
 
     /*******************************************************
