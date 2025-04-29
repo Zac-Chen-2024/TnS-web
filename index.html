@@ -1026,14 +1026,6 @@ Hi, how are you? Meet me on Wednesday. </div>
     const modeExperienceContainer = document.getElementById("experience-mode");
     const modeInputContainer = document.getElementById("input-mode");
 
-    // 在脚本开头获取元素引用
-    const errorSentenceEl = document.getElementById("error-sentence");
-    if (!errorSentenceEl) {
-      console.error("Could not find error-sentence element");
-    } else {
-      // 其他代码保持不变
-    }
-
     /*******************************************************
      * Universal: Toast / Event Log / IME toggle
      *******************************************************/
@@ -1660,25 +1652,6 @@ Hi, how are you? Meet me on Wednesday. </div>
       errorSentenceEl.addEventListener("touchstart", (e) => {
         e.preventDefault();
         
-        // 添加详细的调试日志
-        const el = document.getElementById("error-sentence");
-        const x = e.touches[0].clientX;
-        const y = e.touches[0].clientY;
-        console.log("Touch coords:", x, y);
-
-        let offset = 0;
-        if (document.caretRangeFromPoint) {
-          const range = document.caretRangeFromPoint(x, y);
-          console.log("caretRangeFromPoint:", range.startOffset, range.startContainer);
-          offset = range.startOffset;
-        } else if (document.caretPositionFromPoint) {
-          const pos = document.caretPositionFromPoint(x, y);
-          console.log("caretPositionFromPoint:", pos.offset, pos.offsetNode);
-          offset = pos.offset;
-        }
-        console.log("Computed offset:", offset);
-        localTapIndex = offset;
-        
         // Record touch start position
         const touch = e.touches[0];
         startX = touch.clientX;
@@ -1697,24 +1670,24 @@ Hi, how are you? Meet me on Wednesday. </div>
         const rect = e.currentTarget.getBoundingClientRect();
         const text = errorSentenceEl.innerText;
         
-        // 临时允许文本选择
-        errorSentenceEl.style.webkitUserSelect = 'text';
-        errorSentenceEl.style.userSelect       = 'text';
-
-        // 如果offset为0，尝试手动测量
-        if (offset === 0) {
-          offset = measureTapIndexManually(errorSentenceEl, x);
-          console.log("Manual fallback offset:", offset);
+        const x = touch.clientX;
+        const y = touch.clientY;
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(x, y);
+          if (range) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+          const style = window.getComputedStyle(errorSentenceEl);
+          const fontSize = parseFloat(style.fontSize);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const touchX = touch.clientX - rect.left - paddingLeft;
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(touchX / averageCharWidth);
         }
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
 
-        // 恢复文本选择禁用
-        errorSentenceEl.style.webkitUserSelect = 'none';
-        errorSentenceEl.style.userSelect       = 'none';
-
-        localTapIndex = Math.max(0, Math.min(text.length, offset));
-        console.log("Final localTapIndex:", localTapIndex);
-
-        showCursorAtPosition();
+        showCursorAtPosition();            // short tap cursor
         startRecording();
 
         const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
@@ -2089,269 +2062,35 @@ Hi, how are you? Meet me on Wednesday. </div>
      * Transcription: show cursor during long press
      *******************************************************/
     function showCursorAtPosition(targetId = "error-sentence") {
-      removeCursor();  // remove any existing cursor
-
+      removeCursor();
       const element = document.getElementById(targetId);
       if (!element) return;
 
-      // find the first text node
-      const textNode = [...element.childNodes].find(n => n.nodeType === Node.TEXT_NODE);
-      if (!textNode) return;
+      const textNode = element.firstChild;
+      if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
 
-      const len = textNode.length;
-      const pos = Math.max(0, Math.min(localTapIndex, len));
+      const range = document.createRange();
+      range.setStart(textNode, localTapIndex);
+      range.collapse(true);
 
-      // try collapsed-range method first
-      let charRect = null;
-      try {
-        const range = document.createRange();
-        range.setStart(textNode, pos);
-        range.setEnd(textNode, Math.min(pos + 1, len));
-        range.collapse(true);  // collapse to start of expanded range
-        const rects = range.getClientRects();
-        if (rects.length > 0 && rects[0].width > 0) {
-          charRect = rects[0];
-        }
-      } catch (e) {
-        // ignore
-      }
-
-      // fallback: measure text width with hidden span
-      if (!charRect) {
-        const style = window.getComputedStyle(element);
-        const mirror = document.createElement("span");
-        mirror.style.position    = "absolute";
-        mirror.style.visibility  = "hidden";
-        mirror.style.whiteSpace  = "pre";
-        mirror.style.font        = style.font;
-        mirror.textContent       = textNode.textContent.slice(0, pos);
-        document.body.appendChild(mirror);
-
-        const mirrorRect = mirror.getBoundingClientRect();
-        const elemRect   = element.getBoundingClientRect();
-        const paddingLeft = parseFloat(style.paddingLeft) || 0;
-        const paddingTop  = parseFloat(style.paddingTop)  || 0;
-
-        charRect = {
-          left: elemRect.left + mirrorRect.width + paddingLeft,
-          top:  elemRect.top  + paddingTop,
-          height: mirrorRect.height
-        };
-
-        document.body.removeChild(mirror);
-      }
-
-      // create and position the cursor indicator
+      const rect = range.getBoundingClientRect();
       cursorElement = document.createElement("span");
       cursorElement.className = "cursor-indicator";
       cursorElement.style.position = "absolute";
-      cursorElement.style.left     = charRect.left  + window.scrollX + "px";
-      cursorElement.style.top      = charRect.top   + window.scrollY + "px";
-      cursorElement.style.height   = charRect.height + "px";
-      cursorElement.style.width    = "3px";
-      cursorElement.style.zIndex   = "9999";
+      cursorElement.style.left = rect.left + window.scrollX + "px";
+      cursorElement.style.top  = rect.top  + window.scrollY + "px";
+      cursorElement.style.height = rect.height + "px";
+      cursorElement.style.width  = "3px";
+      cursorElement.style.zIndex = "9999";
       document.body.appendChild(cursorElement);
+
+      /* no auto-hide here – stopRecording()/endTapSay() will call removeCursor() */
     }
 
-    // 添加手动测量点击位置的函数
-    function measureTapIndexManually(element, x) {
-      const style = getComputedStyle(element);
-      const mirror = document.createElement('span');
-      mirror.style.position   = 'absolute';
-      mirror.style.visibility = 'hidden';
-      mirror.style.whiteSpace = 'pre';
-      mirror.style.font       = style.font;
-      document.body.appendChild(mirror);
-
-      const text = element.innerText;
-      let offset = 0;
-      for (; offset < text.length; offset++) {
-        mirror.textContent = text.slice(0, offset + 1);
-        const w = mirror.getBoundingClientRect().width;
-        if (element.getBoundingClientRect().left + w >= x) break;
-      }
-
-      document.body.removeChild(mirror);
-      return offset;
+    function showLongPressFeedback(x, y) {
+      // A placeholder for any long-press feedback
+      console.log("Long-press at:", x, y);
     }
-
-    /**
-     * In `element`, find the character offset closest to (x, y),
-     * supporting multiline text wrapping.
-     */
-    function measureTapIndexMultiLine(element, x, y) {
-      // Find the first TextNode
-      const textNode = Array.from(element.childNodes)
-        .find(n => n.nodeType === Node.TEXT_NODE);
-      if (!textNode) return 0;
-
-      const len = textNode.length;
-      const range = document.createRange();
-
-      // Iterate over each possible offset, collapse the range there,
-      // and get its client rects.
-      for (let i = 0; i <= len; i++) {
-        range.setStart(textNode, i);
-        range.collapse(true);
-        const rects = range.getClientRects();
-        if (!rects.length) continue;
-
-        // A wrapped line may produce multiple rects; pick the last one
-        // as it corresponds to the current line.
-        const rect = rects[rects.length - 1];
-
-        // If the touch point falls within this rect, we've found our offset
-        if (
-          x >= rect.left && x <= rect.right &&
-          y >= rect.top  && y <= rect.bottom
-        ) {
-          range.detach?.();
-          return i;
-        }
-      }
-
-      range.detach?.();
-      // If nothing matched, return the end of the text
-      return len;
-    }
-
-    // Wrap the entire script in an IIFE
-    ;(function(){
-      const errorSentenceEl = document.getElementById("error-sentence");
-      if (!errorSentenceEl) {
-        console.error("Could not find error-sentence element");
-        throw new Error("Missing #error-sentence element");
-      }
-
-      /**
-       * In `element`, find the character offset closest to (x, y),
-       * supporting multiline text wrapping.
-       */
-      function measureTapIndexMultiLine(element, x, y) {
-        // Find the first TextNode
-        const textNode = Array.from(element.childNodes)
-          .find(n => n.nodeType === Node.TEXT_NODE);
-        if (!textNode) return 0;
-
-        const len = textNode.length;
-        const range = document.createRange();
-
-        // Iterate over each possible offset, collapse the range there,
-        // and get its client rects.
-        for (let i = 0; i <= len; i++) {
-          range.setStart(textNode, i);
-          range.collapse(true);
-          const rects = range.getClientRects();
-          if (!rects.length) continue;
-
-          // A wrapped line may produce multiple rects; pick the last one
-          // as it corresponds to the current line.
-          const rect = rects[rects.length - 1];
-
-          // If the touch point falls within this rect, we've found our offset
-          if (
-            x >= rect.left && x <= rect.right &&
-            y >= rect.top  && y <= rect.bottom
-          ) {
-            range.detach?.();
-            return i;
-          }
-        }
-
-        range.detach?.();
-        // If nothing matched, return the end of the text
-        return len;
-      }
-
-      // Update touchstart event handler
-      errorSentenceEl.addEventListener("touchstart", e => {
-        e.preventDefault();
-        removeCursor();
-
-        const touch = e.touches[0];
-        const x = touch.clientX;
-        const y = touch.clientY;
-
-        // First try the native caretRangeFromPoint API
-        let offset = 0;
-        if (document.caretRangeFromPoint) {
-          const range = document.caretRangeFromPoint(x, y);
-          if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
-            offset = range.startOffset;
-          }
-        }
-
-        // If the native API didn't give us a reliable result,
-        // fall back to our multiline measurement
-        if (!offset) {
-          offset = measureTapIndexMultiLine(errorSentenceEl, x, y);
-        }
-
-        // Clamp the offset to valid bounds
-        offset = Math.max(0, Math.min(errorSentenceEl.innerText.length, offset));
-        localTapIndex = offset;
-
-        showCursorAtPosition();  // draw the cursor using collapsed-range
-        startRecording();
-
-        const sentenceInfo = getCurrentSentenceForTranscription(errorSentenceEl.innerText, localTapIndex);
-        errorText.innerText = sentenceInfo.sentence;
-        originalSentence = sentenceInfo.sentence;
-        originalErrorSpan.innerText = sentenceInfo.sentence;
-        selectedSentence = sentenceInfo.sentence;
-        
-        currentSentenceInfo = sentenceInfo;
-        tapStartIndex = sentenceInfo.relativePosition;
-        console.log("Touch start - Relative position set to:", sentenceInfo.relativePosition);
-
-        pressTimerExp = setTimeout(() => {
-          longPressStarted = true;
-          isDraggingAndRecording = true;
-          handleExpLongPress();
-          showLongPressFeedback(touch.clientX, touch.clientY);
-        }, mobileLongPressThreshold);
-      }, { passive: false });
-
-      // Update touchmove event handler
-      errorSentenceEl.addEventListener("touchmove", e => {
-        if (!isDragging) return;
-        e.preventDefault();
-
-        const touch = e.touches[0];
-        const x = touch.clientX;
-        const y = touch.clientY;
-
-        // Try native API first
-        let offset = 0;
-        if (document.caretRangeFromPoint) {
-          const range = document.caretRangeFromPoint(x, y);
-          if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
-            offset = range.startOffset;
-          }
-        }
-
-        // Fallback to multiline measurement if needed
-        if (!offset) {
-          offset = measureTapIndexMultiLine(errorSentenceEl, x, y);
-        }
-
-        // Clamp
-        offset = Math.max(0, Math.min(errorSentenceEl.innerText.length, offset));
-        localTapIndex = offset;
-
-        // Update the selected sentence and cursor
-        const info = getCurrentSentenceForTranscription(
-          errorSentenceEl.innerText,
-          offset
-        );
-        tapStartIndex = info.relativePosition;
-        errorText.innerText         = info.sentence;
-        originalErrorSpan.innerText = info.sentence;
-        selectedSentence            = info.sentence;
-
-        showCursorAtPosition();
-      }, { passive: false });
-    })();
 
     /*******************************************************
      * Transcription: check if the user has completed corrections
