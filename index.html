@@ -990,8 +990,10 @@ Hi, how are you? Meet me on Wednesday. </div>
     let suggestionsDismissHandler = null;   // Stores current document-level listener
     let undoStack = [];
     let isDragging = false;
-    let cursorElement = null;
-    let cursorTimeout = null;
+    let cursorElement   = null;
+    let cursorTimeout   = null;
+    let lastCaretNode   = null;   // ① 缓存 node
+    let lastCaretOffset = 0;      // ② 缓存 offset
     let selectedSentence = ""; // used in Transcription mode, also referenced by some universal functions
     let isDraggingAndRecording = false; // new variable for marking drag+record
     let useWebkitSpeech = true;
@@ -1609,7 +1611,13 @@ Hi, how are you? Meet me on Wednesday. </div>
         if (document.caretRangeFromPoint) {
           const range = document.caretRangeFromPoint(x, y);
           if (range) {
-            localTapIndex = range.startOffset;
+            lastCaretNode   = range.startContainer;   // ③ 记住
+            lastCaretOffset = range.startOffset;
+            /* 如果 startContainer 不是文本节点，改为它的第一个文本子节点 */
+            if (lastCaretNode.nodeType !== 3 && lastCaretNode.firstChild) {
+              lastCaretNode = lastCaretNode.firstChild;
+            }
+            localTapIndex = lastCaretOffset;
           }
         } else {
           // Fallback
@@ -1675,7 +1683,13 @@ Hi, how are you? Meet me on Wednesday. </div>
         if (document.caretRangeFromPoint) {
           const range = document.caretRangeFromPoint(x, y);
           if (range) {
-            localTapIndex = range.startOffset;
+            lastCaretNode   = range.startContainer;   // ③ 记住
+            lastCaretOffset = range.startOffset;
+            /* 如果 startContainer 不是文本节点，改为它的第一个文本子节点 */
+            if (lastCaretNode.nodeType !== 3 && lastCaretNode.firstChild) {
+              lastCaretNode = lastCaretNode.firstChild;
+            }
+            localTapIndex = lastCaretOffset;
           }
         } else {
           const style = window.getComputedStyle(errorSentenceEl);
@@ -2066,14 +2080,29 @@ Hi, how are you? Meet me on Wednesday. </div>
       const element = document.getElementById(targetId);
       if (!element) return;
 
-      const textNode = element.firstChild;
-      if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+      /* 优先用刚才缓存的节点 / offset */
+      let node   = (lastCaretNode && element.contains(lastCaretNode))
+                   ? lastCaretNode : element.firstChild;
+      if (!node || node.nodeType !== 3) return;
 
-      const range = document.createRange();
-      range.setStart(textNode, localTapIndex);
+      let range = document.createRange();
+      try {
+        range.setStart(node, lastCaretOffset);
+      } catch {            /* 容错：offset 超长时退回 0 */
+        range.setStart(node, 0);
+      }
       range.collapse(true);
 
-      const rect = range.getBoundingClientRect();
+      /* iOS：collapsed range 可能返回 0×0，需要一个兜底做标记 */
+      let rect = range.getBoundingClientRect();
+      if (!(rect.width || rect.height)) {
+        const marker = document.createElement("span");
+        marker.appendChild(document.createTextNode("\u200B")); // 零宽空格
+        range.insertNode(marker);
+        rect = marker.getBoundingClientRect();
+        marker.parentNode.removeChild(marker);
+      }
+
       cursorElement = document.createElement("span");
       cursorElement.className = "cursor-indicator";
       cursorElement.style.position = "absolute";
@@ -2084,7 +2113,9 @@ Hi, how are you? Meet me on Wednesday. </div>
       cursorElement.style.zIndex = "9999";
       document.body.appendChild(cursorElement);
 
-      /* no auto-hide here – stopRecording()/endTapSay() will call removeCursor() */
+      /* 游标已显示完毕，允许下一次点击重新计算 */
+      lastCaretNode   = null;
+      lastCaretOffset = 0;
     }
 
     function showLongPressFeedback(x, y) {

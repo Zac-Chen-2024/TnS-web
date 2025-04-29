@@ -1201,6 +1201,12 @@ Hi, how are you? Meet me on Wednesday. </div>
       isRecording = true;
       isListening = true;
 
+      /* cancel any auto-hide timer so the cursor stays while recording */
+      if (cursorTimeout) {
+        clearTimeout(cursorTimeout);
+        cursorTimeout = null;
+      }
+
       micStatusSpan.innerHTML = "🟢 Recording...";
       micStatusSpan.className = "recording-active";
 
@@ -1616,6 +1622,9 @@ Hi, how are you? Meet me on Wednesday. </div>
         }
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
 
+        // show cursor immediately for short tap
+        showCursorAtPosition();            // keep until recording stops
+
         // Start recording
         startRecording();
 
@@ -1678,6 +1687,7 @@ Hi, how are you? Meet me on Wednesday. </div>
         }
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
 
+        showCursorAtPosition();            // short tap cursor
         startRecording();
 
         const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
@@ -2051,57 +2061,30 @@ Hi, how are you? Meet me on Wednesday. </div>
     /*******************************************************
      * Transcription: show cursor during long press
      *******************************************************/
-    function showCursorAtPosition() {
+    function showCursorAtPosition(targetId = "error-sentence") {
       removeCursor();
-      const element = document.getElementById("error-sentence");
+      const element = document.getElementById(targetId);
       if (!element) return;
 
-      const text = element.textContent;
       const textNode = element.firstChild;
       if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
 
-      try {
-        const style = window.getComputedStyle(element);
-        const range = document.createRange();
-        range.setStart(textNode, localTapIndex);
-        range.collapse(true);
+      const range = document.createRange();
+      range.setStart(textNode, localTapIndex);
+      range.collapse(true);
 
-        const rangeRect = range.getBoundingClientRect();
-        
-        cursorElement = document.createElement("span");
-        cursorElement.className = "cursor-indicator";
-        cursorElement.style.position = "absolute";
+      const rect = range.getBoundingClientRect();
+      cursorElement = document.createElement("span");
+      cursorElement.className = "cursor-indicator";
+      cursorElement.style.position = "absolute";
+      cursorElement.style.left = rect.left + window.scrollX + "px";
+      cursorElement.style.top  = rect.top  + window.scrollY + "px";
+      cursorElement.style.height = rect.height + "px";
+      cursorElement.style.width  = "3px";
+      cursorElement.style.zIndex = "9999";
+      document.body.appendChild(cursorElement);
 
-        // Use clientX and clientY coordinates instead of pageX and pageY to adapt to mobile scrolling
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-        
-        cursorElement.style.left = (rangeRect.left + scrollX) + "px";
-        cursorElement.style.top = (rangeRect.top + scrollY) + "px";
-        cursorElement.style.height = rangeRect.height + "px";
-        // Increase cursor width to make it easier to see on mobile devices
-        cursorElement.style.width = "3px";
-        // Ensure the cursor is displayed on top
-        cursorElement.style.zIndex = "9999";
-
-        document.body.appendChild(cursorElement);
-        cursorElement.dataset.index = localTapIndex.toString();
-        cursorElement.dataset.elementId = "error-sentence";
-
-        if (!isRecording && !isDragging) {
-          cursorTimeout = setTimeout(() => { removeCursor(); }, 6000);
-        }
-        touchIndexSpan.innerText = String(localTapIndex);
-        
-        // Add log for debugging
-        console.log("Cursor created at position:", localTapIndex, "with coordinates:", {
-          left: rangeRect.left + scrollX,
-          top: rangeRect.top + scrollY,
-          height: rangeRect.height
-        });
-      } catch (e) {
-        console.error("[Transcription] Error creating cursor:", e);
-      }
+      /* no auto-hide here – stopRecording()/endTapSay() will call removeCursor() */
     }
 
     function showLongPressFeedback(x, y) {
@@ -2535,6 +2518,7 @@ Hi, how are you? Meet me on Wednesday. </div>
             originalErrorSpan.innerText = sentenceInfo.sentence;
             localTapIndex = range.startOffset;
             
+            showCursorAtPosition("simple-editor");
             startRecording(true);
           }
         }, isTouch ? 700 : 500);
