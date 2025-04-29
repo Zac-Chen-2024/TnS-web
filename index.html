@@ -2062,45 +2062,170 @@ Hi, how are you? Meet me on Wednesday. </div>
      * Transcription: show cursor during long press
      *******************************************************/
     function showCursorAtPosition(targetId = "error-sentence") {
-      removeCursor();  // remove any existing cursor indicator
+      removeCursor();  // remove any existing cursor
 
       const element = document.getElementById(targetId);
-      if (!element) return;  // exit if element not found
+      if (!element) return;
 
-      // find the first text node inside the element
+      // find the first text node
       const textNode = [...element.childNodes].find(n => n.nodeType === Node.TEXT_NODE);
-      if (!textNode) return;  // exit if no text node present
+      if (!textNode) return;
 
       const len = textNode.length;
       const pos = Math.max(0, Math.min(localTapIndex, len));
 
-      // create a range at the tap position
-      const range = document.createRange();
-      range.setStart(textNode, pos);
-
-      // expand the range by one character to work around iOS collapsed-range bug
-      if (pos < len) {
-        range.setEnd(textNode, pos + 1);
-      } else if (pos > 0) {
-        // if tapping at end, expand backwards
-        range.setStart(textNode, pos - 1);
-        range.setEnd(textNode, pos);
+      // try collapsed-range method first
+      let charRect = null;
+      try {
+        const range = document.createRange();
+        range.setStart(textNode, pos);
+        range.setEnd(textNode, Math.min(pos + 1, len));
+        range.collapse(true);  // collapse to start of expanded range
+        const rects = range.getClientRects();
+        if (rects.length > 0 && rects[0].width > 0) {
+          charRect = rects[0];
+        }
+      } catch (e) {
+        // ignore
       }
 
-      // use getClientRects()[0] for accurate character rectangle on iOS
-      const rect = (range.getClientRects()[0] || range.getBoundingClientRect());
+      // fallback: measure text width with hidden span
+      if (!charRect) {
+        const style = window.getComputedStyle(element);
+        const mirror = document.createElement("span");
+        mirror.style.position    = "absolute";
+        mirror.style.visibility  = "hidden";
+        mirror.style.whiteSpace  = "pre";
+        mirror.style.font        = style.font;
+        mirror.textContent       = textNode.textContent.slice(0, pos);
+        document.body.appendChild(mirror);
 
-      // create and position the cursor indicator element
+        const mirrorRect = mirror.getBoundingClientRect();
+        const elemRect   = element.getBoundingClientRect();
+        const paddingLeft = parseFloat(style.paddingLeft) || 0;
+        const paddingTop  = parseFloat(style.paddingTop)  || 0;
+
+        charRect = {
+          left: elemRect.left + mirrorRect.width + paddingLeft,
+          top:  elemRect.top  + paddingTop,
+          height: mirrorRect.height
+        };
+
+        document.body.removeChild(mirror);
+      }
+
+      // create and position the cursor indicator
       cursorElement = document.createElement("span");
       cursorElement.className = "cursor-indicator";
       cursorElement.style.position = "absolute";
-      cursorElement.style.left   = rect.left + window.scrollX + "px";
-      cursorElement.style.top    = rect.top  + window.scrollY + "px";
-      cursorElement.style.height = rect.height + "px";
-      cursorElement.style.width  = "3px";
-      cursorElement.style.zIndex = "9999";
+      cursorElement.style.left     = charRect.left  + window.scrollX + "px";
+      cursorElement.style.top      = charRect.top   + window.scrollY + "px";
+      cursorElement.style.height   = charRect.height + "px";
+      cursorElement.style.width    = "3px";
+      cursorElement.style.zIndex   = "9999";
       document.body.appendChild(cursorElement);
     }
+
+    // 添加手动测量点击位置的函数
+    function measureTapIndexManually(element, x) {
+      const style = getComputedStyle(element);
+      const mirror = document.createElement('span');
+      mirror.style.position   = 'absolute';
+      mirror.style.visibility = 'hidden';
+      mirror.style.whiteSpace = 'pre';
+      mirror.style.font       = style.font;
+      document.body.appendChild(mirror);
+
+      const text = element.innerText;
+      let offset = 0;
+      for (; offset < text.length; offset++) {
+        mirror.textContent = text.slice(0, offset + 1);
+        const w = mirror.getBoundingClientRect().width;
+        if (element.getBoundingClientRect().left + w >= x) break;
+      }
+
+      document.body.removeChild(mirror);
+      return offset;
+    }
+
+    // 修改touchstart事件处理
+    errorSentenceEl.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      
+      // Record touch start position
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      
+      errorSentenceEl.dataset.touchStarted = "true";
+      
+      if (stopRecordingTimer) {
+        clearTimeout(stopRecordingTimer);
+        stopRecordingTimer = null;
+      }
+
+      if (isDragging) return;
+      removeCursor();
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const text = errorSentenceEl.innerText;
+      
+      const x = touch.clientX;
+      const y = touch.clientY;
+
+      // debug logs
+      console.log('Touch coordinates:', x, y);
+
+      let offset = 0;
+      if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(x, y);
+        console.log('caretPositionFromPoint:', pos);
+        if (pos) offset = pos.offset;
+      } else if (document.caretRangeFromPoint) {
+        const range = document.caretRangeFromPoint(x, y);
+        console.log('caretRangeFromPoint.range:', range,
+                    'startContainer:', range.startContainer,
+                    'startOffset:', range.startOffset);
+        if (range) offset = range.startOffset;
+      }
+      console.log('Computed offset before clamp:', offset);
+
+      // 临时允许文本选择
+      errorSentenceEl.style.webkitUserSelect = 'text';
+      errorSentenceEl.style.userSelect       = 'text';
+
+      // 如果offset为0，尝试手动测量
+      if (offset === 0) {
+        offset = measureTapIndexManually(errorSentenceEl, x);
+      }
+
+      // 恢复文本选择禁用
+      errorSentenceEl.style.webkitUserSelect = 'none';
+      errorSentenceEl.style.userSelect       = 'none';
+
+      localTapIndex = Math.max(0, Math.min(text.length, offset));
+      console.log('Final localTapIndex:', localTapIndex);
+
+      showCursorAtPosition();
+      startRecording();
+
+      const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+      errorText.innerText = sentenceInfo.sentence;
+      originalSentence = sentenceInfo.sentence;
+      originalErrorSpan.innerText = sentenceInfo.sentence;
+      selectedSentence = sentenceInfo.sentence;
+      
+      currentSentenceInfo = sentenceInfo;
+      tapStartIndex = sentenceInfo.relativePosition;
+      console.log("Touch start - Relative position set to:", sentenceInfo.relativePosition);
+
+      pressTimerExp = setTimeout(() => {
+        longPressStarted = true;
+        isDraggingAndRecording = true;
+        handleExpLongPress();
+        showLongPressFeedback(touch.clientX, touch.clientY);
+      }, mobileLongPressThreshold);
+    }, { passive: false });
 
     function showLongPressFeedback(x, y) {
       // A placeholder for any long-press feedback
