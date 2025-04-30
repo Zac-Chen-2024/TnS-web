@@ -3286,7 +3286,7 @@ Hi, how are you? Meet me on Wednesday. </div>
     /*******************************************************
      * Position cursor based on tap coordinates
      *******************************************************/
-    function showCursorAtPosition(targetId = "error-sentence") {
+    function showCursorAtPosition(targetId = "error-sentence", position = localTapIndex) {
       removeCursor();
       const element = document.getElementById(targetId);
       if (!element) return;
@@ -3294,14 +3294,15 @@ Hi, how are you? Meet me on Wednesday. </div>
       const textNode = element.firstChild;
       if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
 
-      // 确保 localTapIndex 在有效范围内
-      localTapIndex = Math.max(0, Math.min(localTapIndex, textNode.length));
+      // 确保光标位置在有效范围内
+      position = Math.max(0, Math.min(position, textNode.length));
+      localTapIndex = position;
 
       // 使用 requestAnimationFrame 确保 DOM 更新后设置光标
       requestAnimationFrame(() => {
         const selection = window.getSelection();
         const range = document.createRange();
-        range.setStart(textNode, localTapIndex);
+        range.setStart(textNode, position);
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
@@ -3318,6 +3319,67 @@ Hi, how are you? Meet me on Wednesday. </div>
         cursorElement.style.zIndex = "9999";
         document.body.appendChild(cursorElement);
       });
+    }
+
+    // iOS专用的光标位置计算函数
+    function calculateCursorPosition(element, x, y) {
+      const rect = element.getBoundingClientRect();
+      const text = element.textContent;
+      let cursorPosition = 0;
+
+      // 方法1: 使用caretRangeFromPoint获取光标位置
+      if (document.caretRangeFromPoint) {
+        const range = document.caretRangeFromPoint(x, y);
+        if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+          cursorPosition = range.startOffset;
+        }
+      }
+
+      // 方法2: 如果失败，基于字符宽度估算
+      if (cursorPosition === 0) {
+        const style = window.getComputedStyle(element);
+        const fontSize = parseFloat(style.fontSize);
+        const paddingLeft = parseFloat(style.paddingLeft);
+        const touchX = x - rect.left - paddingLeft;
+        const averageCharWidth = fontSize * 0.6; // 估算平均字符宽度
+        cursorPosition = Math.round(touchX / averageCharWidth);
+      }
+
+      // 限制光标位置在文本范围内
+      return Math.max(0, Math.min(text.length, cursorPosition));
+    }
+
+    // 为iOS设备添加touchend事件处理
+    if (isIOS) {
+      errorSentenceEl.addEventListener("touchend", (e) => {
+        // 防止与长按冲突
+        if (longPressStarted) return;
+        
+        const touch = e.changedTouches[0];
+        const x = touch.clientX;
+        const y = touch.clientY;
+        const text = errorSentenceEl.textContent;
+        
+        // 延迟设置光标，确保DOM更新完成
+        setTimeout(() => {
+          const cursorPosition = calculateCursorPosition(errorSentenceEl, x, y);
+          console.log("iOS touchend position:", cursorPosition, "Text length:", text.length);
+          
+          localTapIndex = cursorPosition;
+          showCursorAtPosition("error-sentence", cursorPosition);
+          
+          // 更新选中的句子
+          const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+          errorText.innerText = sentenceInfo.sentence;
+          originalSentence = sentenceInfo.sentence;
+          originalErrorSpan.innerText = sentenceInfo.sentence;
+          selectedSentence = sentenceInfo.sentence;
+          
+          currentSentenceInfo = sentenceInfo;
+          tapStartIndex = sentenceInfo.relativePosition;
+          console.log("Touch end - Relative position set to:", sentenceInfo.relativePosition);
+        }, 100);
+      }, { passive: false });
     }
 
     // 更新touchstart事件处理
@@ -3342,42 +3404,11 @@ Hi, how are you? Meet me on Wednesday. </div>
       const rect = e.currentTarget.getBoundingClientRect();
       const text = errorSentenceEl.innerText;
       
-      const x = touch.clientX;
-      const y = touch.clientY;
-
-      // iOS设备特殊处理
-      if (isIOS) {
-        requestAnimationFrame(() => {
-          if (document.caretRangeFromPoint) {
-            const range = document.caretRangeFromPoint(x, y);
-            if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
-              localTapIndex = range.startOffset;
-            } else {
-              // 备选方案：基于字符宽度估算
-              const style = window.getComputedStyle(errorSentenceEl);
-              const fontSize = parseFloat(style.fontSize);
-              const paddingLeft = parseFloat(style.paddingLeft);
-              const touchX = x - rect.left - paddingLeft;
-              const averageCharWidth = fontSize * 0.6;
-              localTapIndex = Math.round(touchX / averageCharWidth);
-            }
-          } else {
-            // 如果caretRangeFromPoint不可用，使用备选方案
-            const style = window.getComputedStyle(errorSentenceEl);
-            const fontSize = parseFloat(style.fontSize);
-            const paddingLeft = parseFloat(style.paddingLeft);
-            const touchX = x - rect.left - paddingLeft;
-            const averageCharWidth = fontSize * 0.6;
-            localTapIndex = Math.round(touchX / averageCharWidth);
-          }
-          
-          // 确保localTapIndex在有效范围内
-          localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
-          console.log("iOS Touch position:", localTapIndex, "Text length:", text.length);
-          
-          showCursorAtPosition();
-        });
-      } else {
+      // 对于iOS设备，光标定位移至touchend事件中处理
+      if (!isIOS) {
+        const x = touch.clientX;
+        const y = touch.clientY;
+        
         // 非iOS设备使用原有逻辑
         if (document.caretRangeFromPoint) {
           const range = document.caretRangeFromPoint(x, y);
