@@ -1455,7 +1455,7 @@ Hi, how are you? Meet me on Wednesday. </div>
       {
         target: "The cat sat on the mat. The dog chased the cat. The mouse ran away quickly.",
         error: "The cat sat on the mat. The dog chase cat. The mouse ran away quickly.",
-        tip: "This also works for multi-sentence paragraphs"
+        tip: "If you are using iOS, you can long-press and drag to select the sentence you want to try."
       },
       {
         target: "They were discussing the implications of the new policy.",
@@ -3279,6 +3279,157 @@ Hi, how are you? Meet me on Wednesday. </div>
         banner.remove();
       };
     })();
+
+    // 检测是否为iOS设备
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    /*******************************************************
+     * Position cursor based on tap coordinates
+     *******************************************************/
+    function showCursorAtPosition(targetId = "error-sentence") {
+      removeCursor();
+      const element = document.getElementById(targetId);
+      if (!element) return;
+
+      // 针对iOS设备的特殊处理
+      if (isIOS) {
+        const textNode = element.firstChild;
+        if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+
+        // 确保localTapIndex在有效范围内
+        const len = textNode.length;
+        const pos = Math.max(0, Math.min(localTapIndex, len));
+
+        // 使用Selection API设置光标位置
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.setStart(textNode, pos);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        // 获取光标位置的屏幕坐标并显示自定义光标
+        const rect = range.getBoundingClientRect();
+        cursorElement = document.createElement("span");
+        cursorElement.className = "cursor-indicator";
+        cursorElement.style.position = "absolute";
+        cursorElement.style.left = rect.left + window.scrollX + "px";
+        cursorElement.style.top = rect.top + window.scrollY + "px";
+        cursorElement.style.height = rect.height + "px";
+        cursorElement.style.width = "3px";
+        cursorElement.style.zIndex = "9999";
+        document.body.appendChild(cursorElement);
+      } else {
+        // 非iOS设备使用原有逻辑
+        const textNode = element.firstChild;
+        if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+
+        const range = document.createRange();
+        range.setStart(textNode, localTapIndex);
+        range.collapse(true);
+
+        const rect = range.getBoundingClientRect();
+        cursorElement = document.createElement("span");
+        cursorElement.className = "cursor-indicator";
+        cursorElement.style.position = "absolute";
+        cursorElement.style.left = rect.left + window.scrollX + "px";
+        cursorElement.style.top = rect.top + window.scrollY + "px";
+        cursorElement.style.height = rect.height + "px";
+        cursorElement.style.width = "3px";
+        cursorElement.style.zIndex = "9999";
+        document.body.appendChild(cursorElement);
+      }
+
+      /* no auto-hide here – stopRecording()/endTapSay() will call removeCursor() */
+    }
+
+    // 更新touchstart事件处理
+    errorSentenceEl.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      
+      // Record touch start position
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      
+      errorSentenceEl.dataset.touchStarted = "true";
+      
+      if (stopRecordingTimer) {
+        clearTimeout(stopRecordingTimer);
+        stopRecordingTimer = null;
+      }
+
+      if (isDragging) return;
+      removeCursor();
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const text = errorSentenceEl.innerText;
+      
+      const x = touch.clientX;
+      const y = touch.clientY;
+
+      // iOS设备特殊处理
+      if (isIOS) {
+        // 使用setTimeout确保DOM更新完成
+        setTimeout(() => {
+          // 先尝试caretRangeFromPoint
+          if (document.caretRangeFromPoint) {
+            const range = document.caretRangeFromPoint(x, y);
+            if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+              localTapIndex = range.startOffset;
+            } else {
+              // 备选方案：基于字符宽度估算
+              const style = window.getComputedStyle(errorSentenceEl);
+              const fontSize = parseFloat(style.fontSize);
+              const paddingLeft = parseFloat(style.paddingLeft);
+              const touchX = x - rect.left - paddingLeft;
+              const averageCharWidth = fontSize * 0.6;
+              localTapIndex = Math.round(touchX / averageCharWidth);
+            }
+            
+            // 确保localTapIndex在有效范围内
+            localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+            showCursorAtPosition();
+          }
+        }, 50);
+      } else {
+        // 非iOS设备使用原有逻辑
+        if (document.caretRangeFromPoint) {
+          const range = document.caretRangeFromPoint(x, y);
+          if (range) {
+            localTapIndex = range.startOffset;
+          }
+        } else {
+          const style = window.getComputedStyle(errorSentenceEl);
+          const fontSize = parseFloat(style.fontSize);
+          const paddingLeft = parseFloat(style.paddingLeft);
+          const touchX = touch.clientX - rect.left - paddingLeft;
+          const averageCharWidth = fontSize * 0.6;
+          localTapIndex = Math.round(touchX / averageCharWidth);
+        }
+        localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+        showCursorAtPosition();
+      }
+      
+      startRecording();
+
+      const sentenceInfo = getCurrentSentenceForTranscription(text, localTapIndex);
+      errorText.innerText = sentenceInfo.sentence;
+      originalSentence = sentenceInfo.sentence;
+      originalErrorSpan.innerText = sentenceInfo.sentence;
+      selectedSentence = sentenceInfo.sentence;
+      
+      currentSentenceInfo = sentenceInfo;
+      tapStartIndex = sentenceInfo.relativePosition;
+      console.log("Touch start - Relative position set to:", sentenceInfo.relativePosition);
+
+      pressTimerExp = setTimeout(() => {
+        longPressStarted = true;
+        isDraggingAndRecording = true;
+        handleExpLongPress();
+        showLongPressFeedback(touch.clientX, touch.clientY);
+      }, mobileLongPressThreshold);
+    }, { passive: false });
   </script>
 </body>
 </html>
