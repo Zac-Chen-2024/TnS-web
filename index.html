@@ -3291,19 +3291,17 @@ Hi, how are you? Meet me on Wednesday. </div>
       const element = document.getElementById(targetId);
       if (!element) return;
 
-      // 针对iOS设备的特殊处理
-      if (isIOS) {
-        const textNode = element.firstChild;
-        if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+      const textNode = element.firstChild;
+      if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
 
-        // 确保localTapIndex在有效范围内
-        const len = textNode.length;
-        const pos = Math.max(0, Math.min(localTapIndex, len));
+      // 确保 localTapIndex 在有效范围内
+      localTapIndex = Math.max(0, Math.min(localTapIndex, textNode.length));
 
-        // 使用Selection API设置光标位置
+      // 使用 requestAnimationFrame 确保 DOM 更新后设置光标
+      requestAnimationFrame(() => {
         const selection = window.getSelection();
         const range = document.createRange();
-        range.setStart(textNode, pos);
+        range.setStart(textNode, localTapIndex);
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
@@ -3319,28 +3317,7 @@ Hi, how are you? Meet me on Wednesday. </div>
         cursorElement.style.width = "3px";
         cursorElement.style.zIndex = "9999";
         document.body.appendChild(cursorElement);
-      } else {
-        // 非iOS设备使用原有逻辑
-        const textNode = element.firstChild;
-        if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
-
-        const range = document.createRange();
-        range.setStart(textNode, localTapIndex);
-        range.collapse(true);
-
-        const rect = range.getBoundingClientRect();
-        cursorElement = document.createElement("span");
-        cursorElement.className = "cursor-indicator";
-        cursorElement.style.position = "absolute";
-        cursorElement.style.left = rect.left + window.scrollX + "px";
-        cursorElement.style.top = rect.top + window.scrollY + "px";
-        cursorElement.style.height = rect.height + "px";
-        cursorElement.style.width = "3px";
-        cursorElement.style.zIndex = "9999";
-        document.body.appendChild(cursorElement);
-      }
-
-      /* no auto-hide here – stopRecording()/endTapSay() will call removeCursor() */
+      });
     }
 
     // 更新touchstart事件处理
@@ -3370,9 +3347,7 @@ Hi, how are you? Meet me on Wednesday. </div>
 
       // iOS设备特殊处理
       if (isIOS) {
-        // 使用setTimeout确保DOM更新完成
-        setTimeout(() => {
-          // 先尝试caretRangeFromPoint
+        requestAnimationFrame(() => {
           if (document.caretRangeFromPoint) {
             const range = document.caretRangeFromPoint(x, y);
             if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
@@ -3386,12 +3361,22 @@ Hi, how are you? Meet me on Wednesday. </div>
               const averageCharWidth = fontSize * 0.6;
               localTapIndex = Math.round(touchX / averageCharWidth);
             }
-            
-            // 确保localTapIndex在有效范围内
-            localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
-            showCursorAtPosition();
+          } else {
+            // 如果caretRangeFromPoint不可用，使用备选方案
+            const style = window.getComputedStyle(errorSentenceEl);
+            const fontSize = parseFloat(style.fontSize);
+            const paddingLeft = parseFloat(style.paddingLeft);
+            const touchX = x - rect.left - paddingLeft;
+            const averageCharWidth = fontSize * 0.6;
+            localTapIndex = Math.round(touchX / averageCharWidth);
           }
-        }, 50);
+          
+          // 确保localTapIndex在有效范围内
+          localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+          console.log("iOS Touch position:", localTapIndex, "Text length:", text.length);
+          
+          showCursorAtPosition();
+        });
       } else {
         // 非iOS设备使用原有逻辑
         if (document.caretRangeFromPoint) {
@@ -3408,6 +3393,7 @@ Hi, how are you? Meet me on Wednesday. </div>
           localTapIndex = Math.round(touchX / averageCharWidth);
         }
         localTapIndex = Math.max(0, Math.min(text.length, localTapIndex));
+        console.log("Non-iOS Touch position:", localTapIndex, "Text length:", text.length);
         showCursorAtPosition();
       }
       
